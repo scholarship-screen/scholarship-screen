@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="助學金初審系統：匯入申請資料，自動檢查資格、標示不符原因、依優先順序排名並分出正取備取。資料只存在你的電腦，不上傳。">
+<meta property="og:title" content="助學金初審系統">
+<meta property="og:description" content="83 位申請人，一秒完成初篩：資格檢查、原因標籤、優先排名、正取備取、評審分組。">
+<meta property="og:type" content="website">
+<title>松樑教育公益促進協會助學金 初審系統</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#1d2733;--mute:#5b6876;--line:#dde3ea;--pri:#1f5fa8;--pri2:#e8f0fa;--ok:#1d7a46;--okbg:#e5f5ec;--warn:#9a6200;--warnbg:#fff4dd;--bad:#b3261e;--badbg:#fdecea;--chip:#eef1f5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.6 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+header{background:var(--pri);color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+header h1{margin:0;font-size:26px;font-weight:700}
+header .org{font-size:17px;opacity:.85}
+nav{display:flex;gap:4px;background:#fff;border-bottom:1px solid var(--line);padding:0 20px;position:sticky;top:0;z-index:5;overflow-x:auto}
+nav button{border:0;background:none;padding:16px 20px;font:inherit;font-size:19px;color:var(--mute);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav button.on{color:var(--pri);border-color:var(--pri);font-weight:700}
+main{max-width:1400px;margin:0 auto;padding:24px 20px 60px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin-bottom:20px}
+.card h2{margin:0 0 14px;font-size:22px}
+.card h3{margin:18px 0 8px;font-size:19px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.stat .n{font-size:38px;font-weight:700;line-height:1.2}
+.stat .l{color:var(--mute);font-size:17px}
+.stat.ok .n{color:var(--ok)}.stat.warn .n{color:var(--warn)}.stat.bad .n{color:var(--bad)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:10px 18px;font:inherit;font-size:18px;cursor:pointer}
+.btn:hover{border-color:var(--pri);color:var(--pri)}
+.btn.pri{background:var(--pri);color:#fff;border-color:var(--pri)}
+.btn.pri:hover{background:#174a85;color:#fff}
+.btn.danger{color:var(--bad)}
+.btn.sm{padding:6px 12px;font-size:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:17px;background:#fff}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+th{background:#f0f3f7;font-weight:700;position:sticky;top:0}
+td.wrap{white-space:normal;min-width:340px}
+tr:hover td{background:#fafcff}
+.chip{display:inline-block;background:var(--chip);border-radius:20px;padding:2px 10px;margin:2px 4px 2px 0;font-size:15px}
+.chip.p1{background:#fde2e1;color:#8c1d18}.chip.p2{background:#fff0d4;color:#7a4b00}.chip.p3{background:#e3ecff;color:#1d3f8a}.chip.p4{background:#e4f4ea;color:#1d6440}
+.st{display:inline-block;border-radius:6px;padding:3px 12px;font-weight:700;font-size:16px}
+.st.ok{background:var(--okbg);color:var(--ok)}.st.wait{background:var(--warnbg);color:var(--warn)}.st.no{background:var(--badbg);color:var(--bad)}.st.add{background:#ede6fb;color:#5a2ea6}
+.reason{color:var(--bad);font-size:16px}
+.rtag{display:inline-block;border-radius:6px;padding:3px 10px;margin:2px 6px 2px 0;font-size:16px;font-weight:700;border:1px solid transparent}
+.rtag.bad{background:var(--badbg);color:var(--bad);border-color:#f3c3bf}
+.rtag.wait{background:var(--warnbg);color:var(--warn)}
+.rtag.info{background:#e8f0fa;color:var(--pri)}
+.rtag.add{background:#ede6fb;color:#5a2ea6}
+.rtag.ok{background:var(--okbg);color:var(--ok)}
+.dk{display:inline-flex;width:40px;height:34px;border-radius:6px;align-items:center;justify-content:center;font-weight:700;font-size:19px;cursor:pointer;user-select:none}
+.dk.ok{background:var(--okbg);color:var(--ok)}.dk.no{background:var(--badbg);color:var(--bad)}.dk.na{background:#f0f2f5;color:#a0a8b2}
+#docTable th{white-space:normal;min-width:78px;font-size:15px;line-height:1.3;text-align:center}#docTable td.c{text-align:center}
+.rdet{font-size:16px;color:var(--mute);margin-top:2px}
+.tagbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tagbar .rtag{cursor:pointer;font-size:17px;padding:6px 14px}
+.tagbar .rtag.sel{outline:3px solid var(--bad);outline-offset:1px}
+.note{color:var(--mute);font-size:16px}
+.muted{color:var(--mute)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px 22px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:17px;color:var(--mute)}
+label.f input,label.f select,label.f textarea{font:inherit;font-size:18px;color:var(--ink);padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}
+label.f textarea{min-height:80px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;counter-reset:s}
+.step{background:var(--pri2);border-radius:10px;padding:16px 18px;counter-increment:s}
+.step:before{content:counter(s);display:inline-flex;width:32px;height:32px;border-radius:50%;background:var(--pri);color:#fff;align-items:center;justify-content:center;font-weight:700;margin-bottom:6px}
+.step b{display:block;font-size:19px}
+ol.rule{margin:6px 0 0;padding-left:28px}ol.rule li{margin:4px 0}
+.alert{background:var(--warnbg);color:var(--warn);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:17px}
+.hidden{display:none!important}
+dialog{border:0;border-radius:14px;padding:0;width:min(960px,95vw);max-height:92vh}
+dialog::backdrop{background:rgba(20,30,45,.45)}
+.dlg-h{padding:18px 24px;border-bottom:1px solid var(--line);font-size:22px;font-weight:700;display:flex;justify-content:space-between}
+.dlg-b{padding:20px 24px;overflow:auto;max-height:70vh}
+.dlg-f{padding:14px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.drop{border:2px dashed #b9c6d6;border-radius:12px;padding:30px;text-align:center;color:var(--mute);cursor:pointer}
+.drop.over{border-color:var(--pri);background:var(--pri2)}
+@media print{
+ header,nav,.noprint,.btn{display:none!important}
+ body{background:#fff;font-size:14px}
+ .card{border:0;padding:0}
+ table{font-size:13px} th,td{padding:5px 6px}
+ .tablewrap{overflow:visible;border:0}
+ .pagebreak{page-break-before:always}
+}
+</style>
+</head>
+<body>
+<header>
+ <div><h1 id="appTitle">松樑教育公益促進協會助學金　初審系統</h1><div class="org" id="orgName"></div></div>
+ <div class="row noprint">
+  <button class="btn" onclick="window.print()">列印本頁</button>
+  <button class="btn pri" onclick="exportResults()">匯出初篩結果 Excel</button>
+ </div>
+</header>
+<nav>
+ <button data-t="home" class="on">總覽</button>
+ <button data-t="data">申請資料</button>
+ <button data-t="docs">文件檢核</button>
+ <button data-t="result">初篩結果</button>
+ <button data-t="groups">審查分組</button>
+ <button data-t="settings">規則設定</button>
+</nav>
+<main>
+
+<!-- 總覽 -->
+<section id="t-home">
+ <div class="stats" id="stats"></div>
+ <div class="card hidden" id="reasonStat" style="margin-top:20px"></div>
+ <div class="card" style="margin-top:20px">
+  <h2>使用流程</h2>
+  <div class="steps">
+   <div class="step"><b>下載範本</b>學校承辦人依欄位填入申請資料（或直接匯入現有 Excel）</div>
+   <div class="step"><b>匯入資料</b>系統自動檢查資格條件，不符合者列出原因</div>
+   <div class="step"><b>自動排名</b>依 7 項優先順序排序，並依名額與科系比例分出正取／備取</div>
+   <div class="step"><b>評審複核</b>評審分組看自傳、推薦函，可「排除」或「追加」，結果即時更新</div>
+  </div>
+  <div class="row noprint" style="margin-top:18px">
+   <button class="btn pri" onclick="tab('data')">開始匯入資料</button>
+   <button class="btn" onclick="downloadTemplate()">下載 Excel 範本</button>
+   <button class="btn" onclick="loadDemo()">載入示範資料（83 位）</button>
+  </div>
+ </div>
+ <div class="card">
+  <h2>目前套用的審查規則</h2>
+  <div class="grid2">
+   <div><h3>一、資格條件（不符合即排除）</h3><ol class="rule" id="ruleList"></ol></div>
+   <div><h3>二、名額超出時的優先順序</h3>
+    <ol class="rule">
+     <li>上學期已獲本助學金，且具低收／中低收／特殊境遇身分</li>
+     <li>具政府低收入、中低收入資格（含特殊境遇家庭）</li>
+     <li>本人或二等親內領有身心障礙手冊或重大傷病卡</li>
+     <li>無房產者</li>
+     <li>家戶年所得較低者</li>
+     <li>年級較高者</li>
+     <li>學業成績較高者</li>
+    </ol>
+    <p class="note">依序比較：前一項相同才比下一項。</p>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 申請資料 -->
+<section id="t-data" class="hidden">
+ <div class="card noprint">
+  <h2>匯入申請資料</h2>
+  <div class="drop" id="drop">把 Excel（.xlsx）或 CSV 檔拖到這裡，或<b style="color:var(--pri)">點此選擇檔案</b>
+   <input type="file" id="file" accept=".xlsx,.xls,.csv" class="hidden"></div>
+  <div class="row" style="margin-top:14px">
+   <button class="btn" onclick="downloadTemplate()">下載 Excel 範本</button>
+   <button class="btn" onclick="openEdit()">＋ 手動新增一位</button>
+   <button class="btn" onclick="loadDemo()">載入示範資料</button>
+   <button class="btn danger" onclick="clearAll()">清空全部資料</button>
+  </div>
+  <p class="note">資料只存在這台電腦的瀏覽器裡，不會上傳到任何伺服器。換電腦使用時，請重新匯入 Excel。</p>
+ </div>
+ <div class="card">
+  <div class="row" style="justify-content:space-between"><h2 style="margin:0">申請人清單（<span id="cnt">0</span> 位）</h2>
+   <input id="q" placeholder="搜尋姓名、編號、系所" style="font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:8px;min-width:260px"></div>
+  <div class="tablewrap" style="margin-top:14px;max-height:70vh"><table id="dataTable"></table></div>
+ </div>
+</section>
+
+<!-- 文件檢核 -->
+<section id="t-docs" class="hidden">
+ <div class="card noprint">
+  <h2>文件檢核表</h2>
+  <p>點格子就能切換：<span class="dk ok">✓</span> 已附　<span class="dk no">✕</span> 未附　<span class="dk na">—</span> 無須／免附。缺件的人會自動判為「文件不全」並列出缺哪幾份。</p>
+  <div class="row"><select id="dShow" class="btn"><option value="all">全部申請人</option><option value="miss">只看缺件者</option></select>
+   <button class="btn" onclick="allDocs()">把目前顯示的人全部設為「已附」</button></div>
+ </div>
+ <div class="card"><div class="tablewrap" style="max-height:72vh"><table id="docTable"></table></div></div>
+</section>
+
+<!-- 結果 -->
+<section id="t-result" class="hidden">
+ <div class="card noprint">
+  <div class="row">
+   <span>顯示：</span>
+   <select id="fLevel" class="btn"><option value="all">全部學制</option><option value="U">大學部</option><option value="G">碩博士班</option></select>
+   <select id="fStatus" class="btn"><option value="all">全部結果</option><option value="ok">正取（含追加）</option><option value="wait">備取</option><option value="no">不符合</option></select>
+   <input id="fq" placeholder="搜尋姓名、編號" class="btn" style="cursor:text;min-width:200px">
+  </div>
+  <div class="note" style="margin-top:12px">點不符合原因標籤，只看該原因的申請人（再點一次取消）：</div>
+  <div class="tagbar" id="tagBar"></div>
+ </div>
+ <div id="resultBox"></div>
+</section>
+
+<!-- 分組 -->
+<section id="t-groups" class="hidden">
+ <div class="card noprint">
+  <h2>評審分組</h2>
+  <p>所有申請案依學制、排名平均分配到各組，每組件數與難易度接近，評審可直接拿名單審閱自傳與推薦函。組數可在「規則設定」修改。</p>
+ </div>
+ <div id="groupBox"></div>
+</section>
+
+<!-- 設定 -->
+<section id="t-settings" class="hidden">
+ <div class="card">
+  <h2>名額與門檻</h2>
+  <div class="grid2" id="setForm"></div>
+  <div class="row" style="margin-top:18px">
+   <button class="btn pri" onclick="saveSettings()">儲存設定並重新計算</button>
+   <button class="btn" onclick="resetSettings()">恢復預設值</button>
+  </div>
+ </div>
+</section>
+</main>
+
+<dialog id="dlg">
+ <div class="dlg-h"><span id="dlgTitle">申請人資料</span><button class="btn sm" onclick="dlg.close()">✕</button></div>
+ <div class="dlg-b"><div class="grid2" id="editForm"></div></div>
+ <div class="dlg-f"><button class="btn danger" id="delBtn">刪除</button><span style="flex:1"></span><button class="btn" onclick="dlg.close()">取消</button><button class="btn pri" onclick="saveEdit()">儲存</button></div>
+</dialog>
+
+<script>
+// ===== 欄位定義 =====
+const FIELDS=[
+ {k:'id',l:'編號'},
+ {k:'name',l:'姓名'},
+ {k:'level',l:'學制',opt:['大學部','碩士班','博士班']},
+ {k:'div',l:'部別',opt:['日間部','進修部','夜間部','推廣教育','空中大學']},
+ {k:'dept',l:'系所'},
+ {k:'grade',l:'年級'},
+ {k:'nation',l:'國籍',opt:['本國','外籍']},
+ {k:'family',l:'家庭型態',opt:['雙親','單親']},
+ {k:'incSelf',l:'申請人年所得',num:1},
+ {k:'incF',l:'父親年所得',num:1},
+ {k:'incM',l:'母親年所得',num:1},
+ {k:'incG',l:'監護人年所得',num:1,hint:'單親家庭才填'},
+ {k:'score',l:'前學期學業成績',num:1},
+ {k:'rankPct',l:'班級排名百分比',num:1,hint:'例：前 30% 填 30'},
+ {k:'conduct',l:'前學期操行成績',num:1,hint:'甲乙丙也可'},
+ {k:'demerit',l:'懲處紀錄',opt:['無','警告','小過','大過以上'],hint:'因故意行為'},
+ {k:'gov',l:'公費生',opt:['否','是']},
+ {k:'otherAid',l:'其他獎學金每學期金額',num:1},
+ {k:'d_id',l:'文件-學生證或在學證明',opt:['已附','未附'],doc:1},
+ {k:'d_tr',l:'文件-前學期成績單（含班排）',opt:['已附','未附'],doc:1},
+ {k:'d_hh',l:'文件-全戶戶籍謄本',opt:['已附','未附'],doc:1},
+ {k:'d_prop',l:'文件-財產稅總歸戶清單',opt:['已附','未附'],doc:1},
+ {k:'d_inc',l:'文件-綜合所得稅資料清單',opt:['已附','未附'],doc:1,ex:1},
+ {k:'d_rec',l:'文件-導師或系主任推薦函',opt:['已附','未附'],doc:1,ex:1},
+ {k:'d_wel',l:'文件-低收中低收或特殊境遇證明',opt:['無須','已附','未附'],doc:2,need:'welfare'},
+ {k:'d_dis',l:'文件-身障手冊或重大傷病卡',opt:['無須','已附','未附'],doc:2,need:'disab'},
+ {k:'d_unemp',l:'文件-失業家庭證明',opt:['無須','已附','未附'],doc:3},
+ {k:'docNote',l:'文件備註'},
+ {k:'prev',l:'上學期已獲本助學金',opt:['否','是']},
+ {k:'welfare',l:'福利身分',opt:['無','低收入戶','中低收入戶','特殊境遇家庭']},
+ {k:'disab',l:'身障手冊或重大傷病卡',opt:['無','本人','二等親內']},
+ {k:'house',l:'家戶房產',opt:['有','無']},
+ {k:'fam',l:'家戶代號',hint:'同一家庭的兄弟姊妹填相同代號'},
+ {k:'memo',l:'自傳／推薦函重點',area:1},
+ {k:'override',l:'評審決議',opt:['依系統','評審排除','評審追加']},
+ {k:'overNote',l:'決議說明'}
+];
+const DEF={org:'社團法人台灣松樑教育公益促進協會　清寒及弱勢助學金',quotaU:29,quotaG:4,incomeLimit:1000000,scoreMin:70,rankPct:50,aRatio:'2/3',groups:5,
+ conductMin:75,otherMax:50000,penalty:'大過以上',
+ kwA:'電子,電機,光電,物理,通訊,生物,機電,自動化,半導體',kwB:'紡織,材料,機械,工業工程,工業管理',backfill:'是'};
+let S=Object.assign({},DEF), APPS=[], R=[];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function load(){try{const d=JSON.parse(localStorage.getItem('sch_screen')||'null');if(d){APPS=d.apps||[];S=Object.assign({},DEF,d.s||{})}}catch(e){}}
+function save(){try{localStorage.setItem('sch_screen',JSON.stringify({apps:APPS,s:S}))}catch(e){}}
+
+// ===== 解析 =====
+function num(v){if(v==null||v==='')return 0;let s=String(v).replace(/[,\s元]/g,'');let m=1;if(s.includes('萬')){m=10000;s=s.replace('萬','')}const n=parseFloat(s);return isNaN(n)?0:n*m}
+const yes=v=>/^(是|有|y|yes|1|v|✓|true|○)$/i.test(String(v??'').trim());
+function gradeNum(v){const s=String(v??'');const m=s.match(/\d+/);if(m)return+m[0];const c='一二三四五六七'.indexOf((s.match(/[一二三四五六七]/)||[''])[0]);return c>=0?c+1:0}
+function ratio(){const s=String(S.aRatio).trim();if(s.includes('/')){const[a,b]=s.split('/').map(Number);return a/b}const n=parseFloat(s);return n>1?n/100:n}
+function cat(dept){const d=String(dept||'');if(S.kwA.split(/[,，、]/).some(k=>k.trim()&&d.includes(k.trim())))return'A';if(S.kwB.split(/[,，、]/).some(k=>k.trim()&&d.includes(k.trim())))return'B';return null}
+const lvl=a=>/碩|博|研究/.test(a.level||'')?'G':'U';
+const wan=n=>(n/10000).toFixed(1)+' 萬';
+
+// ===== 核心計算 =====
+function compute(){
+ const lim=num(S.incomeLimit),smin=+S.scoreMin,rp=+S.rankPct;
+ R=APPS.map((a,i)=>{
+  const x={a,i,L:lvl(a),cat:cat(a.dept),reasons:[],notes:[]};
+  x.single=/單/.test(a.family||'');
+  x.house=x.single?num(a.incSelf)+num(a.incG):num(a.incSelf)+num(a.incF)+num(a.incM);
+  x.score=parseFloat(a.score)||0; x.rank=a.rankPct===''||a.rankPct==null?100:parseFloat(a.rankPct);
+  x.grade=gradeNum(a.grade);
+  const w=String(a.welfare||'');x.welfare=/低收|特殊/.test(w);
+  x.disab=/本人|親/.test(a.disab||'');
+  x.noHouse=/無|否/.test(a.house||'');
+  x.prev=yes(a.prev);
+  x.p1=x.prev&&x.welfare;
+  if(/外/.test(a.nation||''))x.reasons.push('非本國籍｜國籍：'+a.nation);
+  if(!x.cat)x.reasons.push('科系不符｜'+(a.dept||'未填系所')+' 不在補助科系範圍');
+  if(x.house>lim)x.reasons.push(`所得超標｜家戶年所得 ${wan(x.house)}，上限 ${wan(lim)}`);
+  if(x.score<smin&&!(x.rank<=rp))x.reasons.push(`成績未達｜成績 ${x.score} 分（需 ${smin} 分），班排 ${x.rank<100?'前 '+x.rank+'%':'未提供'}（需前 ${rp}%）`);
+  const PL=['無','警告','小過','大過以上'],pv=yes(a.demerit)?3:Math.max(0,PL.indexOf(String(a.demerit||'無').replace('大過','大過以上').replace('以上以上','以上'))),pt=Math.max(1,PL.indexOf(S.penalty));
+  if(pv>=pt)x.reasons.push(`懲處紀錄｜曾記${PL[pv]}`);
+  if(/進修|夜間|推廣|空中/.test(a.div||''))x.reasons.push(`非日間部｜${a.div}不在補助範圍`);
+  const cd=String(a.conduct??'').trim(),cn=/甲|優/.test(cd)?85:/乙/.test(cd)?75:/丙|丁/.test(cd)?65:parseFloat(cd);
+  if(cd&&!isNaN(cn)&&cn<+S.conductMin)x.reasons.push(`操行未達｜操行 ${cd}（需 ${S.conductMin} 分以上）`);
+  if(yes(a.gov))x.reasons.push('公費生｜已享公費待遇');
+  if(num(a.otherAid)>=num(S.otherMax))x.reasons.push(`他項獎學金超額｜每學期已領 ${wan(num(a.otherAid))}（須低於 ${wan(num(S.otherMax))}）`);
+  const legacyOK=yes(a.docs)&&FIELDS.filter(f=>f.doc===1).every(f=>!a[f.k]);
+  const has=v=>/已附|^是$|^有$|^v$|✓|○/i.test(String(v??'').trim());
+  x.missing=legacyOK?[]:FIELDS.filter(f=>f.doc===1&&!(f.ex&&x.prev)&&!has(a[f.k])).map(f=>f.l.replace('文件-',''));
+  if(x.missing.length)x.reasons.push('文件不全｜缺：'+x.missing.join('、')+(a.docNote?'（'+a.docNote+'）':''));
+  if(x.welfare&&/未附|無須/.test(a.d_wel||'')){x.welfare=false;x.p1=false;x.notes.push('福利身分未附證明｜不列入優先條件')}
+  if(x.disab&&/未附|無須/.test(a.d_dis||'')){x.disab=false;x.notes.push('身障未附證明｜不列入優先條件')}
+  if(a.override==='評審排除')x.reasons.push('評審排除｜'+(a.overNote||'評審會議決議'));
+  if(x.score<smin&&x.rank<=rp&&!x.reasons.length)x.notes.push(`班排補足｜成績未達 ${smin}，以班排前 ${x.rank}% 符合`);
+  return x;
+ });
+ const key=x=>[x.p1?1:0,x.welfare?1:0,x.disab?1:0,x.noHouse?1:0,-x.house,x.grade,x.score];
+ const cmp=(p,q)=>{const a=key(p),b=key(q);for(let i=0;i<a.length;i++)if(a[i]!==b[i])return b[i]-a[i];return 0};
+ const out={};
+ for(const L of['U','G']){
+  const N=+(L==='U'?S.quotaU:S.quotaG);
+  let el=R.filter(x=>x.L===L&&!x.reasons.length).sort(cmp);
+  // 同一家庭限一人
+  const seen={};
+  el.forEach(x=>{const f=String(x.a.fam||'').trim();if(!f)return;if(seen[f]){x.reasons.push(`同家庭限一人｜同家庭的 ${seen[f]} 排名較前`)}else seen[f]=x.a.name});
+  el=el.filter(x=>!x.reasons.length);
+  el.forEach((x,k)=>x.rk=k+1);
+  const aMin=Math.ceil(N*ratio()-1e-9),bMax=Math.max(0,N-aMin);
+  let a=0,b=0;const ch=new Set();
+  for(const x of el){if(ch.size>=N)break;if(x.cat==='A'){ch.add(x);a++}else if(b<bMax){ch.add(x);b++}else x.notes.push('類別名額已滿｜機械／紡織／工工類名額 '+bMax+' 名已滿')}
+  let bf=0;
+  if(ch.size<N&&S.backfill==='是'){for(const x of el){if(ch.size>=N)break;if(!ch.has(x)){ch.add(x);bf++;x.notes.push('名額回流｜電子電機類人數不足，名額回流')}}}
+  let w=0;
+  el.forEach(x=>{if(ch.has(x))x.st='ok';else{x.st='wait';x.wn=++w;if(!x.notes.some(n=>n.startsWith('類別')))x.notes.push(`名額已滿｜排名第 ${x.rk}，名額 ${N} 名已滿`)}});
+  R.filter(x=>x.L===L&&x.reasons.length).forEach(x=>x.st='no');
+  R.filter(x=>x.L===L&&x.a.override==='評審追加'&&x.st!=='ok').forEach(x=>{x.st='add';x.reasons=x.reasons.filter(r=>!r.startsWith('評審'));x.overrode=x.reasons.slice();x.reasons=[];x.notes.push('評審追加｜'+(x.a.overNote||'評審會議決議追加'))});
+  out[L]={N,aMin,bMax,a:[...ch].filter(x=>x.cat==='A').length,b:[...ch].filter(x=>x.cat==='B').length,bf,el};
+ }
+ // 分組：依學制、排名輪流分配
+ const G=Math.max(1,+S.groups||1);
+ const ord=[...R].sort((p,q)=>(p.L>q.L?-1:p.L<q.L?1:0)||((p.rk||999)-(q.rk||999))||(String(p.a.id).localeCompare(String(q.a.id),'zh-Hant',{numeric:true})));
+ ord.forEach((x,k)=>x.grp=(k%G)+1);
+ return out;
+}
+
+// ===== 畫面 =====
+function tab(t){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('main>section').forEach(s=>s.classList.toggle('hidden',s.id!=='t-'+t));window.scrollTo(0,0)}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>tab(b.dataset.t));
+
+function chips(x){let h='';if(x.p1)h+='<span class="chip p1">續領＋福利身分</span>';else if(x.welfare)h+=`<span class="chip p2">${esc(x.a.welfare)}</span>`;if(x.disab)h+=`<span class="chip p3">身障／重傷（${esc(x.a.disab)}）</span>`;if(x.noHouse)h+='<span class="chip p4">無房產</span>';return h||'<span class="muted">—</span>'}
+const TAGTIP={'所得超標':'申請人＋父母年所得合計超過上限','成績未達':'前學期成績未達門檻，且班排不在範圍內','操行未達':'操行未達乙等','科系不符':'非電子電機、機械、工工、紡織材料相關','非日間部':'限日間部學生','非本國籍':'限本國籍','懲處紀錄':'曾因故意行為受懲處','公費生':'已享公費待遇者不得申請','他項獎學金超額':'已獲其他獎學金達上限','文件不全':'文件不全視為無效','同家庭限一人':'同一家庭同學制限一人','評審排除':'評審會議決議'};
+const tagOf=r=>String(r).split('｜')[0],detOf=r=>String(r).split('｜')[1]||'';
+function rTags(x,detail=true){
+ const bad=x.reasons.map(r=>`<span class="rtag bad" title="${esc(TAGTIP[tagOf(r)]||'')}">✕ ${esc(tagOf(r))}</span>`).join('');
+ const nt=x.notes.map(r=>`<span class="rtag ${/評審追加/.test(r)?'add':/名額|回流/.test(r)?'wait':'info'}">${esc(tagOf(r))}</span>`).join('');
+ const dt=detail?[...x.reasons,...x.notes].filter(detOf).map(r=>`<div class="rdet">${esc(tagOf(r))}：${esc(detOf(r))}</div>`).join(''):'';
+ return (bad+nt)?`<div>${bad}${nt}</div>${dt}`:'<span class="rtag ok">✓ 全部符合</span>';
+}
+function stTag(x){return{ok:'<span class="st ok">正取</span>',add:'<span class="st add">追加正取</span>',wait:`<span class="st wait">備取 ${x.wn||''}</span>`,no:'<span class="st no">不符合</span>'}[x.st]}
+
+function render(){
+ const O=compute();save();
+ $('#orgName').textContent=S.org||'';
+ const c=s=>R.filter(x=>s.includes(x.st)).length;
+ $('#stats').innerHTML=`
+  <div class="stat"><div class="n">${R.length}</div><div class="l">申請人數</div></div>
+  <div class="stat"><div class="n">${R.length-c(['no'])}</div><div class="l">符合資格</div></div>
+  <div class="stat ok"><div class="n">${c(['ok','add'])}</div><div class="l">正取（含追加 ${c(['add'])}）</div></div>
+  <div class="stat warn"><div class="n">${c(['wait'])}</div><div class="l">備取</div></div>
+  <div class="stat bad"><div class="n">${c(['no'])}</div><div class="l">不符合資格</div></div>`;
+ const tc=tagCounts();
+ $('#reasonStat').innerHTML=tc.length?`<h2>不符合原因統計</h2><p class="note">一人可能有多個原因。點標籤直接看名單。</p><div class="tagbar">${tc.map(([t,n])=>`<span class="rtag bad" onclick="TF='';setTF('${t}')">✕ ${esc(t)}　${n} 人</span>`).join('')}</div>`:'';
+ $('#reasonStat').classList.toggle('hidden',!tc.length);
+ $('#ruleList').innerHTML=`<li>本國籍、日間部學生（不含進修部、夜間部、推廣教育、空大）</li><li>科系：電子、電機相關（至少 ${esc(S.aRatio)} 名額）；紡織材料、機械、工業工程（其餘名額）</li><li>未享公費，其他獎學金每學期未達 ${wan(num(S.otherMax))}</li><li>申請人＋父母年所得合計 ${wan(num(S.incomeLimit))} 以下（單親：申請人＋監護人）</li><li>前學期成績 ${S.scoreMin} 分以上，或班排前 ${S.rankPct}%；操行 ${S.conductMin} 分（乙等）以上</li><li>無因故意行為遭記「${esc(S.penalty)}」以上懲處</li><li>必要文件齊全：學生證、成績單、戶籍謄本、財產清單、所得清單、推薦函（續領者免附後兩項）。不全視為無效</li><li>勾選福利身分或身障者，須附證明才列入優先條件</li><li>同一家庭：大學部最多一人、碩博士最多一人</li>`;
+ renderData();renderResult(O);renderGroups();renderDocs();
+}
+
+function renderData(){
+ const q=$('#q').value.trim();
+ const rows=R.filter(x=>!q||[x.a.id,x.a.name,x.a.dept].join(' ').includes(q));
+ $('#cnt').textContent=APPS.length;
+ $('#dataTable').innerHTML=`<tr><th>編號</th><th>姓名</th><th>學制</th><th>系所</th><th>年級</th><th>家戶所得</th><th>成績</th><th>班排</th><th>優先條件</th><th>初篩</th><th class="noprint"></th></tr>`+
+  (rows.length?rows.map(x=>`<tr><td>${esc(x.a.id)}</td><td><b>${esc(x.a.name)}</b></td><td>${esc(x.a.level)}</td><td>${esc(x.a.dept)}</td><td>${x.grade||''}</td><td>${wan(x.house)}</td><td>${esc(x.a.score)}</td><td>${x.rank<100?x.rank+'%':''}</td><td>${chips(x)}</td><td>${stTag(x)}<div>${x.reasons.map(r=>`<span class="rtag bad">✕ ${esc(tagOf(r))}</span>`).join('')}</div></td><td class="noprint"><button class="btn sm" onclick="openEdit(${x.i})">編輯</button></td></tr>`).join('')
+  :`<tr><td colspan="11" class="muted" style="text-align:center;padding:40px">尚無資料，請匯入 Excel 或載入示範資料</td></tr>`);
+}
+
+let TF='';
+function tagCounts(){const c={};R.forEach(x=>x.reasons.forEach(r=>{const t=tagOf(r);c[t]=(c[t]||0)+1}));return Object.entries(c).sort((a,b)=>b[1]-a[1])}
+function setTF(t){TF=TF===t?'':t;if(TF){$('#fStatus').value='all'}tab('result');render()}
+function renderResult(O){
+ const tc=tagCounts();
+ $('#tagBar').innerHTML=tc.length?tc.map(([t,n])=>`<span class="rtag bad ${TF===t?'sel':''}" onclick="setTF('${t}')" title="${esc(TAGTIP[t]||'')}">✕ ${esc(t)}　${n} 人</span>`).join('')+(TF?`<span class="rtag info" onclick="setTF('')">顯示全部</span>`:''):'<span class="muted">目前沒有不符合的申請人</span>';
+ const fl=$('#fLevel').value,fs=$('#fStatus').value;let h='';
+ for(const L of['U','G']){
+  if(fl!=='all'&&fl!==L)continue;
+  const o=O[L],nm=L==='U'?'大學部':'碩博士班';
+  const all=R.filter(x=>x.L===L);if(!all.length)continue;
+  const order={ok:0,add:1,wait:2,no:3};
+  let list=all.sort((p,q)=>order[p.st]-order[q.st]||((p.rk||999)-(q.rk||999)));
+  if(fs!=='all')list=list.filter(x=>fs==='ok'?['ok','add'].includes(x.st):x.st===fs);
+  if(TF)list=list.filter(x=>[...x.reasons,...x.notes].some(r=>tagOf(r)===TF));
+  const fq=$('#fq').value.trim();if(fq)list=list.filter(x=>(x.a.name+' '+x.a.id).includes(fq));
+  const ok=all.filter(x=>x.st==='ok').length,add=all.filter(x=>x.st==='add').length;
+  h+=`<div class="card ${L==='G'?'pagebreak':''}"><h2>${nm}　申請 ${all.length} 位 → 正取 ${ok} 位${add?`＋追加 ${add} 位`:''}</h2>
+  <p class="note">名額 ${o.N}：電子電機類至少 ${o.aMin} 名、其他類最多 ${o.bMax} 名。本次錄取 電子電機 ${o.a} 名／其他類 ${o.b} 名。</p>
+  ${o.bf?`<div class="alert">電子電機類合格人數不足，${o.bf} 個名額已回流給其他類科。</div>`:''}
+  ${ok<o.N?`<div class="alert">合格人數不足，名額未滿（缺 ${o.N-ok} 名）。</div>`:''}
+  <div class="tablewrap"><table><tr><th>排名</th><th>結果</th><th>編號</th><th>姓名</th><th>系所</th><th>年級</th><th>家戶所得</th><th>成績</th><th>優先條件</th><th>原因／備註</th><th>審查組</th><th class="noprint"></th></tr>
+  ${list.map(x=>`<tr><td>${x.rk||'—'}</td><td>${stTag(x)}</td><td>${esc(x.a.id)}</td><td><b>${esc(x.a.name)}</b></td><td>${esc(x.a.dept)}</td><td>${x.grade||''}</td><td>${wan(x.house)}</td><td>${esc(x.a.score)}</td><td>${chips(x)}</td><td class="wrap">${rTags(x)}${x.a.memo?`<div class="note">📝 ${esc(x.a.memo)}</div>`:''}</td><td>第 ${x.grp} 組</td><td class="noprint"><button class="btn sm" onclick="openEdit(${x.i})">複核</button></td></tr>`).join('')}
+  </table></div></div>`;
+ }
+ $('#resultBox').innerHTML=h||'<div class="card muted">尚無資料</div>';
+}
+
+const DOCF=()=>FIELDS.filter(f=>f.doc);
+function docState(x,f){const v=String(x.a[f.k]??'').trim();
+ if(f.ex&&x.prev&&!/已附/.test(v))return'na';
+ if(f.doc===1)return /已附|^是$|^有$|^v$|✓|○/i.test(v)||(yes(x.a.docs)&&!v)?'ok':'no';
+ if(f.need){const claim=f.need==='welfare'?/低收|特殊/.test(x.a.welfare||''):/本人|親/.test(x.a.disab||'');if(!claim)return'na';return /已附/.test(v)||!v?'ok':'no'}
+ if(/已附/.test(v))return'ok';if(/未附/.test(v))return'no';return'na'}
+function toggleDoc(i,k){const a=APPS[i],f=FIELDS.find(f=>f.k===k),x=R.find(r=>r.i===i),cur=docState(x,f);
+ if(cur==='ok')a[k]=(f.doc===3)?'無須':'未附';else a[k]='已附';
+ render()}
+function allDocs(){const show=$('#dShow').value;R.forEach(x=>{if(show==='miss'&&!(x.missing||[]).length)return;DOCF().filter(f=>f.doc===1).forEach(f=>x.a[f.k]='已附')});render()}
+function renderDocs(){
+ const fs=DOCF(),show=$('#dShow').value;
+ const rows=R.filter(x=>show!=='miss'||(x.missing||[]).length||fs.some(f=>f.doc===2&&docState(x,f)==='no'));
+ $('#docTable').innerHTML=`<tr><th style="text-align:left">編號</th><th style="text-align:left">姓名</th>${fs.map(f=>`<th>${f.l.replace('文件-','')}${f.doc===1?'':'<br><span style="font-weight:400">（有勾選才需）</span>'}</th>`).join('')}<th style="text-align:left">結果</th></tr>`+
+ (rows.length?rows.map(x=>`<tr><td>${esc(x.a.id)}</td><td><b>${esc(x.a.name)}</b>${x.prev?'<div class="note">續領</div>':''}</td>${fs.map(f=>{const st=docState(x,f);return`<td class="c"><span class="dk ${st}" onclick="toggleDoc(${x.i},'${f.k}')">${st==='ok'?'✓':st==='no'?'✕':'—'}</span></td>`}).join('')}<td>${(x.missing||[]).length?`<span class="rtag bad">✕ 缺 ${x.missing.length} 件</span>`:'<span class="rtag ok">✓ 必要文件齊全</span>'}${fs.filter(f=>f.need&&docState(x,f)==='no').map(f=>`<div><span class="rtag wait">${f.need==='welfare'?'福利身分':'身障'}缺證明，不列優先</span></div>`).join('')}</td></tr>`).join('')
+ :`<tr><td colspan="${fs.length+3}" class="muted" style="text-align:center;padding:30px">${APPS.length?'沒有缺件的申請人':'尚無資料'}</td></tr>`);
+}
+function renderGroups(){
+ const G=Math.max(1,+S.groups||1);let h='';
+ for(let g=1;g<=G;g++){
+  const l=R.filter(x=>x.grp===g).sort((p,q)=>(p.L>q.L?-1:1)||((p.rk||999)-(q.rk||999)));
+  if(!l.length)continue;
+  h+=`<div class="card ${g>1?'pagebreak':''}"><h2>第 ${g} 組　共 ${l.length} 件（大學部 ${l.filter(x=>x.L==='U').length}／碩博 ${l.filter(x=>x.L==='G').length}）</h2>
+  <div class="tablewrap"><table><tr><th>編號</th><th>姓名</th><th>學制</th><th>系所</th><th>系統初篩</th><th>優先條件</th><th style="min-width:200px">評審意見</th></tr>
+  ${l.map(x=>`<tr><td>${esc(x.a.id)}</td><td><b>${esc(x.a.name)}</b></td><td>${esc(x.a.level)}</td><td>${esc(x.a.dept)}</td><td>${stTag(x)}${x.rk?` <span class="note">#${x.rk}</span>`:''}<div>${x.reasons.map(r=>`<span class="rtag bad">✕ ${esc(tagOf(r))}</span>`).join('')}</div></td><td>${chips(x)}</td><td></td></tr>`).join('')}
+  </table></div></div>`;
+ }
+ $('#groupBox').innerHTML=h||'<div class="card muted">尚無資料</div>';
+}
+
+// ===== 編輯 =====
+let editIdx=null;const dlg=$('#dlg');
+function openEdit(i){
+ editIdx=(i===undefined)?null:i;const a=editIdx===null?{}:APPS[editIdx];
+ $('#dlgTitle').textContent=editIdx===null?'新增申請人':`申請人：${a.name||''}`;
+ $('#delBtn').classList.toggle('hidden',editIdx===null);
+ $('#editForm').innerHTML=FIELDS.map(f=>{const v=a[f.k]??'';
+  const inp=f.opt?`<select data-k="${f.k}">${f.opt.map(o=>`<option ${String(v)===o?'selected':''}>${o}</option>`).join('')}</select>`
+   :f.area?`<textarea data-k="${f.k}">${esc(v)}</textarea>`:`<input data-k="${f.k}" value="${esc(v)}" ${f.num?'inputmode="decimal"':''}>`;
+  return`${f.k==='d_id'?'<h3 style="grid-column:1/-1;margin:10px 0 0;color:var(--ink)">文件檢核（續領者免附所得清單與推薦函）</h3>':''}<label class="f" ${f.area?'style="grid-column:1/-1"':''}>${f.l.replace('文件-','')}${f.hint?`<span style="font-size:15px">（${f.hint}）</span>`:''}${inp}</label>`}).join('');
+ dlg.showModal();
+}
+function saveEdit(){const a={};document.querySelectorAll('#editForm [data-k]').forEach(e=>a[e.dataset.k]=e.value.trim());if(!a.name){alert('請填姓名');return}
+ if(editIdx===null)APPS.push(a);else APPS[editIdx]=a;dlg.close();render()}
+$('#delBtn').onclick=()=>{if(confirm('確定刪除這位申請人？')){APPS.splice(editIdx,1);dlg.close();render()}};
+
+// ===== 匯入匯出 =====
+const drop=$('#drop'),fileIn=$('#file');
+drop.onclick=()=>fileIn.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};
+drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');if(e.dataTransfer.files[0])readFile(e.dataTransfer.files[0])};
+fileIn.onchange=()=>{if(fileIn.files[0])readFile(fileIn.files[0]);fileIn.value=''};
+
+function parseCSV(t){const rows=[];let r=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===','){r.push(c);c=''}else if(ch==='\n'){r.push(c);rows.push(r);r=[];c=''}else if(ch!=='\r')c+=ch}if(c||r.length){r.push(c);rows.push(r)}return rows}
+function readFile(f){
+ const rd=new FileReader();
+ const isCsv=/\.csv$/i.test(f.name);
+ rd.onload=e=>{let rows;
+  try{if(isCsv||typeof XLSX==='undefined'){rows=parseCSV(isCsv?e.target.result:new TextDecoder().decode(e.target.result))}
+   else{const wb=XLSX.read(e.target.result,{type:'array'});rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''})}}
+  catch(err){alert('檔案讀取失敗，請確認格式');return}
+  const hi=rows.findIndex(r=>r.some(c=>String(c).trim()==='姓名'));
+  if(hi<0){alert('找不到「姓名」欄，請使用範本格式');return}
+  const head=rows[hi].map(h=>String(h).trim());
+  const map=head.map(h=>(FIELDS.find(f=>f.l===h||h.startsWith(f.l)||f.l.startsWith(h)&&h.length>=2)||{}).k);
+  const list=rows.slice(hi+1).map(r=>{const a={};map.forEach((k,j)=>{if(k)a[k]=String(r[j]??'').trim()});return a}).filter(a=>a.name);
+  if(!list.length){alert('沒有讀到任何申請人');return}
+  const mode=APPS.length?(confirm(`讀到 ${list.length} 位申請人。\n\n按「確定」= 取代現有資料\n按「取消」= 加在現有資料後面`)?'r':'a'):'r';
+  APPS=mode==='r'?list:APPS.concat(list);render();tab('result');
+ };
+ isCsv?rd.readAsText(f,'utf-8'):rd.readAsArrayBuffer(f);
+}
+function sheetOut(name,aoa,fname){
+ if(typeof XLSX!=='undefined'){const wb=XLSX.utils.book_new();(Array.isArray(name)?name:[[name,aoa]]).forEach(([n,d])=>{const ws=XLSX.utils.aoa_to_sheet(d);ws['!cols']=d[0].map(()=>({wch:16}));XLSX.utils.book_append_sheet(wb,ws,n)});XLSX.writeFile(wb,fname+'.xlsx')}
+ else{const d=Array.isArray(name)?name[0][1]:aoa;const csv='﻿'+d.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=fname+'.csv';a.click()}
+}
+function downloadTemplate(){
+ const h=FIELDS.filter(f=>!['override','overNote'].includes(f.k)).map(f=>f.l);
+ const E1={id:'U001',name:'王小明',level:'大學部',div:'日間部',dept:'電子工程系',grade:'3',nation:'本國',family:'雙親',incSelf:'120000',incF:'350000',incM:'280000',score:'82',rankPct:'25',conduct:'82',demerit:'無',gov:'否',otherAid:'0',prev:'否',welfare:'中低收入戶',disab:'無',house:'無',fam:'F001',d_id:'已附',d_tr:'已附',d_hh:'已附',d_prop:'已附',d_inc:'已附',d_rec:'未附',d_wel:'已附',d_dis:'無須',d_unemp:'已附',docNote:'推薦函待補',memo:'父親失業，課餘打工負擔家計'};
+ const E2={id:'G001',name:'林小華',level:'碩士班',div:'日間部',dept:'電機工程系碩士班',grade:'1',nation:'本國',family:'單親',incSelf:'80000',incG:'300000',score:'88',conduct:'乙',demerit:'無',gov:'否',otherAid:'0',prev:'是',welfare:'低收入戶',disab:'二等親內',house:'無',fam:'F002',d_id:'已附',d_tr:'已附',d_hh:'已附',d_prop:'已附',d_inc:'',d_rec:'',d_wel:'已附',d_dis:'已附',d_unemp:'無須'};
+ const ks=FIELDS.filter(f=>!['override','overNote'].includes(f.k)).map(f=>f.k);const ex=ks.map(k=>E1[k]||''),ex2=ks.map(k=>E2[k]||'');
+ const note=[['欄位','填寫方式'],['（文件欄）','填「已附」或「未附」；續領者所得清單、推薦函可留空。福利證明、身障證明有該身分才需要附'],...FIELDS.filter(f=>!['override','overNote'].includes(f.k)).map(f=>[f.l,f.opt?'請填：'+f.opt.join(' / '):f.num?'數字（元），可含逗號'+(f.hint?'；'+f.hint:''):(f.hint||'文字')])];
+ sheetOut([['申請資料',[h,ex,ex2]],['填寫說明',note]],null,'松樑助學金_申請資料範本');
+}
+function exportResults(){
+ if(!R.length){alert('尚無資料');return}
+ const st=x=>({ok:'正取',add:'追加正取',wait:'備取'+(x.wn||''),no:'不符合'}[x.st]);
+ const pr=x=>[x.p1?'續領＋福利身分':x.welfare?x.a.welfare:'',x.disab?'身障／重傷':'',x.noHouse?'無房產':''].filter(Boolean).join('、');
+ const head=['排名','結果','編號','姓名','學制','系所','年級','家戶年所得(元)','成績','班排%','優先條件','不符合標籤','不符合說明','備註','審查組'];
+ const row=x=>[x.rk||'',st(x),x.a.id,x.a.name,x.a.level,x.a.dept,x.grade||'',x.house,x.a.score,x.rank<100?x.rank:'',pr(x),x.reasons.map(tagOf).join('、'),x.reasons.map(r=>tagOf(r)+'：'+detOf(r)).join('；'),x.notes.map(r=>tagOf(r)+(detOf(r)?'：'+detOf(r):'')).join('；'),x.grp];
+ const order={ok:0,add:1,wait:2,no:3};
+ const part=L=>[head,...R.filter(x=>x.L===L).sort((p,q)=>order[p.st]-order[q.st]||((p.rk||999)-(q.rk||999))).map(row)];
+ const sheets=[['大學部',part('U')],['碩博士班',part('G')],['不符合資格',[head,...R.filter(x=>x.st==='no').map(row)]]];
+ for(let g=1;g<=(+S.groups||1);g++)sheets.push([`第${g}組`,[['編號','姓名','學制','系所','系統初篩（原因）','優先條件','評審意見'],...R.filter(x=>x.grp===g).map(x=>[x.a.id,x.a.name,x.a.level,x.a.dept,st(x)+(x.reasons.length?'（'+x.reasons.map(tagOf).join('、')+'）':''),pr(x),''])]]);
+ sheetOut(sheets,null,'松樑助學金_初篩結果');
+}
+function clearAll(){if(confirm('確定清空全部申請資料？此動作無法復原。')){APPS=[];render()}}
+
+// ===== 設定 =====
+const SET=[['org','單位名稱（顯示在標題下方）'],['quotaU','大學部名額'],['quotaG','碩博士班名額'],['incomeLimit','家戶年所得上限（元）'],['scoreMin','學業成績門檻（分）'],['rankPct','成績未達時，班排前幾 %'],['aRatio','電子電機類最低比例（如 2/3）'],['groups','評審分組數'],['conductMin','操行成績門檻（分）'],['otherMax','其他獎學金每學期上限（元，達此金額即不符）'],['penalty','懲處排除門檻（警告／小過／大過以上）'],['kwA','電子電機類 系所關鍵字（逗號分隔）'],['kwB','紡織材料／機械／工工類 關鍵字'],['backfill','電子電機不足時，名額回流其他類（是／否）']];
+function renderSettings(){$('#setForm').innerHTML=SET.map(([k,l])=>`<label class="f" ${k.startsWith('kw')?'style="grid-column:1/-1"':''}>${l}<input data-s="${k}" value="${esc(S[k])}"></label>`).join('')}
+function saveSettings(){document.querySelectorAll('[data-s]').forEach(e=>S[e.dataset.s]=e.value.trim());render();alert('已儲存，結果已重新計算')}
+function resetSettings(){if(confirm('恢復預設值？')){S=Object.assign({},DEF);renderSettings();render()}}
+
+// ===== 示範資料 =====
+function loadDemo(){
+ if(APPS.length&&!confirm('載入示範資料會取代目前資料，確定？'))return;
+ let sd=20261108;const r=()=>(sd=(sd*1664525+1013904223)%4294967296)/4294967296;const pick=a=>a[Math.floor(r()*a.length)];
+ const sur='陳林黃張李王吳劉蔡楊許鄭謝郭洪曾邱廖賴周徐蘇葉莊呂江何蕭羅高'.split('');
+ const gn='家豪 志明 俊傑 建宏 冠宇 宗翰 承恩 柏翰 宇軒 品睿 詩涵 雅婷 怡君 欣妤 佳穎 子晴 思妤 庭瑜 昱廷 彥廷 宥辰 哲瑋 育誠 政霖 冠廷'.split(' ');
+ const dU=['電子工程系','電子工程系','電機工程系','電機工程系','光電工程系','機械與電腦輔助工程系','工業工程與管理系','企業管理系'];
+ const dG=['電子工程系碩士班','電機工程系碩士班','光電工程系碩士班','機械與電腦輔助工程系碩士班','工業工程與管理系碩士班'];
+ const L=[];
+ for(let i=0;i<83;i++){const U=i<55;const single=r()<.3;
+  const a={id:(U?'U':'G')+String(U?i+1:i-54).padStart(3,'0'),name:pick(sur)+pick(gn),level:U?'大學部':(r()<.9?'碩士班':'博士班'),div:r()<.03?'進修部':'日間部',conduct:String(Math.round(72+r()*20)),gov:'否',otherAid:r()<.05?'50000':'0',d_id:'已附',d_tr:r()<.03?'未附':'已附',d_hh:'已附',d_prop:r()<.04?'未附':'已附',d_inc:'已附',d_rec:r()<.05?'未附':'已附',d_wel:'已附',d_dis:r()<.25?'未附':'已附',d_unemp:'無須',docNote:'',dept:pick(U?dU:dG),
+   grade:String(U?1+Math.floor(r()*4):1+Math.floor(r()*2)),nation:r()<.04?'外籍':'本國',family:single?'單親':'雙親',
+   incSelf:String(Math.round(r()*180)*1000),incF:single?'':String(Math.round(r()*560)*1000),incM:single?'':String(Math.round(r()*420)*1000),
+   incG:single?String(Math.round(r()*500)*1000):'',score:String(Math.round(62+r()*33)),rankPct:String(Math.round(5+r()*80)),
+   demerit:r()<.04?pick(['警告','小過','大過以上']):'無',prev:r()<.25?'是':'否',welfare:r()<.35?pick(['低收入戶','中低收入戶','中低收入戶','特殊境遇家庭']):'無',
+   disab:r()<.18?pick(['本人','二等親內','二等親內']):'無',house:r()<.6?'無':'有',fam:'F'+String(i+1).padStart(3,'0'),memo:'',override:'依系統',overNote:''};
+  L.push(a)}
+ L[12].fam=L[13].fam;L[30].fam=L[31].fam; // 兄弟姊妹示範
+ L[5].memo='父親重病無法工作，母親兼兩份工';L[20].memo='導師推薦：課業積極、擔任班代';
+ APPS=L;render();tab('result');
+}
+
+$('#q').oninput=renderData;$('#fLevel').onchange=render;$('#fStatus').onchange=render;$('#fq').oninput=render;$('#dShow').onchange=renderDocs;
+load();renderSettings();render();
+</script>
+</body>
+</html>
