@@ -2,11 +2,11 @@
 (function(){
 const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const css=`.msc{display:inline-block;transform-origin:50% 90%;position:relative}
-.msc.bob{animation:mscBob 2.2s ease-in-out infinite}
+.msc.bob{animation:mscBob 4s ease-in-out infinite}
 .msc.flyin{animation:mscFly 1.1s cubic-bezier(.2,1.4,.4,1) both}
-.msc .arm{transform-origin:84px 84px;animation:mscWave 1.2s ease-in-out infinite}
+.msc .arm{transform-origin:84px 84px}
 .msc .arm2{transform-origin:36px 86px}
-.msc .tassel{transform-origin:92px 26px;animation:mscTassel 1.6s ease-in-out infinite}
+.msc .tassel{transform-origin:92px 26px;animation:mscTassel 3.2s ease-in-out infinite}
 .msc .eyes{transform-origin:60px 72px;animation:mscBlink 4s infinite}
 .msc .cap{transform-origin:60px 30px}
 .msc.a-jump{animation:mscJump .9s cubic-bezier(.3,1.6,.5,1)}
@@ -18,7 +18,7 @@ const css=`.msc{display:inline-block;transform-origin:50% 90%;position:relative}
 .msc.a-wave .arm{animation:mscWave .35s ease-in-out 4}
 .msc.a-wave2 .arm2{animation:mscWave2 .4s ease-in-out 3}
 .msc.a-peek{animation:mscPeek 1.3s ease-in-out}
-@keyframes mscBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-6px) rotate(2deg)}}
+@keyframes mscBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes mscFly{0%{transform:translate(70vw,-60vh) rotate(-260deg) scale(.3);opacity:0}60%{opacity:1}100%{transform:translate(0,0) rotate(0) scale(1)}}
 @keyframes mscJump{0%{transform:translateY(0) scale(1)}20%{transform:translateY(3px) scale(1.12,.86)}50%{transform:translateY(-30px) scale(.94,1.08) rotate(-6deg)}75%{transform:translateY(0) scale(1.06,.94)}100%{transform:none}}
 @keyframes mscSpin{0%{transform:rotate(0) scale(1)}50%{transform:rotate(200deg) scale(1.1) translateY(-10px)}100%{transform:rotate(360deg) scale(1)}}
@@ -29,7 +29,7 @@ const css=`.msc{display:inline-block;transform-origin:50% 90%;position:relative}
 @keyframes mscPeek{0%,100%{transform:none}30%{transform:translateY(14px) scale(1,.9)}60%{transform:translateY(-8px) scale(1,1.05)}}
 @keyframes mscWave{0%,100%{transform:rotate(0)}50%{transform:rotate(-30deg)}}
 @keyframes mscWave2{0%,100%{transform:rotate(0)}50%{transform:rotate(28deg)}}
-@keyframes mscTassel{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(14deg)}}
+@keyframes mscTassel{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(6deg)}}
 @keyframes mscBlink{0%,46%,50%,100%{transform:scaleY(1)}48%{transform:scaleY(.1)}}
 .mscfx{position:fixed;left:0;top:0;width:0;height:0;pointer-events:none;z-index:2147483647}
 .mscfx i{position:absolute;display:block;will-change:transform,opacity}
@@ -80,9 +80,9 @@ function trail(el){if(RM||!el||!el.isConnected)return;const r=el.getBoundingClie
 // ===== 隨機動作，避免每次都一樣 =====
 const ACTS=['a-jump','a-spin','a-wiggle','a-dance','a-nod','a-cap','a-wave','a-wave2','a-peek'];
 const last=new WeakMap();
-function act(m,name){if(!m||RM)return;const prev=last.get(m);let a=name;while(!a||a===prev)a=ACTS[Math.floor(Math.random()*ACTS.length)];last.set(m,a);
+function act(m,name,quiet){if(!m||RM)return;const prev=last.get(m);let a=name;while(!a||a===prev)a=ACTS[Math.floor(Math.random()*ACTS.length)];last.set(m,a);
  ACTS.forEach(x=>m.classList.remove(x));m.classList.remove('bob','flyin');void m.offsetWidth;m.classList.add(a);
- if(a==='a-jump'||a==='a-spin'||a==='a-cap'||a==='a-dance')setTimeout(()=>burst(m,14,.6),a==='a-jump'?380:250);else trail(m);
+ if(!quiet&&(a==='a-jump'||a==='a-spin'||a==='a-cap'||a==='a-dance'))setTimeout(()=>burst(m,14,.6),a==='a-jump'?380:250);
  clearTimeout(m._t);m._t=setTimeout(()=>{m.classList.remove(a);m.classList.add('bob')},1500)}
 window.MASCOT_HOP=function(root){act((root||document).querySelector('.msc'))};
 window.MASCOT_ACT=act;
@@ -90,5 +90,7 @@ window.MASCOT_ACT=act;
 function arrive(m){if(m._arr)return;m._arr=1;setTimeout(()=>{ring(m);burst(m,48,1.25);m.classList.remove('flyin');m.classList.add('bob');setTimeout(()=>act(m,'a-wave'),500)},1050)}
 new MutationObserver(ms=>{for(const x of ms)for(const n of x.addedNodes){if(n.nodeType!==1)continue;const list=n.matches&&n.matches('.msc[data-msc="fly"]')?[n]:[...(n.querySelectorAll?n.querySelectorAll('.msc[data-msc="fly"]'):[])];list.forEach(arrive)}}).observe(document.documentElement,{childList:true,subtree:true});
 // 閒置時每隔幾秒做不同的小動作，吸引注意
-setInterval(()=>{if(document.hidden)return;document.querySelectorAll('.msc').forEach(m=>{if(!m.isConnected||!m.getBoundingClientRect().width)return;if(Math.random()<.55)act(m)})},4200);
+// 閒置時偶爾做一個小動作（約 20 秒一次，不噴亮片）
+const CALM=['a-nod','a-wave','a-wave2','a-wiggle'];
+setInterval(()=>{if(document.hidden||document.getElementById('dpCap')&&!document.getElementById('dpCap').dataset.off)return;document.querySelectorAll('.msc').forEach(m=>{if(!m.isConnected||!m.getBoundingClientRect().width)return;if(Math.random()<.5)act(m,CALM[Math.floor(Math.random()*CALM.length)],true)})},20000);
 })();

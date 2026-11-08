@@ -742,7 +742,7 @@ function exportReviewers(){
 async function checkKey(){try{const{data}=await SBC.functions.invoke('analyze',{body:{ping:true}});const bad=!data||data.key===false;
  const box=$('#keyWarn');box.classList.toggle('hidden',!bad)}catch(e){}}
 let DEMO=false;
-function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=4';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
+function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=5';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
 
 function adminDemoSteps(){
  const pendIdx=(no,k)=>RQ.findIndex(id=>{const r=FALL.find(x=>x.id===id);return r&&r.k===no+'|'+k});

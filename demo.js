@@ -118,7 +118,7 @@ async function type(sel,text){const el=document.querySelector(sel);if(!el)return
 async function show(){const my=++run;clearTimeout(timer);const s=steps[i];
  cap.querySelector('.t').textContent=s.t;cap.querySelector('.b').innerHTML=s.b;cap.querySelector('.n').textContent=`${i+1} / ${steps.length}`;
  cap.querySelector('.nx').textContent=i===steps.length-1?'開始操作':'下一步';
- const bar=cap.querySelector('.bar i');bar.style.transition='none';bar.style.width='0';top();if(i>0&&window.MASCOT_HOP)MASCOT_HOP(cap);
+ const bar=cap.querySelector('.bar i');bar.style.transition='none';bar.style.width='0';top();if(i>0&&(i===steps.length-1||i%4===0)&&window.MASCOT_HOP)MASCOT_HOP(cap);
  try{if(s.do)await s.do({hl,tap,type,sleep,until})}catch(e){console.log(e)}
  if(my!==run)return;top();arm()}
 function arm(){clearTimeout(timer);if(paused)return;const s=steps[i],ms=s.ms||5000;const bar=cap.querySelector('.bar i');
