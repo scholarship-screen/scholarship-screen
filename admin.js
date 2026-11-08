@@ -162,7 +162,7 @@ function render(){
  const tc=tagCounts();
  $('#reasonStat').innerHTML=tc.length?`<h2>不符合原因統計</h2><p class="note">一人可能有多個原因。點標籤直接看名單。</p><div class="tagbar">${tc.map(([t,n])=>`<span class="rtag bad" onclick="TF='';setTF('${t}')">✕ ${esc(t)}　${n} 人</span>`).join('')}</div>`:'';
  $('#reasonStat').classList.toggle('hidden',!tc.length);
- $('#ruleList').innerHTML=`<li>本國籍、日間部學生（不含進修部、夜間部、推廣教育、空大）</li><li>科系：電子、電機相關（至少 ${esc(S.aRatio)} 名額）；紡織材料、機械、工業工程（其餘名額）</li><li>未享公費，其他獎學金每學期未達 ${wan(num(S.otherMax))}</li><li>申請人＋父母年所得合計 ${wan(num(S.incomeLimit))} 以下（單親：申請人＋監護人）</li><li>前學期成績 ${S.scoreMin} 分以上，或班排前 ${S.rankPct}%；操行 ${S.conductMin} 分（乙等）以上</li><li>無因故意行為遭記「${esc(S.penalty)}」以上懲處</li><li>必要文件齊全：學生證、成績單、戶籍謄本、財產清單、所得清單、推薦函（續領者免附後兩項）。不全視為無效</li><li>勾選福利身分或身障者，須附證明才列入優先條件</li><li>同一家庭的兄弟姊妹都可以通過，系統會加註「同家庭」標籤供委員參考</li><li>資訊工程（資工）系不列入電子電機類</li>`;
+ $('#ruleList').innerHTML=`<li>本國籍、日間部學生（不含進修部、夜間部、推廣教育、空大）</li><li>科系：電子、電機相關（至少 ${esc(S.aRatio)} 名額）；紡織材料、機械、工業工程（其餘名額）</li><li>未享公費，其他獎學金每學期未達 ${wan(num(S.otherMax))}</li><li>申請人＋父母年所得合計 ${wan(num(S.incomeLimit))} 以下（單親：申請人＋監護人）</li><li>前學期成績 ${S.scoreMin} 分以上，或班排前 ${S.rankPct}%；操行 ${S.conductMin} 分（乙等）以上</li><li>無因故意行為遭記「${esc(S.penalty)}」以上懲處</li><li>必要文件齊全：學生證、成績單、戶籍謄本、財產清單、所得清單、推薦函（續領者免附後兩項）。不全視為無效</li><li>勾選福利身分或身障者，須附證明才列入優先條件</li><li>同一家庭之兄弟姊妹均可通過，系統加註「同家庭」標籤供委員參考</li><li>資訊工程（資工）系不列入電子電機類</li>`;
  renderData();renderResult(O);renderGroups();renderDocs();
 }
 
@@ -271,7 +271,7 @@ async function uploadMany(files){
 let FCUR=null;const fdlg=$('#fdlg');
 function openFiles(i,k){FCUR={i,k};const f=FIELDS.find(f=>f.k===k);$('#fdlgTitle').textContent=k==='*'?`${APPS[i].id||''} ${APPS[i].name}｜全部文件`:`${APPS[i].name}｜${f.l.replace('文件-','')}`;$('#fdlgUp').classList.toggle('hidden',k==='*');listFiles();fdlg.showModal()}
 function listFiles(){const who=fkey(APPS[FCUR.i],'');const L=FCUR.k==='*'?FALL.filter(r=>r.k.startsWith(who)):FIDX[fkey(APPS[FCUR.i],FCUR.k)]||[];
- $('#fdlgList').innerHTML=L.length?L.map(r=>`<div style="flex-wrap:wrap"><span>${FCUR.k==='*'?`<b>${esc(DOCNAME(r.k.split('|')[1]))}</b><br>`:''}${esc(r.name)} ${stBadge(r)}${r.lockBy?`<span class="rtag wait">${esc(r.lockBy)} 核對中</span>`:''}${(r.flags||[]).map(f=>`<div class="reason" style="border:0;padding:2px 0">⚠ ${esc(f)}</div>`).join('')}${r.summary?`<div class="note" style="border:0;padding:2px 0">初步檢查：${esc(r.summary)}</div>`:''}${r.note?`<div class="note" style="border:0;padding:2px 0">退回原因：${esc(r.note)}</div>`:''}</span><button class="btn sm" onclick="viewFile('${r.id}')">開啟</button><button class="btn sm" onclick="setSt('${r.id}','ok').then(()=>{listFiles();render()})">✓ 符合</button><button class="btn sm danger" onclick="rejectFile('${r.id}').then(()=>{listFiles();render()})">✕ 退回</button><button class="btn sm danger adminonly" onclick="rmFile('${r.id}')">刪除</button></div>`).join(''):(FCUR.k==='*'?'<p class="muted">這位學生還沒有上傳任何檔案。</p>':`<p class="muted">這項文件沒有上傳檔案。</p><p class="note">如果學生是交紙本，可以直接標記：</p><div class="row"><button class="btn" onclick="markDoc('已附')">標為已繳（紙本）</button><button class="btn" onclick="markDoc('${(FIELDS.find(f=>f.k===FCUR.k)||{}).doc===3?'無須':'未附'}')">標為${(FIELDS.find(f=>f.k===FCUR.k)||{}).doc===3?'免附':'未繳'}</button></div>`)}
+ $('#fdlgList').innerHTML=L.length?L.map(r=>`<div style="flex-wrap:wrap"><span>${FCUR.k==='*'?`<b>${esc(DOCNAME(r.k.split('|')[1]))}</b><br>`:''}${esc(r.name)} ${stBadge(r)}${r.lockBy?`<span class="rtag wait">${esc(r.lockBy)} 核對中</span>`:''}${(r.flags||[]).map(f=>`<div class="reason" style="border:0;padding:2px 0">⚠ ${esc(f)}</div>`).join('')}${r.summary?`<div class="note" style="border:0;padding:2px 0">初步檢查：${esc(r.summary)}</div>`:''}${r.note?`<div class="note" style="border:0;padding:2px 0">退回原因：${esc(r.note)}</div>`:''}</span><button class="btn sm" onclick="viewFile('${r.id}')">開啟</button><button class="btn sm" onclick="setSt('${r.id}','ok').then(()=>{listFiles();render()})">✓ 符合</button><button class="btn sm danger" onclick="rejectFile('${r.id}').then(()=>{listFiles();render()})">✕ 退回</button><button class="btn sm danger adminonly" onclick="rmFile('${r.id}')">刪除</button></div>`).join(''):(FCUR.k==='*'?'<p class="muted">此申請人尚未上傳任何檔案。</p>':`<p class="muted">此項文件無上傳檔案。</p><p class="note">紙本繳交者，可直接標記：</p><div class="row"><button class="btn" onclick="markDoc('已附')">標為已繳（紙本）</button><button class="btn" onclick="markDoc('${(FIELDS.find(f=>f.k===FCUR.k)||{}).doc===3?'無須':'未附'}')">標為${(FIELDS.find(f=>f.k===FCUR.k)||{}).doc===3?'免附':'未繳'}</button></div>`)}
 function stBadge(r){const s=r.st||'pend';return s==='ok'?(r.by==='auto'?'<span class="rtag ok">✓ 系統通過</span>':'<span class="rtag ok">✓ 已核對符合</span>'):s==='bad'?'<span class="rtag bad">✕ 已退回</span>':'<span class="rtag wait">? 待核對</span>'}
 const BREASONS=['不是這份文件','看不清楚／模糊','缺頁或拍不完整','姓名不是申請人或家人','日期過期（超過三個月）','與申請表填的資料不符','缺少簽名或印章'];
 const bdlg=$('#bdlg');
@@ -287,7 +287,7 @@ function askReason(hint){return new Promise(ok=>{let done=false;const sel=new Se
 async function rejectFile(id){const r=FALL.find(x=>String(x.id)===String(id));const n=await askReason(r&&r.flags);if(n===null)return;await setSt(id,'bad',n)}
 // 逐一核對
 let SPOT=false,RQ=[],RI=0,RURL=null,RS={},RALL={},DIR=1,VZ=1,VR=0,BUSY=false;const rdlg=$('#rdlg');
-function startReview(){SPOT=false;RQ=FALL.filter(r=>(r.st||'pend')==='pend').map(r=>r.id);RI=0;RS={};RALL={};DIR=1;if(!RQ.length){alert('目前沒有待核對的文件 👍');return}rdlg.showModal();showReview()}
+function startReview(){SPOT=false;RQ=FALL.filter(r=>(r.st||'pend')==='pend').map(r=>r.id);RI=0;RS={};RALL={};DIR=1;if(!RQ.length){alert('目前無待核對文件');return}rdlg.showModal();showReview()}
 function stripHtml(){return'<b>進度</b>'+RQ.map((id,i)=>{const v=RS[id];const c=v==='ok'?'ok':v==='bad'?'bad':v==='skip'?'skip':v==='lock'||v==='other'?'lock':'';return`<span role="button" tabindex="0" onkeydown="if(event.key==='Enter')revJump(${i})" class="${c} ${i===RI?'cur':''}" title="${v==='ok'?'符合':v==='bad'?'退回':v==='skip'?'略過':v==='lock'?'其他委員核對中':v==='other'?'其他委員已完成':'未看'}" onclick="revJump(${i})">${v==='ok'?'✓':v==='bad'?'✕':v==='skip'?'…':v==='lock'||v==='other'?'鎖':i+1}</span>`}).join('')+'<span class="lg">✓ 符合　✕ 退回　… 略過　鎖＝其他委員核對中</span>'}
 function vz(d){VZ=d===0?1:Math.max(.4,Math.min(4,VZ*(d>0?1.3:1/1.3)));vApply()}
 function vr(){VR=(VR+90)%360;vApply()}
@@ -306,10 +306,10 @@ async function showReview(){
  const st=SPOT&&!RS[id]&&r.by==='auto'?'':RS[id]==='ok'||r.st==='ok'?'ok':RS[id]==='bad'||r.st==='bad'?'bad':'';
  $('#rInfo').innerHTML=`<div style="font-size:22px;font-weight:700">${esc(who)}　${esc(a.name||'')}</div>${a.dept?`<div class="note">${esc(a.dept)}　${esc(a.level||'')}</div>`:''}<div style="font-size:20px;margin:8px 0 4px">這份應該是：<br><b style="color:var(--pri)">${esc(DOCNAME(dk))}</b></div><div class="note">檔名：${esc(r.name)}</div>
   ${SPOT&&!RS[id]&&r.by==='auto'?'<div class="decided" style="background:var(--info-bg);color:var(--info)">抽查：系統已判定通過，請確認是否正確</div>':''}
-  ${st?`<div class="decided" style="background:var(--${st}bg);color:var(--${st})">${st==='ok'?'✓ 已標為「符合」':'✕ 已標為「退回」：'+esc(r.note||'')}　（可以重新選）</div>`:''}
+  ${st?`<div class="decided" style="background:var(--${st}bg);color:var(--${st})">${st==='ok'?'✓ 已標為「符合」':'✕ 已標為「退回」：'+esc(r.note||'')}　（可重新選擇）</div>`:''}
   ${r.summary?`<div class="alert" style="margin:8px 0;background:#e8f0fa;color:#1d3f8a">初步檢查：${esc(r.summary)}</div>`:''}${(r.flags||[]).map(f=>`<div class="alert" style="margin:6px 0">⚠ ${esc(f)}</div>`).join('')}
-  ${(r.summary||(r.flags||[]).length)?'<div class="note">初步檢查只是提醒，可能會錯，以審查人員判斷為準。</div>':''}
-  <div class="checklist"><b>請確認：</b><br>① 是這份文件嗎？<br>② 姓名是申請人或家人嗎？<br>③ 日期在期限內嗎？<br>④ 姓名、數字、日期看得清楚嗎？</div>`;
+  ${(r.summary||(r.flags||[]).length)?'<div class="note">初步檢查僅供參考，以審查人員判斷為準。</div>':''}
+  <div class="checklist"><b>請確認：</b><br>① 文件種類是否正確<br>② 姓名是否為申請人或其家屬<br>③ 日期是否在有效期限內<br>④ 姓名、數字、日期是否清晰</div>`;
  const isImg=/image\//.test(r.type),isPdf=/pdf/.test(r.type)||/\.pdf$/i.test(r.name);
  $('#vOpen').href=RURL;$('#vTool').querySelectorAll('button').forEach(b=>b.classList.toggle('hidden',!isImg));
  $('#rView').innerHTML=isImg?`<img src="${RURL}" alt="文件" style="width:100%">`:isPdf?`<iframe src="${RURL}" style="width:100%;height:100%;border:0"></iframe>`:`<p style="padding:40px"><a class="btn" href="${RURL}" download="${esc(r.name)}">下載檔案查看</a></p>`;
@@ -319,11 +319,11 @@ function finishReview(byUser){
  const va=Object.values(RALL),ok=va.filter(x=>x==='ok').length,bad=va.filter(x=>x==='bad').length,v=Object.values(RS),lock=v.filter(x=>x==='lock').length,other=v.filter(x=>x==='other').length;
  const left=RQ.filter(id=>!RS[id]||RS[id]==='skip');
  if(byUser){
-  if(left.length&&!confirm(`本次已核對：符合 ${ok} 份、退回 ${bad} 份。\n還有 ${left.length} 份略過或還沒看，下次按「逐一核對」會再出現。\n\n確定先結束嗎？`))return;
+  if(left.length&&!confirm(`本次已核對：符合 ${ok} 份、退回 ${bad} 份。\n還有 ${left.length} 份略過或尚未核對，下次開始核對時將再次列出。\n\n確定結束？`))return;
   rdlg.close();render();return}
- if(left.length&&confirm(`已經看到最後一份了。\n本次核對：符合 ${ok} 份、退回 ${bad} 份。\n\n還有 ${left.length} 份按了「略過」，要現在回去看嗎？`)){RQ=left;RS={};RI=0;DIR=1;showReview();return}
+ if(left.length&&confirm(`已至最後一份。\n本次核對：符合 ${ok} 份、退回 ${bad} 份。\n\n還有 ${left.length} 份已略過，是否返回核對？`)){RQ=left;RS={};RI=0;DIR=1;showReview();return}
  rdlg.close();render();
- alert((left.length?`本次核對：符合 ${ok} 份、退回 ${bad} 份。\n還有 ${left.length} 份略過，下次按「逐一核對」會再出現。`:`全部核對完成。\n符合 ${ok} 份、退回 ${bad} 份。\n辛苦了，謝謝！`)+(lock?`\n\n另有 ${lock} 份正由其他委員核對中，已自動跳過。`:'')+(other?`\n${other} 份已由其他委員完成。`:''));
+ alert((left.length?`本次核對：符合 ${ok} 份、退回 ${bad} 份。\n還有 ${left.length} 份略過，下次開始核對時將再次列出。`:`全部核對完成。\n符合 ${ok} 份、退回 ${bad} 份。\n感謝協助。`)+(lock?`\n\n另有 ${lock} 份由其他委員核對中，已自動略過。`:'')+(other?`\n${other} 份已由其他委員完成核對。`:''));
 }
 let LOADING=false;
 function guard(){if(BUSY||LOADING)return false;BUSY=true;['rOk','rBad','rSkip','rPrev'].forEach(i=>$('#'+i).disabled=true);return true}
@@ -434,7 +434,7 @@ function exportResults(){
 async function clearAll(){if(confirm('確定清空全部申請資料與已上傳的文件電子檔？此動作無法復原。')){APPS=[];try{await idb();await new Promise(ok=>{const t=DB.transaction('f','readwrite');t.objectStore('f').clear();t.oncomplete=ok})}catch(e){}FIDX={};render()}}
 
 // ===== 設定 =====
-const SET=[['deadline','本年度申請截止日（過了就不能送新申請）','date'],['supDeadline','本年度補件期限（過了學生就不能補傳；逾期的人會集中列出提醒委員）','date'],['spotPct','抽查比例 %（系統自動通過的文件要抽查多少，例：10）'],['announce','預計公告結果時間（例：12 月中旬）'],['contact','承辦聯絡方式（學生頁會顯示，例：王小姐 02-1234-5678）'],['org','單位名稱（顯示在標題下方）'],['quotaU','大學部名額'],['quotaG','碩博士班名額'],['incomeLimit','家戶年所得上限（元，申請人＋父母合計；單親為申請人＋扶養家長）'],['scoreMin','學業成績門檻（分）'],['rankPct','成績未達時，班排前幾 %'],['aRatio','電子電機類最低比例（如 2/3）'],['groups','評審分組數'],['conductMin','操行成績門檻（分）'],['otherMax','其他獎學金每學期上限（元，達此金額即不符）'],['penalty','懲處排除門檻（記到這個等級以上就不符合）',['警告','小過','大過以上']],['kwA','電子電機類 系所關鍵字（逗號分隔）'],['kwB','紡織材料／機械／工工類 關鍵字'],['kwX','不列入的系所關鍵字（例：資訊工程,資工）'],['backfill','電子電機不足時，名額回流其他類',['是','否']]];
+const SET=[['deadline','本年度申請截止日（逾期不受理新申請）','date'],['supDeadline','本年度補件期限（逾期不受理補件；逾期者集中列出供委員會議決定）','date'],['spotPct','抽查比例 %（系統通過文件之抽查比例，例：10）'],['announce','預計公告結果時間（例：12 月中旬）'],['contact','承辦聯絡方式（顯示於學生申請頁，例：王小姐 02-1234-5678）'],['org','單位名稱（顯示在標題下方）'],['quotaU','大學部名額'],['quotaG','碩博士班名額'],['incomeLimit','家戶年所得上限（元，申請人＋父母合計；單親為申請人＋扶養家長）'],['scoreMin','學業成績門檻（分）'],['rankPct','成績未達時，班排前幾 %'],['aRatio','電子電機類最低比例（如 2/3）'],['groups','評審分組數'],['conductMin','操行成績門檻（分）'],['otherMax','其他獎學金每學期上限（元，達此金額即不符）'],['penalty','懲處排除門檻（達此等級以上即不符資格）',['警告','小過','大過以上']],['kwA','電子電機類 系所關鍵字（逗號分隔）'],['kwB','紡織材料／機械／工工類 關鍵字'],['kwX','不列入的系所關鍵字（例：資訊工程,資工）'],['backfill','電子電機不足時，名額回流其他類',['是','否']]];
 function renderSettings(){
  const G1=['deadline','supDeadline','announce','contact','spotPct'],G3=['kwA','kwB','kwX','aRatio','backfill'];
  const one=([k,l,t])=>{const m=String(l).match(/^([^（]+)（(.+)）$/);const lab=m?m[1]:l,hint=m?m[2]:'';return`<label class="f" ${k.startsWith('kw')||k==='contact'?'style="grid-column:1/-1"':''}>${esc(lab)}${hint?`<span class="hint">${esc(hint)}</span>`:''}${Array.isArray(t)?`<select data-s="${k}">${t.map(o=>`<option ${String(S[k])===o?'selected':''}>${o}</option>`).join('')}</select>`:`<input data-s="${k}" ${t==='date'?'type="date"':''} value="${esc(S[k]??'')}">`}</label>`};
@@ -476,7 +476,7 @@ const tfetch=(u,o={})=>{const ac=new AbortController();const t=setTimeout(()=>ac
 try{if(CFG.key&&!/^__/.test(CFG.key)&&window.supabase)SBC=window.supabase.createClient(CFG.url,CFG.key,{global:{fetch:tfetch}})}catch(e){}
 // 寫入後沒有任何資料被更新，多半是登入過期或已被移出審查名單
 async function wrote(res,what){if(res.error){alert(what+'失敗：'+res.error.message);return false}if(Array.isArray(res.data)&&!res.data.length){await sessionLost();return false}return true}
-async function sessionLost(){alert('登入已過期，或此帳號已不在審查人員名單內。\n剛剛的變更沒有存到，請重新登入後再做一次。');try{await SBC.auth.signOut()}catch(e){}location.reload()}
+async function sessionLost(){alert('登入已逾時，或此帳號已不在審查人員名單內。\n本次變更未儲存，請重新登入後再操作。');try{await SBC.auth.signOut()}catch(e){}location.reload()}
 const DOCKEYS=['d_id','d_tr','d_hh','d_prop','d_inc','d_rec','d_wel','d_dis','d_unemp'];
 const nid=id=>typeof id==='string'&&/^\d+$/.test(id)?+id:id;
 const _load=load,_save=save,_loadIdx=loadIdx,_getFile=getFile,_setSt=setSt,_delFile=delFile,_putFile=putFile,_syncDoc=syncDoc,_toggleDoc=toggleDoc,_saveEdit=saveEdit,_saveSettings=saveSettings,_clearAll=clearAll,_loadDemo=loadDemo,_allDocs=allDocs;
@@ -489,7 +489,7 @@ getFile=async function(id){
 };
 function cRec(d){const a=CAPPS.find(x=>x._cid===d.applicant_id);const ai=d.ai||{};
  const stuck=(d.ai_status==='pending'||d.ai_status==='running')&&Date.now()-Date.parse(d.created_at)>5*60e3;
- const flags=stuck?['初步檢查沒有完成，請人工核對']:d.ai_status==='pending'||d.ai_status==='running'?['系統還在做初步檢查，可以稍後按「重新整理」再看']:(ai.issues||[]);
+ const flags=stuck?['初步檢查未完成，請人工核對']:d.ai_status==='pending'||d.ai_status==='running'?['系統初步檢查中，請稍後重新整理']:(ai.issues||[]);
  const lk=d.locked_by&&d.locked_by!==CUSER.toLowerCase()&&d.locked_at&&Date.now()-Date.parse(d.locked_at)<6e5?(RVN[d.locked_by]||d.locked_by):'';
  return{lockBy:lk,id:d.id,k:(a?a.id:'?')+'|'+d.doc_type,name:d.file_name||d.path.split('/').pop(),type:d.mime||'',size:d.size,h:d.sha256,flags,summary:ai.summary||'',st:d.review_status||'pend',note:d.review_note||'',by:d.reviewed_by||''}}
 loadIdx=async function(){
@@ -575,7 +575,7 @@ saveEdit=async function(){
  CAPPS_RAW[a._cid].form=newForm;CAPPS_RAW[a._cid].review=newRev;a._review=newRev;Object.assign(a,chg,rvPart);dlg.close();render()};
 const REVKEYS=['override','overNote','fam'];
 $('#delBtn').onclick=async()=>{
- if(!confirm('確定刪除這位申請人？'+(CLOUD?'\n（雲端上的資料與文件都會一併刪除，無法復原）':'')))return;
+ if(!confirm('確定刪除這位申請人？'+(CLOUD?'\n（雲端資料及文件將一併刪除，無法復原）':'')))return;
  if(!CLOUD){APPS.splice(editIdx,1);dlg.close();render();return}
  const a=APPS[editIdx];const paths=CDOCS.filter(d=>d.applicant_id===a._cid).map(d=>d.path);
  if(!await wrote(await SBC.from('applicants').delete().eq('id',a._cid).select('id'),'刪除'))return;
@@ -585,11 +585,11 @@ saveSettings=async function(){
  if(!CLOUD)return _saveSettings();
  document.querySelectorAll('[data-s]').forEach(e=>S[e.dataset.s]=e.value.trim());
  if(!await wrote(await SBC.from('settings').upsert({id:1,data:S,updated_at:new Date().toISOString()}).select('id'),'儲存'))return;
- render();alert('已儲存到雲端，所有審查人員都會套用新規則')};
-clearAll=function(){if(CLOUD)return alert('雲端模式不能一次清空。要刪除申請人，請在「申請資料」按「編輯」→「刪除」。');return _clearAll()};
-loadDemo=function(){if(CLOUD)return alert('雲端模式不能載入示範資料。請先按右上角「登出」回到本機模式。');return _loadDemo()};
-allDocs=function(){if(CLOUD)return alert('雲端模式請逐一核對文件，不能一次全部設為已附。');return _allDocs()};
-const _readFile=readFile;readFile=function(f){if(CLOUD)return alert('雲端模式的申請資料來自學生線上申請，不能匯入 Excel。要匯入請先登出。');return _readFile(f)};
+ render();alert('已儲存，所有審查人員將套用新規則')};
+clearAll=function(){if(CLOUD)return alert('雲端模式不提供全部清除。刪除申請人請至「申請人」點選「編輯」→「刪除」。');return _clearAll()};
+loadDemo=function(){if(CLOUD)return alert('雲端模式不提供載入示範資料。');return _loadDemo()};
+allDocs=function(){if(CLOUD)return alert('雲端模式須逐份核對文件。');return _allDocs()};
+const _readFile=readFile;readFile=function(f){if(CLOUD)return alert('雲端模式資料來自線上申請，不提供 Excel 匯入。');return _readFile(f)};
 
 let CAPPS_RAW={};
 async function cloudLoad(){
@@ -618,7 +618,7 @@ async function enterCloud(){
 let LEAVING=false;
 async function leaveCloud(){
  if(DEMO){location.reload();return}
- if(!confirm('確定登出嗎？'))return;
+ if(!confirm('確定登出？'))return;
  LEAVING=true;await SBC.auth.signOut();location.reload();return;CLOUD=false;CUSER='';ISADMIN=false;document.body.classList.remove('cloud','admin');
  
  if(LOCAL_BAK){APPS=LOCAL_BAK.APPS;S=LOCAL_BAK.S}else{APPS=[];S=Object.assign({},DEF);_load()}
@@ -629,20 +629,20 @@ async function doLogin(e){e.preventDefault();const em=$('#lgEmail').value.trim()
  const{error}=await SBC.auth.signInWithPassword({email:em,password:pw});
  if(error){$('#lgErr').textContent=/Invalid login/i.test(error.message)?'Email 或密碼錯誤':'登入失敗：'+error.message;return}
  ldlg.close();$('#lgPw').value='';await enterCloud()}
-function copyApply(){const u=$('#applyUrl').textContent;(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>alert('已複製，可以貼給學生或學校承辦人'),()=>prompt('請複製這個網址：',u))}
+function copyApply(){const u=$('#applyUrl').textContent;(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>alert('已複製網址'),()=>prompt('請複製這個網址：',u))}
 if(SBC){if(SBC.auth.onAuthStateChange)SBC.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&CLOUD&&!LEAVING)sessionLost()});$('#cloudBtn').classList.remove('hidden');$('#applyUrl').textContent=new URL('apply.html',location.href).href}
 
 // ===== 使用導覽（第一次登入自動出現；右上角「使用說明」可再看）=====
 const TOUR_STEPS=()=>{const nm=RVN[CUSER.toLowerCase()];const L=[
- {title:`歡迎${nm?'，'+nm:''}！`,body:'感謝擔任助學金審查委員。<br>以下用 1 分鐘說明審查工作。<br><br>放心，按錯都可以改，不會一按就無法挽回。'},
+ {title:`歡迎${nm?'，'+nm:''}！`,body:'感謝擔任助學金審查委員。<br>以下說明審查作業，約 1 分鐘。<br><br>所有核對結果均可修改。'},
  {sel:'#hello',tab:'home',title:'審查工作：核對文件',body:'首頁顯示待核對文件數量。<br>按「<b>開始核對</b>」，系統逐份顯示文件。<br><br>其他分頁供參考，不需操作。'},
- {sel:'#startReviewBtn',tab:'docs',title:'三個按鈕',body:'<b style="color:var(--ok)">✓ 符合</b>：這份文件可以用<br><b style="color:var(--bad)">✕ 退回</b>：學生要重交，點選原因就好，不用打字<br><b>略過</b>：晚點再看，<u>不算完成</u>，下次會再出現'},
- {sel:'#startReviewBtn',tab:'docs',title:'按錯了怎麼辦？',body:'按「<b>◀ 上一份</b>」回去重新選；<br>或點視窗上方的小方格，直接跳到那一份。<br><br>開啟中的文件會鎖定，其他委員自動跳過，不會重複核對。'},
- {sel:'#startReviewBtn',tab:'docs',title:'初步檢查只是提醒',body:'大部分文件系統已經先看過、自動通過。<br>標 ⚠ 的文件才需人工確認，例如：<br>・是不是這份文件<br>・姓名是不是學生或家人<br>・日期是否在 3 個月內<br>・分數和申請表一不一樣<br><br>系統可能出錯，<b>以審查人員判斷為準</b>。'},
- {sel:'#docTable',tab:'docs',title:'每個人的文件一覽',body:'<span class="dk ok">✓</span> 已繳　<span class="dk pend">?</span> 待核對　<span class="dk no">✕</span> 缺件或退回<br><br>點任何一格，就能看這位學生上傳的檔案。'},
- {sel:'nav button[data-t="result"]',tab:'result',title:'初篩結果自動算好',body:'資格、優先順序、正取／備取都依協會規則自動排好。<br><br>文件還沒核對完時，名單是<b>暫定</b>的；被退回文件的學生會列為「<b>待補件</b>」，不是不符合。'}];
- if(ISADMIN)L.push({sel:'nav button[data-t="settings"]',tab:'settings',title:'管理者專用：規則設定',body:'這裡可以設定<b>截止日</b>和<b>聯絡方式</b>（學生頁會顯示）、新增或移除審查人員，也可以查看<b>異動紀錄</b>：誰在什麼時候改了什麼。'});
- L.push({sel:'#tourBtn',tab:'home',title:'隨時可以再看一次',body:'忘記怎麼用，按右上角「<b>使用說明</b>」就能重看。<br>中途離開沒關係，進度均已自動儲存。<br><br>辛苦了，謝謝！'});
+ {sel:'#startReviewBtn',tab:'docs',title:'核對按鈕',body:'<b style="color:var(--ok)">✓ 符合</b>：文件審核通過<br><b style="color:var(--bad)">✕ 退回</b>：要求申請人重新繳交，點選退件原因即可<br><b>略過</b>：暫不處理，<u>不計為完成</u>，下次將再次列出'},
+ {sel:'#startReviewBtn',tab:'docs',title:'修改核對結果',body:'點選「<b>◀ 上一份</b>」重新選擇；<br>或點選視窗上方進度格，直接跳至該份。<br><br>開啟中的文件會鎖定，其他委員自動跳過，不會重複核對。'},
+ {sel:'#startReviewBtn',tab:'docs',title:'初步檢查僅供參考',body:'多數文件已由系統初步檢查並自動通過。<br>標示 ⚠ 之文件須人工確認，例如：<br>・文件種類是否正確<br>・姓名是否為申請人或其家屬<br>・日期是否在 3 個月內<br>・成績是否與申請表相符<br><br>初步檢查可能有誤，<b>以審查人員判斷為準</b>。'},
+ {sel:'#docTable',tab:'docs',title:'文件一覽',body:'<span class="dk ok">✓</span> 已繳　<span class="dk pend">?</span> 待核對　<span class="dk no">✕</span> 缺件或退回<br><br>點選格子可查看該申請人上傳之檔案。'},
+ {sel:'nav button[data-t="result"]',tab:'result',title:'初篩結果',body:'資格、優先順序、正取及備取均依協會規則自動計算。<br><br>文件未核對完成前，名單為<b>暫定</b>；文件經退回者列為「<b>待補件</b>」，非資格不符。'}];
+ if(ISADMIN)L.push({sel:'nav button[data-t="settings"]',tab:'settings',title:'管理者功能：設定',body:'設定<b>申請截止日</b>、<b>補件期限</b>及<b>聯絡方式</b>（顯示於學生申請頁）、管理審查人員名單，並可查閱<b>異動紀錄</b>。'});
+ L.push({sel:'#tourBtn',tab:'home',title:'使用說明',body:'右上角「<b>使用說明</b>」可再次檢視本導覽。<br>中途離開時，進度均已自動儲存。<br><br>感謝協助。'});
  return L};
 let TI=0,TS=[];
 function tourKey(){return'sch_tour_done_'+(CUSER||'local').toLowerCase()}
@@ -685,17 +685,17 @@ function maybeTour(){let done=false;try{done=!!localStorage.getItem(tourKey())}c
 // ===== 承辦用：未定案提示、補件名單、規則、名單、紀錄 =====
 const today=()=>{const d=new Date();return`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`};
 function provCount(){return{docs:FALL.filter(r=>(r.st||'pend')==='pend').length,hold:R.filter(x=>x.st==='hold').length,late:R.filter(x=>x.st==='late').length}}
-function provHtml(){const c=provCount();if(!R.length||(!c.docs&&!c.hold&&!c.late))return'';if(!c.docs&&!c.hold)return`<div class="prov late noprint"><b>補件期限已過</b>：${c.late} 位逾期未補件，已集中列在「初篩結果」的「逾期未補件」，請委員會議決定是否受理。</div>`;return`<div class="prov noprint"><b>初篩尚未定案</b>：還有 ${c.docs} 份文件待核對${c.hold?`、${c.hold} 位待補件`:''}${c.late?`、${c.late} 位逾期未補件（請委員會議決定）`:''}。目前的正取／備取是<b>暫定</b>，匯出的檔名會加上「暫定」。</div>`}
+function provHtml(){const c=provCount();if(!R.length||(!c.docs&&!c.hold&&!c.late))return'';if(!c.docs&&!c.hold)return`<div class="prov late noprint"><b>補件期限已過</b>：${c.late} 位逾期未補件，已集中列於「初篩結果」之「逾期未補件」，請委員會議決定是否受理。</div>`;return`<div class="prov noprint"><b>初篩尚未定案</b>：還有 ${c.docs} 份文件待核對${c.hold?`、${c.hold} 位待補件`:''}${c.late?`、${c.late} 位逾期未補件（請委員會議決定）`:''}。目前的正取／備取是<b>暫定</b>，匯出檔名將標示「暫定」。</div>`}
 function badNotes(x){const who=fkey(x.a,'');return FALL.filter(r=>r.k.startsWith(who)&&r.st==='bad').map(r=>`<div class="note">${esc(DOCNAME(r.k.split('|')[1]))}：${esc(r.note||'')}</div>`).join('')}
 function renderHello(){if(!CLOUD){$('#hello').innerHTML='';return}
  const nm=RVN[CUSER.toLowerCase()]||'',n=FALL.filter(r=>(r.st||'pend')==='pend').length;
  const c=provCount();
- $('#hello').innerHTML=n?`<div class="next"><div><h2>${esc(nm||'')}${nm?'，':''}目前有 <span class="big">${n} 份</span>文件待核對</h2><p>每份大約 30 秒。全部核對完，初篩結果才會定案。</p></div><button class="btn pri lg" onclick="tab('docs');startReview()">開始核對</button></div>`
-  :c.late?`<div class="next late"><div><h2>${esc(nm||'')}${nm?'，':''}文件已全部核對完成</h2><p>${c.late} 位學生逾期未補件，請在委員會議決定是否受理。</p></div><button class="btn lg" onclick="tab('result');$('#fStatus').value='late';render()">查看逾期名單</button></div>`
-  :`<div class="next"><div><h2>${esc(nm||'')}${nm?'，':''}目前沒有待核對的文件</h2><p>${c.hold?`還有 ${c.hold} 位學生在補件中，補交後會再出現在這裡。`:'辛苦了，謝謝。'}</p></div><button class="btn lg" onclick="tab('result')">查看初篩結果</button></div>`}
+ $('#hello').innerHTML=n?`<div class="next"><div><h2>${esc(nm||'')}${nm?'，':''}目前有 <span class="big">${n} 份</span>文件待核對</h2><p>每份約 30 秒。全部核對完成後，初篩結果始定案。</p></div><button class="btn pri lg" onclick="tab('docs');startReview()">開始核對</button></div>`
+  :c.late?`<div class="next late"><div><h2>${esc(nm||'')}${nm?'，':''}文件已全部核對完成</h2><p>${c.late} 位申請人逾期未補件，請於委員會議決定是否受理。</p></div><button class="btn lg" onclick="tab('result');$('#fStatus').value='late';render()">查看逾期名單</button></div>`
+  :`<div class="next"><div><h2>${esc(nm||'')}${nm?'，':''}目前無待核對文件</h2><p>${c.hold?`還有 ${c.hold} 位申請人補件中，補件後將再次列入待核對。`:'感謝協助。'}</p></div><button class="btn lg" onclick="tab('result')">查看初篩結果</button></div>`}
 function exportFollowup(){
  const list=R.filter(x=>(x.missing||[]).length||FALL.some(r=>r.k.startsWith(fkey(x.a,''))&&r.st==='bad'));
- if(!list.length){alert('目前沒有需要補件的申請人');return}
+ if(!list.length){alert('目前無需補件之申請人');return}
  const dl=S.deadline?S.deadline:'';
  const rows=[['編號','姓名','手機','Email','缺少的文件','被退回的文件與原因','補件截止日'],...list.map(x=>{const who=fkey(x.a,'');const bad=FALL.filter(r=>r.k.startsWith(who)&&r.st==='bad');const badT=bad.map(r=>DOCNAME(r.k.split('|')[1]));
   return[x.a.id,x.a.name,x.a.phone||'',x.a.email||'',(x.missing||[]).filter(m=>!badT.includes(m)).join('、'),bad.map(r=>DOCNAME(r.k.split('|')[1])+'：'+(r.note||'')).join('；'),dl]})];
@@ -721,11 +721,11 @@ async function loadAudit(){const{data,error}=await SBC.from('audit_log').select(
 
 async function startSpot(){
  await cloudLoad();const auto=FALL.filter(r=>r.st==='ok'&&r.by==='auto');
- if(!auto.length){alert('目前沒有需要抽查的系統通過文件');return}
+ if(!auto.length){alert('目前無需抽查之文件');return}
  const must=auto.filter(r=>/\|(d_wel|d_dis)$/.test(r.k)),rest=auto.filter(r=>!must.includes(r)).sort(()=>Math.random()-.5);
  const pct=Math.max(0,Math.min(100,parseFloat(S.spotPct)||10)),pick=rest.slice(0,Math.ceil(rest.length*pct/100));
  RQ=[...must,...pick].map(r=>r.id);
- if(!confirm(`本次抽查 ${RQ.length} 份：\n・福利身分、身障證明 ${must.length} 份（影響優先順序，全部看）\n・其他文件隨機抽 ${pct}%：${pick.length} 份\n\n看過按「符合」就會改成「已核對符合」，下次不會再抽到。開始嗎？`))return;
+ if(!confirm(`本次抽查 ${RQ.length} 份：\n・福利身分、身障證明 ${must.length} 份（影響優先順序，全數抽查）\n・其他文件隨機抽 ${pct}%：${pick.length} 份\n\n核對後標示為「已核對符合」，不再列入抽查。是否開始？`))return;
  SPOT=true;RI=0;RS={};RALL={};DIR=1;rdlg.showModal();showReview()}
 const mask=n=>{n=String(n||'');return n.length<=1?n:n.length===2?n[0]+'○':n[0]+'○'.repeat(n.length-2)+n[n.length-1]};
 function exportReviewers(){
@@ -742,32 +742,32 @@ function exportReviewers(){
 async function checkKey(){try{const{data}=await SBC.functions.invoke('analyze',{body:{ping:true}});const bad=!data||data.key===false;
  const box=$('#keyWarn');box.classList.toggle('hidden',!bad)}catch(e){}}
 let DEMO=false;
-function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=3';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
+function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=4';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
 
 function adminDemoSteps(){
  const pendIdx=(no,k)=>RQ.findIndex(id=>{const r=FALL.find(x=>x.id===id);return r&&r.k===no+'|'+k});
  return[
- {t:'為什麼要做這個系統？',b:'紙本與 Excel 作業的問題：<br>・承辦逐份對照文件、電話追補件<br>・委員依多項規則人工計算資格與排名，容易出錯<br>・所得、身障等個資分散保存，不易控管',ms:9000,do:async h=>{tab('home')}},
+ {t:'系統建置緣由',b:'紙本與 Excel 作業的問題：<br>・承辦逐份對照文件、電話追補件<br>・委員依多項規則人工計算資格與排名，容易出錯<br>・所得、身障等個資分散保存，不易控管',ms:9000,do:async h=>{tab('home')}},
  {t:'系統用途',b:'・線上申請：學生以手機填表、拍照上傳，可查進度、補件<br>・文件初步檢查：有疑問的文件才交委員核對<br>・資格自動計算：依協會規則判定資格、優先順序、正取與備取<br>・資料集中管理：權限分級控管，所有修改留存紀錄',ms:9000,do:async h=>{tab('home')}},
- {t:'接下來實際看一次',b:'系統會自動示範審查委員和承辦人員的工作，約 1 分鐘。<br>隨時可以按「暫停」或「結束介紹」。',ms:5000,do:async h=>{tab('home');h.hl('#hello')}},
- {t:'一登入就知道要做什麼',b:'首頁會告訴委員還有幾份文件等著核對，按「開始核對」就開始。',ms:3000,do:async h=>{tab('home');await h.tap('#hello .btn');await h.until(()=>rdlg.open&&!LOADING)}},
- {t:'左邊：這份應該是什麼文件',b:'會顯示學生姓名、這份應該是哪一種文件，還有初步檢查發現的問題。',do:async h=>{await h.until(()=>!LOADING);h.hl('#rInfo')}},
- {t:'右邊：學生上傳的原檔',b:'看不清楚可以放大、旋轉，或用新分頁打開原檔。',do:async h=>{h.hl('#rView');await h.sleep(700);await h.tap('#vTool button:nth-child(2)')}},
- {t:'沒問題，就按「符合」',b:'按下去會自動跳到下一份文件。',ms:3500,do:async h=>{vz(0);await h.tap('#rOk');await h.until(()=>!LOADING&&!BUSY)}},
- {t:'有問題的文件，系統會提醒',b:'例如這份「成績單」，其實是一張風景照。',ms:5000,do:async h=>{const j=pendIdx('U002','d_tr');if(j>=0){await revJump(j);await h.until(()=>!LOADING&&!BUSY)}h.hl(document.querySelector('#rInfo .alert:not([style*="e8f0fa"])')||'#rInfo')}},
- {t:'退回：點選原因就好',b:'系統已經先勾好原因，也可以再寫補充說明。學生登入後會看到這個原因。',ms:5000,do:async h=>{await h.tap('#rBad');await h.until(()=>bdlg.open);await h.sleep(300);h.hl('#bChips')}},
- {t:'確定退回',b:'這位學生會列為「待補件」，不是不符合。',ms:3500,do:async h=>{await h.tap('#bOk');await h.until(()=>!bdlg.open&&!LOADING&&!BUSY)}},
- {t:'上方小方格就是進度',b:'✓ 是符合、✕ 是退回。點任何一格都能回去改，按錯不用怕。<br>開啟中的文件會鎖定，其他委員自動跳過，不會重複核對。',ms:6000,do:async h=>{h.hl('#rStrip')}},
- {t:'初篩結果自動排好',b:'資格、優先順序、正取／備取都依協會規則算好，並寫出不符合的原因。',ms:5500,do:async h=>{rdlg.close();await h.sleep(300);tab('result');render();await h.sleep(300);h.hl('#resultBox .card')}},
- {t:'每位學生的文件一覽',b:'綠色是已繳、橘色待核對、紅色缺件或退回。點任何一格就能看檔案。',ms:5000,do:async h=>{tab('docs');await h.sleep(300);h.hl('#docTable')}},
- {t:'承辦專用：設定與匯出',b:'每年在這裡填申請截止日、補件期限、聯絡方式，學生頁會自動顯示。<br>名單可以匯出 Excel，也有給評審的去識別版。',ms:6000,do:async h=>{tab('settings');await h.sleep(300);h.hl('#setForm1')}},
- {t:'示範結束',b:'接下來可自行操作。示範資料皆為虛構，任何操作都不會影響正式系統。',ms:6000,do:async h=>{tab('home');h.hl('#hello')}}]}
+ {t:'操作示範',b:'以下自動示範審查委員及承辦人員之作業，約 1 分鐘。<br>可隨時點選「暫停」或「結束介紹」。',ms:5000,do:async h=>{tab('home');h.hl('#hello')}},
+ {t:'首頁',b:'登入後首頁顯示待核對文件數量，點選「開始核對」即進入核對作業。',ms:3000,do:async h=>{tab('home');await h.tap('#hello .btn');await h.until(()=>rdlg.open&&!LOADING)}},
+ {t:'文件資訊',b:'左側顯示申請人姓名、應繳文件種類及初步檢查結果。',do:async h=>{await h.until(()=>!LOADING);h.hl('#rInfo')}},
+ {t:'原始檔案',b:'右側顯示申請人上傳之原檔，可放大、旋轉，或以新分頁開啟。',do:async h=>{h.hl('#rView');await h.sleep(700);await h.tap('#vTool button:nth-child(2)')}},
+ {t:'符合',b:'文件無誤者點選「符合」，系統自動進入下一份。',ms:3500,do:async h=>{vz(0);await h.tap('#rOk');await h.until(()=>!LOADING&&!BUSY)}},
+ {t:'疑義提醒',b:'初步檢查發現疑義時顯示提醒，例如此份「成績單」實為風景照片。',ms:5000,do:async h=>{const j=pendIdx('U002','d_tr');if(j>=0){await revJump(j);await h.until(()=>!LOADING&&!BUSY)}h.hl(document.querySelector('#rInfo .alert:not([style*="e8f0fa"])')||'#rInfo')}},
+ {t:'退回',b:'系統依初步檢查結果預先勾選退件原因，亦可填寫補充說明；申請人登入後可查閱退件原因。',ms:5000,do:async h=>{await h.tap('#rBad');await h.until(()=>bdlg.open);await h.sleep(300);h.hl('#bChips')}},
+ {t:'確定退回',b:'該申請人列為「待補件」，非資格不符。',ms:3500,do:async h=>{await h.tap('#bOk');await h.until(()=>!bdlg.open&&!LOADING&&!BUSY)}},
+ {t:'核對進度',b:'上方進度格：✓ 為符合、✕ 為退回，點選可返回修改。<br>開啟中之文件自動鎖定，其他委員將略過，避免重複核對。',ms:6000,do:async h=>{h.hl('#rStrip')}},
+ {t:'初篩結果',b:'資格、優先順序、正取及備取依協會規則自動計算，並列出不符資格原因。',ms:5500,do:async h=>{rdlg.close();await h.sleep(300);tab('result');render();await h.sleep(300);h.hl('#resultBox .card')}},
+ {t:'文件一覽',b:'綠色為已繳、橘色為待核對、紅色為缺件或退回；點選格子可查看檔案。',ms:5000,do:async h=>{tab('docs');await h.sleep(300);h.hl('#docTable')}},
+ {t:'承辦功能：設定及匯出',b:'每年於此設定申請截止日、補件期限及聯絡方式，並同步顯示於學生申請頁。<br>名單可匯出 Excel，並提供評審用去識別版。',ms:6000,do:async h=>{tab('settings');await h.sleep(300);h.hl('#setForm1')}},
+ {t:'示範結束',b:'以下可自行操作。示範資料均為虛構，操作不影響正式系統。',ms:6000,do:async h=>{tab('home');h.hl('#hello')}}]}
 async function startDemo(){try{await loadDemoJs()}catch(e){alert(e.message);return}
  try{localStorage.setItem('sch_tour_done_demo@example.tw','1')}catch(e){}
  SBC=window.DemoClient();SBC.auth._demoLogin();DEMO=true;$('#demoBar').classList.remove('hidden');$('#demoBar').style.display='flex';if(ldlg.open)ldlg.close();
  $('#applyUrl').textContent=new URL('apply.html',location.href).href;await enterCloud();window.DemoPlayer.play(adminDemoSteps())}
 $('#q').oninput=renderData;$('#fLevel').onchange=render;$('#fStatus').onchange=render;$('#fq').oninput=render;$('#dShow').onchange=renderDocs;
 if(SBC&&!/[?&]offline\b/.test(location.search))document.body.classList.add('gated');
-const wdlg=$('#wdlg');if(window.MASCOT){$('#wMascot').innerHTML=MASCOT(110,'wave');$('#gMascot').innerHTML=MASCOT(80)}
+const wdlg=$('#wdlg');if(window.MASCOT){$('#gMascot').innerHTML=MASCOT(96)}
 wdlg.addEventListener('close',()=>{try{localStorage.setItem('sch_seen_intro','1')}catch(e){}});
-load();renderSettings();render();loadIdx().then(render).then(async()=>{if(SBC){const ok=await enterCloud();if(ok)document.body.classList.remove('gated');else{let seen=false;try{seen=!!localStorage.getItem('sch_seen_intro')}catch(e){}if(!seen&&document.body.classList.contains('gated'))wdlg.showModal()}}});
+load();renderSettings();render();loadIdx().then(render).then(async()=>{if(SBC){const ok=await enterCloud();if(ok)document.body.classList.remove('gated');else{let seen=false;try{seen=!!localStorage.getItem('sch_seen_intro')}catch(e){}if(!seen&&document.body.classList.contains('gated')){if(window.MASCOT)$('#wMascot').innerHTML=MASCOT(130,'fly');wdlg.showModal()}}}});

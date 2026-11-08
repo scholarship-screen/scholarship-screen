@@ -10,7 +10,7 @@
 <title>松樑教育公益促進協會助學金 初審系統</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
-<script src="mascot.js?v=1"></script>
+<script src="mascot.js?v=2"></script>
 <link rel="stylesheet" href="admin.css?v=3">
 </head>
 <body>
@@ -18,12 +18,12 @@
  <div class="brand"><img src="logo.png" alt="社團法人台灣松樑教育公益促進協會"><div class="sys"><h1 id="appTitle">助學金初審系統</h1><div class="org" id="orgName"></div></div></div>
  <div class="hright noprint">
   <button class="btn text cloudonly" id="tourBtn" onclick="startTour()">使用說明</button>
-  <button class="btn localonly" onclick="startDemo()">看示範</button>
+  <button class="btn localonly" onclick="startDemo()">觀看示範</button>
   <button class="btn hidden localonly" id="cloudBtn" onclick="cloudBtnClick()">審查人員登入</button>
   <details class="menu cloudonly" id="userMenu"><summary class="btn" id="userBtn">帳號</summary><div class="pop"><div class="mi" id="userInfo"></div><button onclick="this.closest('details').open=false;leaveCloud()">登出</button></div></details>
  </div>
 </header>
-<div id="demoBar" class="hidden noprint" style="background:#1e4e8c;color:#fff;padding:10px 24px;font-size:17px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><b>示範模式</b><span>這裡都是假資料，可以隨意操作，什麼都不會存到雲端。重新整理頁面就恢復原狀。</span><button class="btn sm" style="margin-left:auto" onclick="window.DemoPlayer.play(adminDemoSteps())">重播介紹</button><button class="btn sm" onclick="location.reload()">離開示範</button></div>
+<div id="demoBar" class="hidden noprint" style="background:#1e4e8c;color:#fff;padding:10px 24px;font-size:17px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><b>示範模式</b><span>本頁為示範資料，所有操作均不會儲存；重新整理頁面即恢復原狀。</span><button class="btn sm" style="margin-left:auto" onclick="window.DemoPlayer.play(adminDemoSteps())">重播介紹</button><button class="btn sm" onclick="location.reload()">離開示範</button></div>
 <nav>
  <button data-t="home" class="on">總覽</button>
  <button data-t="docs">文件核對<span class="count hidden" id="navPend"></span></button>
@@ -34,9 +34,9 @@
  <div class="navr noprint"><span class="upd cloudonly" id="cloudInfo"></span><button class="btn sm cloudonly" onclick="cloudLoad()">重新整理</button>
   <details class="menu"><summary class="btn sm">列印與匯出 ▾</summary><div class="pop">
    <button onclick="this.closest('details').open=false;window.print()">列印本頁</button>
-   <button class="adminonly" onclick="this.closest('details').open=false;exportResults()">匯出初篩結果<span class="sub">完整版，含個資，限承辦保管</span></button>
-   <button class="adminonly" onclick="this.closest('details').open=false;exportReviewers()">匯出評審用名單<span class="sub">去識別，可以發給評審委員</span></button>
-   <button class="adminonly cloudonly" onclick="this.closest('details').open=false;exportFollowup()">匯出補件通知名單<span class="sub">含聯絡方式，用來通知學生補件</span></button>
+   <button class="adminonly" onclick="this.closest('details').open=false;exportResults()">匯出初篩結果<span class="sub">完整版，含個人資料，限承辦人員保管</span></button>
+   <button class="adminonly" onclick="this.closest('details').open=false;exportReviewers()">匯出評審用名單<span class="sub">去識別版，供評審委員使用</span></button>
+   <button class="adminonly cloudonly" onclick="this.closest('details').open=false;exportFollowup()">匯出補件通知名單<span class="sub">含聯絡方式，供補件通知使用</span></button>
   </div></details></div>
 </nav>
 <main>
@@ -45,7 +45,7 @@
   <div id="gMascot"></div>
   <h2 style="font-size:28px;margin-bottom:10px">助學金初審系統</h2>
   <p style="font-size:19px;color:var(--ink-2);margin:0 0 26px">限審查委員與承辦人員登入使用。<br>尚未取得帳號，可先觀看示範。</p>
-  <div class="row" style="justify-content:center;gap:14px"><button class="btn pri lg" onclick="cloudBtnClick()">審查人員登入</button><button class="btn lg" onclick="startDemo()">看示範</button></div>
+  <div class="row" style="justify-content:center;gap:14px"><button class="btn pri lg" onclick="cloudBtnClick()">審查人員登入</button><button class="btn lg" onclick="startDemo()">觀看示範</button></div>
   <div style="text-align:left;margin:30px 0 0;padding:20px 22px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md)">
    <div style="font-size:19px;font-weight:700;color:var(--brand-900);margin-bottom:8px">系統用途</div>
    <p style="margin:0 0 10px;font-size:17px;color:var(--ink-2)">取代紙本與 Excel 作業，減少人工對照文件、電話追補件與手算排名。</p>
@@ -62,7 +62,7 @@
 
 <!-- 總覽 -->
 <section id="t-home">
- <div id="keyWarn" class="prov late hidden noprint" style="background:var(--err-bg);color:var(--err);border-color:var(--err-bd)"><b>文件初步檢查目前無法使用</b>：判讀金鑰沒有設定、已過期或已停用，學生上傳的文件不會自動檢查，全部要人工核對。請聯絡系統管理員更新金鑰。</div>
+ <div id="keyWarn" class="prov late hidden noprint" style="background:var(--err-bg);color:var(--err);border-color:var(--err-bd)"><b>文件初步檢查目前無法使用</b>：判讀金鑰未設定、已過期或已停用，上傳文件將不進行自動檢查，須全數人工核對。請洽系統管理員更新金鑰。</div>
  <div id="hello" class="cloudonly noprint"></div>
  <div id="provHome"></div>
  <div class="stats" id="stats"></div>
@@ -126,7 +126,7 @@
 <section id="t-docs" class="hidden">
  <div class="card noprint">
   <div class="chead"><h2>文件核對</h2></div>
-  <div class="legend" style="margin-bottom:14px"><span><span class="dk ok">✓</span> 已繳</span><span><span class="dk pend">?</span> 待核對</span><span><span class="dk no">✕</span> 缺件或退回</span><span><span class="dk na">—</span> 免附</span><span>數字＝上傳的檔案數，點格子可以查看</span></div>
+  <div class="legend" style="margin-bottom:14px"><span><span class="dk ok">✓</span> 已繳</span><span><span class="dk pend">?</span> 待核對</span><span><span class="dk no">✕</span> 缺件或退回</span><span><span class="dk na">—</span> 免附</span><span>數字為上傳檔案數，點選格子可查看</span></div>
   <div class="row"><select id="dShow" class="btn"><option value="all">顯示全部申請人</option><option value="pend">只看有文件待核對的人</option><option value="miss">只看缺件或被退回的人</option><option value="auto" class="cloudonly">只看有「系統通過」文件的人</option></select>
    <button class="btn pri" id="startReviewBtn" onclick="startReview()">開始核對（<span id="pendN">0</span> 份待核對）</button>
    <button class="btn adminonly cloudonly" onclick="startSpot()">抽查系統通過的文件</button><button class="btn localonly" onclick="allDocs()">把目前顯示的人全部設為已繳</button></div>
@@ -134,10 +134,10 @@
  <details class="card noprint adminonly" id="upCard">
   <summary style="cursor:pointer;font-size:20px;font-weight:700;color:var(--brand-900)">補上傳文件（紙本掃描檔）</summary>
   <div style="margin-top:14px">
-  <div class="drop" id="fdrop">把掃描檔（PDF、JPG、PNG）拖到這裡，或<b style="color:var(--pri)">點此選擇檔案</b>，可一次選很多個
+  <div class="drop" id="fdrop">把掃描檔（PDF、JPG、PNG）拖到這裡，或<b style="color:var(--pri)">點此選擇檔案</b>，可一次選取多個檔案
    <input type="file" id="ffile" multiple accept=".pdf,.jpg,.jpeg,.png,.heic,.webp" class="hidden"></div>
-  <p class="note" style="margin-top:10px">檔名包含「編號＋文件名稱」就會自動歸檔並打勾，例如：<b>U001_成績單.pdf</b>、<b>G003 戶籍謄本.jpg</b>、<b>U012-推薦函.pdf</b>。也可以在下表點某一格，單獨上傳給某個人。</p>
-  <p class="note cloudonly"><b>系統先看過：</b>判讀沒問題的文件會自動標為「✓ 系統通過」（可以用上方選單抽查），有疑問的才標「?」等人工核對。</p>
+  <p class="note" style="margin-top:10px">檔名包含「編號＋文件名稱」就會自動歸檔並打勾，例如：<b>U001_成績單.pdf</b>、<b>G003 戶籍謄本.jpg</b>、<b>U012-推薦函.pdf</b>。亦可點選下表格子，個別上傳。</p>
+  <p class="note cloudonly"><b>系統先看過：</b>初步檢查無誤之文件自動標示為「✓ 系統通過」（可由上方選單抽查）；有疑義者標示「?」，待人工核對。</p>
   <p class="note localonly"><b>上傳不等於通過：</b>上傳後只會標成「? 待核對」，要按「逐一核對」看過內容、按「符合」才算繳交。系統另外會自動抓：檔案格式不對、檔案太小（可能空白）、同一個檔案重複用在不同文件或不同人身上。</p>
   <p class="note localonly">檔案只存在這台電腦的瀏覽器裡，不會上傳到網路；換電腦或清除瀏覽器資料後會消失，原始檔請另外保存。</p>
   <div id="fmsg"></div></div>
@@ -177,7 +177,7 @@
   <div style="margin-top:18px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md)">
    <div style="font-weight:600">學生申請網址</div>
    <div class="row" style="margin-top:6px"><b id="applyUrl" style="word-break:break-all;font-weight:600;color:var(--brand-700)"></b><button class="btn sm" onclick="copyApply()">複製網址</button></div>
-   <div class="note">貼給學校承辦人或公告在學校網站，學生就能用手機線上申請。</div>
+   <div class="note">提供學校承辦人員或公告於學校網站，學生即可以手機線上申請。</div>
   </div>
  </div>
  <div class="card">
@@ -186,19 +186,19 @@
  </div>
  <div class="card">
   <h2>補助科系</h2>
-  <p class="note" style="margin-top:-6px">系所名稱裡有這些字就歸到該類，用逗號分開。</p>
+  <p class="note" style="margin-top:-6px">系所名稱含下列關鍵字者歸入該類，以逗號分隔。</p>
   <div class="grid2" id="setForm3"></div>
  </div>
  <div class="savebar"><span class="dirty hidden" id="setDirty">有尚未儲存的變更</span><button class="btn" onclick="resetSettings()">恢復預設值</button><button class="btn pri" onclick="saveSettings()">儲存並重新計算</button></div>
  <div class="card cloudonly">
   <h2>審查人員名單</h2>
-  <p class="note">只有名單上的人登入後看得到資料。「管理者」可以改規則、刪除、匯出；「審查委員」只核對文件與填評審意見。<br>新增後，請通知系統管理員開通這個 Email 的登入帳號。</p>
+  <p class="note">僅名單內人員登入後可查閱資料。「管理者」可修改規則、刪除及匯出；「審查委員」僅核對文件及填寫評審意見。<br>新增後，請通知系統管理員開通這個 Email 的登入帳號。</p>
   <div class="tablewrap"><table id="rvTable"></table></div>
   <div class="row" style="margin-top:12px"><input id="rvEmail" placeholder="Email" class="btn" style="cursor:text;min-width:240px"><input id="rvName" placeholder="姓名" class="btn" style="cursor:text;width:140px"><select id="rvRole" class="btn"><option value="reviewer">審查委員</option><option value="admin">管理者</option></select><button class="btn pri" onclick="rvAdd()">＋ 新增</button></div>
  </div>
  <div class="card cloudonly">
   <div class="row" style="justify-content:space-between"><h2 style="margin:0">異動紀錄</h2><button class="btn sm" onclick="loadAudit()">載入最近 200 筆</button></div>
-  <p class="note">誰在什麼時間改了什麼（原值 → 新值），包含刪除與規則變更。</p>
+  <p class="note">記錄修改人員、時間及內容（原值 → 新值），含刪除及規則變更。</p>
   <div class="tablewrap" style="max-height:60vh"><table id="auditTable" class="audit"></table></div>
  </div>
 </section>
@@ -218,7 +218,7 @@
 <div id="tour" class="hidden" role="dialog" aria-modal="true" aria-labelledby="tourTitle"><div id="tourHole"></div><div id="tourCard"><div id="tourTitle"></div><div id="tourBody"></div><div class="tf"><span id="tourStep"></span><button class="btn" id="tourSkip" onclick="endTour()">略過導覽</button><button class="btn" id="tourPrev" onclick="tourPrev()">← 上一步</button><button class="btn pri" id="tourNext" onclick="tourNext()">下一步 →</button></div></div></div>
 <dialog id="bdlg" style="width:min(620px,95vw)">
  <div class="dlg-h"><span>退回原因</span><button class="xbtn" aria-label="關閉" onclick="bdlg.close()">✕</button></div>
- <div class="dlg-b"><p style="margin:0 0 10px">點選原因（可以選多個），會記錄下來，通知學生補件時使用：</p><div id="bChips" class="tagbar"></div>
+ <div class="dlg-b"><p style="margin:0 0 10px">請點選退件原因（可複選），將記錄並供補件通知使用：</p><div id="bChips" class="tagbar"></div>
   <label class="f" style="margin-top:14px">補充說明（可不填）<textarea id="bNote" placeholder="例如：請重新拍攝第 2 頁"></textarea></label></div>
  <div class="dlg-f"><button class="btn" onclick="bdlg.close()">取消</button><button class="btn dangerfill" id="bOk">確定退回</button></div>
 </dialog>
@@ -233,7 +233,7 @@
 <dialog id="ldlg">
  <form onsubmit="doLogin(event)">
  <div class="dlg-h"><span>審查人員登入</span><button type="button" class="xbtn" aria-label="關閉" onclick="ldlg.close()">✕</button></div>
- <div class="dlg-b"><label class="f">Email<input id="lgEmail" type="email" autocomplete="username" required></label><label class="f" style="margin-top:14px">密碼<input id="lgPw" type="password" autocomplete="current-password" required></label><div id="lgErr" class="reason" style="margin-top:12px;font-size:17px"></div><p class="note">帳號由管理者建立。登入後看到的是學生線上申請的資料。</p><p class="note">還沒有帳號、想先看看？<button type="button" class="btn text" onclick="startDemo()">看示範</button></p></div>
+ <div class="dlg-b"><label class="f">Email<input id="lgEmail" type="email" autocomplete="username" required></label><label class="f" style="margin-top:14px">密碼<input id="lgPw" type="password" autocomplete="current-password" required></label><div id="lgErr" class="reason" style="margin-top:12px;font-size:17px"></div><p class="note">帳號由管理者建立。登入後看到的是學生線上申請的資料。</p><p class="note">尚未取得帳號？<button type="button" class="btn text" onclick="startDemo()">觀看示範</button></p></div>
  <div class="dlg-f"><button class="btn pri" type="submit">登入</button></div>
  </form>
 </dialog>
@@ -243,6 +243,6 @@
  <div class="dlg-f"><button class="btn danger adminonly" id="delBtn">刪除</button><span style="flex:1"></span><button class="btn" onclick="dlg.close()">取消</button><button class="btn pri" onclick="saveEdit()">儲存</button></div>
 </dialog>
 
-<script src="admin.js?v=5"></script>
+<script src="admin.js?v=6"></script>
 </body>
 </html>

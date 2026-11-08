@@ -12,7 +12,7 @@ const svgBlob=s=>new Blob([s],{type:'image/svg+xml'});
 function seed(){
  const DB={applicants:[],documents:[],files:{},reviewers:[{email:'demo@example.tw',name:'示範承辦',role:'admin'}],settings:[{id:1,data:{deadline:'2026-12-15',supDeadline:'2026-12-31',announce:'2027 年 1 月中旬',contact:'協會承辦 王小姐 02-2345-6789',incomeLimit:'600000',penalty:'警告',kwX:'資訊工程,資工'}}],audit_log:[]};
  const P=[
-  ['U001','林怡君','電子工程系','3','單親',{guardianName:'林美華',guardianRel:'母親',incG:'260000'},'86','中低收入戶','無','無','否',{d_id:['ok'],d_tr:['ok',['學期平均：86.0','操行：甲']],d_hh:['bad',[],[],'戶籍謄本','照片右半邊被切掉了，請重新拍攝完整的一頁'],d_prop:['pend',[],[],'財產清單，名下無房屋土地'],d_inc:['pend',[],[],'所得清單，母親 26 萬'],d_wel:['pend',['有效期限：2027-06-30'],[],'中低收入戶證明']}],
+  ['U001','林怡君','電子工程系','3','單親',{guardianName:'林美華',guardianRel:'母親',incG:'260000'},'86','中低收入戶','無','無','否',{d_id:['ok'],d_tr:['ok',['學期平均：86.0','操行：甲']],d_hh:['bad',[],[],'戶籍謄本','照片右半部缺漏，請重新拍攝完整頁面'],d_prop:['pend',[],[],'財產清單，名下無房屋土地'],d_inc:['pend',[],[],'所得清單，母親 26 萬'],d_wel:['pend',['有效期限：2027-06-30'],[],'中低收入戶證明']}],
   ['U002','陳冠宇','電機工程系','2','雙親',{fatherName:'陳建國',motherName:'張淑芬',incF:'320000',incM:'180000'},'78','無','無','無','否',{d_id:['ok'],d_tr:['scenery',[],['看起來不是「前學期成績單」，而是「無關的圖片或文件」'],'一張山景照片'],d_hh:['ok'],d_prop:['pend'],d_inc:['pend'],d_rec:['ok']}],
   ['U003','黃詩涵','光電工程系','4','雙親',{fatherName:'黃志強',motherName:'吳雅婷',incF:'280000',incM:'150000'},'64','低收入戶','二等親內','無','否',{d_id:['ok'],d_tr:['pend',['學期平均：64.2'],['成績單平均 64.2 分，與申請表填的 68 分不同'],'成績單，學期平均 64.2 分'],d_hh:['blur',[],['文字不清楚'],'戶籍謄本，畫面模糊'],d_prop:['pend'],d_inc:['pend'],d_rec:['ok'],d_wel:['pend'],d_dis:['pend']}],
   ['U004','張宗翰','機械工程系','3','雙親',{fatherName:'張文雄',motherName:'李秀英',incF:'300000',incM:'200000'},'88','無','無','有','否',{d_id:['ok'],d_tr:['ok'],d_hh:['bad',[],[],'戶籍謄本','列印日期超過三個月。請重新申請三個月內的謄本'],d_prop:['ok'],d_inc:['ok'],d_rec:['ok']}],
@@ -74,7 +74,7 @@ window.DemoClient=function(){
    const d=DB.documents.find(x=>x.id===body.document_id);if(!d||d.ai_status!=='pending')return{data:{skipped:true},error:null};
    const nm=String(d.file_name||'');const bad=/風景|scenery|IMG_\d+/i.test(nm)&&!/成績|謄本|證/.test(nm);
    const manual=['d_inc','d_prop','d_wel','d_dis'].includes(d.doc_type);
-   const issues=bad?['看起來不是這份文件，請確認是否傳錯（示範：檔名是相片編號時會出現這個提醒）']:[];
+   const issues=bad?['文件種類疑似不符，請確認是否上傳錯誤']:[];
    Object.assign(d,{ai_status:'done',verdict:bad||manual?'check':'pass',review_status:bad||manual?'pend':'ok',reviewed_by:bad||manual?null:'auto',review_note:bad||manual?null:'系統自動核對通過',ai:{issues,summary:bad?'看起來是一般照片':'收到的文件'}});
    return{data:{ok:true,verdict:d.verdict,issues},error:null}}},
   auth:{onAuthStateChange(){return{data:{subscription:{unsubscribe(){}}}}},
@@ -89,7 +89,7 @@ window.DemoClient=function(){
 (function(){
 const css=`#dpCap{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(640px,calc(100vw - 24px));margin:0;background:#1d2733;color:#fff;border:0;border-radius:16px;padding:18px 20px 14px;box-shadow:0 16px 48px rgba(0,0,0,.35);font:18px/1.65 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;z-index:2147483647}
 #dpCap b.t{display:block;font-size:21px;margin-bottom:4px;color:#cfe8b8}
-@media(max-width:500px){#dpCap .m svg{width:48px;height:48px}}
+@media(max-width:500px){#dpCap .m svg{width:56px;height:56px}}
 #dpCap .ctl{display:flex;gap:8px;align-items:center;margin-top:12px}
 #dpCap .ctl span{flex:1;font-size:15px;color:#b9c4d0}
 #dpCap .ctl button{font:inherit;font-size:16px;font-weight:600;border:1px solid #5b6876;background:#2b3644;color:#fff;border-radius:10px;padding:8px 14px;cursor:pointer}
@@ -104,7 +104,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let steps=[],i=0,paused=false,timer=null,run=0,cap=null;
 function ensure(){if(cap)return;const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
  cap=document.createElement('div');cap.id='dpCap';cap.setAttribute('role','status');cap.setAttribute('aria-live','polite');
- cap.innerHTML='<div style="display:flex;gap:14px;align-items:flex-start"><div class="m" style="flex:none;margin-top:-4px">'+(window.MASCOT?window.MASCOT(64,'wave'):'')+'</div><div style="flex:1"><b class="t"></b><div class="b"></div></div></div><div class="bar"><i></i></div><div class="ctl"><span class="n"></span><button class="pz">暫停</button><button class="nx">下一步</button><button class="go">結束介紹</button></div>';
+ cap.innerHTML='<div style="display:flex;gap:14px;align-items:flex-start"><div class="m" style="flex:none;margin-top:-4px">'+(window.MASCOT?window.MASCOT(72,'fly'):'')+'</div><div style="flex:1"><b class="t"></b><div class="b"></div></div></div><div class="bar"><i></i></div><div class="ctl"><span class="n"></span><button class="pz">暫停</button><button class="nx">下一步</button><button class="go">結束介紹</button></div>';
  document.body.appendChild(cap);
  cap.querySelector('.pz').onclick=()=>{paused=!paused;cap.querySelector('.pz').textContent=paused?'繼續':'暫停';if(!paused)arm()};
  cap.querySelector('.nx').onclick=()=>{next()};
@@ -117,8 +117,8 @@ async function tap(sel){const el=typeof sel==='string'?document.querySelector(se
 async function type(sel,text){const el=document.querySelector(sel);if(!el)return;hl(el);el.focus();el.value='';for(const ch of text){el.value+=ch;el.dispatchEvent(new Event('input',{bubbles:true}));await sleep(110)}}
 async function show(){const my=++run;clearTimeout(timer);const s=steps[i];
  cap.querySelector('.t').textContent=s.t;cap.querySelector('.b').innerHTML=s.b;cap.querySelector('.n').textContent=`${i+1} / ${steps.length}`;
- cap.querySelector('.nx').textContent=i===steps.length-1?'自己操作看看':'下一步';
- const bar=cap.querySelector('.bar i');bar.style.transition='none';bar.style.width='0';top();
+ cap.querySelector('.nx').textContent=i===steps.length-1?'開始操作':'下一步';
+ const bar=cap.querySelector('.bar i');bar.style.transition='none';bar.style.width='0';top();if(i>0&&window.MASCOT_HOP)MASCOT_HOP(cap);
  try{if(s.do)await s.do({hl,tap,type,sleep,until})}catch(e){console.log(e)}
  if(my!==run)return;top();arm()}
 function arm(){clearTimeout(timer);if(paused)return;const s=steps[i],ms=s.ms||5000;const bar=cap.querySelector('.bar i');
@@ -127,5 +127,5 @@ function arm(){clearTimeout(timer);if(paused)return;const s=steps[i],ms=s.ms||50
 function next(){if(i>=steps.length-1){stop();return}i++;show()}
 function stop(){run++;clearTimeout(timer);clearHl();cap.dataset.off='1';cap.style.display='none';if(window.__dpEnd)window.__dpEnd()}
 const until=async(fn,ms=8000)=>{const t=Date.now();while(Date.now()-t<ms){try{if(fn())return true}catch(e){}await sleep(150)}return false};
-window.DemoPlayer={play(list){ensure();delete cap.dataset.off;steps=list;i=0;paused=false;cap.querySelector('.pz').textContent='暫停';top();show()},helpers:{hl,tap,type,sleep,until}};
+window.DemoPlayer={play(list){ensure();delete cap.dataset.off;if(window.MASCOT)cap.querySelector('.m').innerHTML=MASCOT(72,'fly');steps=list;i=0;paused=false;cap.querySelector('.pz').textContent='暫停';top();show()},helpers:{hl,tap,type,sleep,until}};
 })();
