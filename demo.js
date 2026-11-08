@@ -14,7 +14,7 @@ function seed(){
  const P=[
   ['U001','林怡君','電子工程系','3','單親',{guardianName:'林美華',guardianRel:'母親',incG:'260000'},'86','中低收入戶','無','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['ok',['學期平均：86.0','操行：甲']],d_hh:['bad',[],[],'戶籍謄本','照片右半部缺漏，請重新拍攝完整頁面'],d_prop:['pend',[],[],'財產清單，名下無房屋土地'],d_inc:['pend',[],[],'所得清單，母親 26 萬'],d_wel:['pend',['有效期限：2027-06-30'],[],'中低收入戶證明']}],
   ['U002','陳冠宇','電機工程系','2','雙親',{fatherName:'陳建國',motherName:'張淑芬',incF:'320000',incM:'180000'},'78','無','無','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['scenery',[],['看起來不是「前學期成績單」，而是「無關的圖片或文件」'],'一張山景照片'],d_hh:['ok'],d_prop:['pend'],d_inc:['pend'],d_rec:['ok']}],
-  ['U003','黃詩涵','光電工程系','4','雙親',{fatherName:'黃志強',motherName:'吳雅婷',incF:'280000',incM:'150000'},'64','低收入戶','二等親內','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['pend',['學期平均：64.2'],['成績單平均 64.2 分，與申請表填的 68 分不同'],'成績單，學期平均 64.2 分'],d_hh:['blur',[],['文字不清楚'],'戶籍謄本，畫面模糊'],d_prop:['pend'],d_inc:['pend'],d_rec:['ok'],d_wel:['pend'],d_dis:['pend']}],
+  ['U003','黃詩涵','光電工程系','4','雙親',{fatherName:'黃志強',motherName:'吳雅婷',incF:'280000',incM:'150000'},'68','低收入戶','二等親內','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['pend',['學期平均：64.2'],['成績單平均 64.2 分，與申請表填的 68 分不同'],'成績單，學期平均 64.2 分'],d_hh:['blur',[],['文字不清楚'],'戶籍謄本，畫面模糊'],d_prop:['pend'],d_inc:['pend'],d_rec:['ok'],d_wel:['pend'],d_dis:['pend']}],
   ['U004','張宗翰','機械工程系','3','雙親',{fatherName:'張文雄',motherName:'李秀英',incF:'300000',incM:'200000'},'88','無','無','有','否',{d_id:['ok'],d_merit:['ok'],d_tr:['ok'],d_hh:['bad',[],[],'戶籍謄本','列印日期超過三個月。請重新申請三個月內的謄本'],d_prop:['ok'],d_inc:['ok'],d_rec:['ok']}],
   ['U005','吳佳穎','電子工程系','1','雙親',{fatherName:'吳俊傑',motherName:'許美玲',incF:'250000',incM:'120000'},'91','無','本人','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['ok'],d_hh:['ok'],d_prop:['ok'],d_inc:['ok'],d_dis:['ok']}],
   ['U006','劉柏翰','資訊工程系','2','雙親',{fatherName:'劉正雄',motherName:'楊秀英',incF:'260000',incM:'190000'},'84','無','無','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['ok'],d_hh:['ok'],d_prop:['ok'],d_inc:['ok'],d_rec:['ok']}],
@@ -37,20 +37,20 @@ window.DemoClient=function(){
  const DB=seed();let session=null;
  const clone=o=>JSON.parse(JSON.stringify(o));
  function q(table){
-  const st={filters:[],op:'select',patch:null,single:false,maybe:false,ret:false,order:null,desc:false,lim:null};
-  const run=async()=>{await new Promise(r=>setTimeout(r,60));let rows=DB[table]||(DB[table]=[]);const match=r=>st.filters.every(([k,v])=>String(r[k])===String(v));
-   if(st.op==='select'){let out=rows.filter(match);if(st.order)out=[...out].sort((a,b)=>String(a[st.order]).localeCompare(String(b[st.order]))*(st.desc?-1:1));if(st.lim)out=out.slice(0,st.lim);
+  const st={filters:[],isf:[],op:'select',patch:null,single:false,maybe:false,ret:false,order:null,desc:false,lim:null,rng:null};
+  const run=async()=>{await new Promise(r=>setTimeout(r,60));let rows=DB[table]||(DB[table]=[]);const match=r=>st.filters.every(([k,v])=>String(r[k])===String(v))&&st.isf.every(([k,v])=>(r[k]==null)===(v===null));
+   if(st.op==='select'){let out=rows.filter(match);if(st.order)out=[...out].sort((a,b)=>String(a[st.order]).localeCompare(String(b[st.order]))*(st.desc?-1:1));if(st.lim)out=out.slice(0,st.lim);if(st.rng&&!st.single&&!st.maybe)out=out.slice(st.rng[0],st.rng[1]+1);
     if(st.single||st.maybe)return{data:out[0]?clone(out[0]):null,error:out[0]||st.maybe?null:{message:'找不到資料'}};return{data:clone(out),error:null}}
    if(st.op==='update'){const hit=rows.filter(match);hit.forEach(r=>Object.assign(r,clone(st.patch)));return{data:st.ret?clone(hit):null,error:null}}
    if(st.op==='delete'){const hit=rows.filter(match);DB[table]=rows.filter(r=>!match(r));if(table==='applicants')DB.documents=DB.documents.filter(d=>DB.applicants.some(a=>a.id===d.applicant_id));return{data:st.ret?clone(hit):null,error:null}}
    if(st.op==='insert'){const r={id:uid(),ai_status:'pending',review_status:'pend',created_at:new Date().toISOString(),...clone(st.patch)};rows.push(r);return{data:st.single?clone(r):[clone(r)],error:null}}
    if(st.op==='upsert'){const key=st.patch.id!==undefined?'id':'email';const i=rows.findIndex(r=>r[key]===st.patch[key]);if(i>=0)rows[i]={...rows[i],...clone(st.patch)};else rows.push(clone(st.patch));return{data:st.ret?[clone(st.patch)]:null,error:null}}};
-  const b={select(){if(st.op!=='select')st.ret=true;return b},order(k,o){st.order=k;st.desc=!!(o&&o.ascending===false);return b},range(){return b},limit(n){st.lim=n;return b},eq(k,v){st.filters.push([k,v]);return b},
+  const b={select(){if(st.op!=='select')st.ret=true;return b},order(k,o){if(!st.order){st.order=k;st.desc=!!(o&&o.ascending===false)}return b},range(a,z){st.rng=[a,z];return b},is(k,v){st.isf.push([k,v]);return b},limit(n){st.lim=n;return b},eq(k,v){st.filters.push([k,v]);return b},
    single(){st.single=true;return b},maybeSingle(){st.maybe=true;return b},update(p){st.op='update';st.patch=p;return b},delete(){st.op='delete';return b},insert(p){st.op='insert';st.patch=p;return b},upsert(p){st.op='upsert';st.patch=p;return b},
    then(ok,no){return run().then(ok,no)}};
   return b}
  const appBy=(no,code)=>DB.applicants.find(a=>a.app_no===String(no||'').toUpperCase()&&a.code===String(code||'').toUpperCase());
- const statusOf=a=>({id:a.id,app_no:a.app_no,form:clone(a.form),open:true,docs:DB.documents.filter(d=>d.applicant_id===a.id&&!d.withdrawn_at).map(d=>({id:d.id,type:d.doc_type,name:d.file_name,status:d.review_status,note:d.review_note,check:d.verdict==='check'&&d.review_status==='pend'?(d.ai||{}).issues:null}))});
+ const statusOf=a=>({id:a.id,app_no:a.app_no,form:clone(a.form),open:true,docs:DB.documents.filter(d=>d.applicant_id===a.id&&!d.withdrawn_at).map(d=>({id:d.id,type:d.doc_type,name:d.file_name,status:d.review_status,note:d.review_note,human:!!d.reviewed_by&&d.reviewed_by!=='auto',check:d.verdict==='check'&&d.review_status==='pend'?(d.ai||{}).issues:null}))});
  return{
   from:q,
   async rpc(fn,a){await new Promise(r=>setTimeout(r,80));const me=session&&session.user.email;
@@ -58,6 +58,8 @@ window.DemoClient=function(){
     case'is_reviewer':case'is_admin':return{data:!!me,error:null};
     case'public_info':{const d=DB.settings[0].data;return{data:{deadline:d.deadline,supDeadline:d.supDeadline,contact:d.contact,announce:d.announce},error:null}}
     case'claim_document':{const d=DB.documents.find(x=>x.id===a.p_id);d.locked_by=me;d.locked_at=new Date().toISOString();return{data:{ok:true,status:d.review_status},error:null}}
+    case'review_document':{const d=DB.documents.find(x=>x.id===a.p_id);if(!d)return{data:{ok:false},error:null};if((d.review_status||'pend')!==a.p_prev)return{data:{ok:false,status:d.review_status,by:d.reviewed_by},error:null};Object.assign(d,{review_status:a.p_status,review_note:a.p_note||null,reviewed_by:me,reviewed_at:new Date().toISOString(),locked_by:null,locked_at:null});return{data:{ok:true},error:null}}
+    case'review_patch':{const x=DB.applicants.find(r=>r.id===a.p_id);if(!x)return{data:null,error:{message:'找不到申請人'}};const p=clone(a.p_patch);const rv=x.review||{};x.review=p.docs?{...rv,...p,docs:{...(rv.docs||{}),...p.docs}}:{...rv,...p};return{data:clone(x.review),error:null}}
     case'release_document':{const d=DB.documents.find(x=>x.id===a.p_id);if(d){d.locked_by=null;d.locked_at=null}return{data:null,error:null}}
     case'submit_application':{const f={...a.p_form};delete f.consent;delete f.clientToken;const pre=/碩|博/.test(f.level||'')?'G':'U';const n=DB.applicants.filter(x=>x.app_no[0]===pre).length+1;const id=uid(),no=pre+String(n).padStart(3,'0');DB.applicants.push({id,app_no:no,form:f,review:{},code:'DEMO2026',created_at:new Date().toISOString()});return{data:{id,app_no:no,code:'DEMO2026'},error:null}}
     case'add_document':{const id=uid();DB.documents.push({id,applicant_id:a.p_app,doc_type:a.p_type,path:a.p_path,file_name:a.p_name,mime:a.p_mime,size:a.p_size,ai_status:'pending',review_status:'pend',ai:{},created_at:new Date().toISOString()});return{data:id,error:null}}
@@ -91,7 +93,11 @@ const css=`#dpCap{position:fixed;left:50%;bottom:16px;transform:translateX(-50%)
 #dpCap b.t{display:block;font-size:21px;margin-bottom:4px;color:#cfe8b8}
 @media(max-width:500px){#dpCap .m svg{width:56px;height:56px}}
 #dpCap .ctl{display:flex;gap:8px;align-items:center;margin-top:12px}
-#dpCap .ctl span{flex:1;font-size:15px;color:#b9c4d0}
+#dpCap .ctl span{flex:1;font-size:16px;color:#b9c4d0}
+#dpCap.top{top:16px;bottom:auto}
+#dpCap.mini{padding:10px 14px;width:max-content;max-width:calc(100vw - 24px)}#dpCap.mini .m,#dpCap.mini b.t,#dpCap.mini .b,#dpCap.mini .bar{display:none}#dpCap.mini .ctl{margin-top:0}
+@media print{#dpCap{display:none!important}}
+#dpCap .ctl button{min-height:44px;white-space:nowrap}
 #dpCap .ctl button{font:inherit;font-size:16px;font-weight:600;border:1px solid #5b6876;background:#2b3644;color:#fff;border-radius:10px;padding:8px 14px;cursor:pointer}
 #dpCap .ctl button.go{background:#3d6b2f;border-color:#3d6b2f}
 #dpCap .bar{height:4px;background:#3a4553;border-radius:9px;margin-top:10px;overflow:hidden}#dpCap .bar i{display:block;height:100%;background:#9bbb45;width:0}
@@ -105,19 +111,25 @@ let onDone=null,steps=[],i=0,paused=false,timer=null,run=0,cap=null;
 // 依序執行每一步的動作；使用者按「下一步」時，正在進行的動作會加速完成（不跳過），畫面與說明保持同步
 let gen=0,exec=-1,done=-1,working=false;
 const behind=()=>!cap||!!cap.dataset.off||exec!==i;
-const sleep=async ms=>{const end=Date.now()+ms;while(Date.now()<end){if(behind())return;await rawSleep(Math.min(60,end-Date.now()))}};
+const sleep=async ms=>{let end=Date.now()+ms;while(Date.now()<end){if(behind())return;if(paused){await rawSleep(120);end+=120;continue}await rawSleep(Math.min(60,end-Date.now()))}};
+function setPause(p){paused=p;if(!cap)return;cap.querySelector('.pz').textContent=paused?'繼續':'暫停';cap.classList.toggle('mini',paused);if(paused){clearTimeout(timer);const bar=cap.querySelector('.bar i'),w=getComputedStyle(bar).width;bar.style.transition='none';bar.style.width=w}else if(done===i)arm()}
+document.addEventListener('pointerdown',e=>{if(!cap||cap.dataset.off||paused||!e.isTrusted)return;if(cap.contains(e.target))return;const db=document.getElementById('demoBar');if(db&&db.contains(e.target))return;setPause(true)},true);
 function ensure(){if(cap)return;const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
  cap=document.createElement('div');cap.id='dpCap';cap.setAttribute('role','status');cap.setAttribute('aria-live','polite');
  cap.innerHTML='<div style="display:flex;gap:14px;align-items:flex-start"><div class="m" style="flex:none;margin-top:-4px">'+(window.MASCOT?window.MASCOT(72,'fly'):'')+'</div><div style="flex:1"><b class="t"></b><div class="b"></div></div></div><div class="bar"><i></i></div><div class="ctl"><span class="n"></span><button class="pz">暫停</button><button class="nx">下一步</button><button class="go">結束介紹</button></div>';
  document.body.appendChild(cap);
- cap.querySelector('.pz').onclick=()=>{paused=!paused;cap.querySelector('.pz').textContent=paused?'繼續':'暫停';if(paused){clearTimeout(timer);const bar=cap.querySelector('.bar i'),w=getComputedStyle(bar).width;bar.style.transition='none';bar.style.width=w}else if(done===i)arm()};
+ cap.querySelector('.pz').onclick=()=>setPause(!paused);
  cap.querySelector('.nx').onclick=()=>{if(i>=steps.length-1&&onDone){const f=onDone;stop();f();return}next()};
  cap.querySelector('.go').onclick=()=>{if(onDone){const f=onDone;stop();f();return}stop()}}
 function top(){if(cap.dataset.off)return;const ds=[...document.querySelectorAll('dialog[open]')];const host=ds.length?ds[ds.length-1]:document.body;if(cap.parentNode!==host)host.appendChild(cap);cap.style.display='block'}
 setInterval(()=>{if(cap&&!cap.dataset.off)top()},400);
+document.addEventListener('close',()=>{if(cap&&!cap.dataset.off)setTimeout(top,0)},true);
+try{new MutationObserver(()=>{if(cap&&!cap.dataset.off)top()}).observe(document.documentElement,{attributes:true,subtree:true,attributeFilter:['open']})}catch(e){}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&cap&&!cap.dataset.off&&!document.querySelector('dialog[open]')){e.preventDefault();const g=cap.querySelector('.go');if(g)g.click()}});
 function clearHl(){document.querySelectorAll('.dp-hl').forEach(e=>e.classList.remove('dp-hl'))}
-function hl(sel){clearHl();const el=typeof sel==='string'?document.querySelector(sel):sel;if(el){el.classList.add('dp-hl');try{el.scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}}return el}
-async function tap(sel){const el=typeof sel==='string'?document.querySelector(sel):sel;if(!el)return;hl(el);await sleep(900);el.classList.add('dp-tap');setTimeout(()=>el.classList.remove('dp-tap'),600);await sleep(250);el.click();await sleep(400);top()}
+function place(el){if(!cap||!el||!el.isConnected)return;const r=el.getBoundingClientRect();const want=r.top+r.height/2>innerHeight/2&&r.height<innerHeight*0.7;cap.classList.toggle('top',want);const c=cap.getBoundingClientRect();if(c.height&&c.top<r.bottom&&c.bottom>r.top){const other=!want;cap.classList.toggle('top',other);const c2=cap.getBoundingClientRect();if(c2.top<r.bottom&&c2.bottom>r.top)cap.classList.toggle('top',want)}}
+function hl(sel){clearHl();if(!cap||cap.dataset.off)return null;const el=typeof sel==='string'?document.querySelector(sel):sel;if(el){el.classList.add('dp-hl');try{el.scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}place(el);setTimeout(()=>place(el),450)}return el}
+async function tap(sel){const el=typeof sel==='string'?document.querySelector(sel):sel;if(!el)return;hl(el);await sleep(900);if(!cap||cap.dataset.off){clearHl();return}el.classList.add('dp-tap');setTimeout(()=>el.classList.remove('dp-tap'),600);await sleep(250);if(!cap||cap.dataset.off){clearHl();return}el.click();await sleep(400);top()}
 async function type(sel,text){const el=document.querySelector(sel);if(!el)return;hl(el);el.focus();el.value='';for(const ch of text){el.value+=ch;el.dispatchEvent(new Event('input',{bubbles:true}));await sleep(110)}}
 function paint(){const s=steps[i];clearTimeout(timer);
  cap.querySelector('.t').textContent=s.t;cap.querySelector('.b').innerHTML=s.b;cap.querySelector('.n').textContent=`${i+1} / ${steps.length}`;
@@ -131,11 +143,11 @@ async function pump(){if(working)return;working=true;const g=gen;
  finally{working=false}
  if(g!==gen){exec=-1;pump();return}
  if(cap&&!cap.dataset.off&&done===i){top();arm()}}
-function arm(){clearTimeout(timer);if(paused)return;if(i>=steps.length-1&&onDone){const b=cap.querySelector('.bar i');b.style.transition='none';b.style.width='100%';return}const s=steps[i],ms=s.ms||5000;const bar=cap.querySelector('.bar i');
+function arm(){clearTimeout(timer);if(paused)return;if(i>=steps.length-1){const b=cap.querySelector('.bar i');b.style.transition='none';b.style.width='100%';return}const s=steps[i],ms=s.ms||5000;const bar=cap.querySelector('.bar i');
  bar.style.transition='none';bar.style.width='0';requestAnimationFrame(()=>{bar.style.transition=`width ${ms}ms linear`;bar.style.width='100%'});
  timer=setTimeout(()=>next(),ms)}
-function next(){if(i>=steps.length-1){stop();return}i++;paint();pump()}
+function next(){if(i>=steps.length-1){stop();return}if(paused)setPause(false);i++;paint();pump()}
 function stop(){run++;clearTimeout(timer);clearHl();cap.dataset.off='1';cap.style.display='none';if(window.__dpEnd)window.__dpEnd()}
-const until=async(fn,ms=8000)=>{const t=Date.now();while(Date.now()-t<ms){try{if(fn())return true}catch(e){}await rawSleep(120)}return false};
-window.DemoPlayer={play(list,opt){onDone=(opt&&opt.onDone)||null;ensure();delete cap.dataset.off;if(window.MASCOT)cap.querySelector('.m').innerHTML=MASCOT(72,'fly');gen++;steps=list;i=0;done=-1;exec=-1;paused=false;cap.querySelector('.pz').textContent='暫停';top();paint();pump()},helpers:H};
+const until=async(fn,ms=8000)=>{const t=Date.now(),r0=run;while(Date.now()-t<(behind()?Math.min(ms,2500):ms)){if(run!==r0||!cap||cap.dataset.off)return false;try{if(fn())return true}catch(e){}await rawSleep(80)}return false};
+window.DemoPlayer={play(list,opt){onDone=(opt&&opt.onDone)||null;ensure();delete cap.dataset.off;if(window.MASCOT)cap.querySelector('.m').innerHTML=MASCOT(72,'fly');gen++;steps=list;i=0;done=-1;exec=-1;paused=false;cap.querySelector('.pz').textContent='暫停';cap.classList.remove('mini','top');top();paint();pump()},helpers:H};
 })();

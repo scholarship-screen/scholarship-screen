@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script src="mascot.js?v=5"></script>
-<link rel="stylesheet" href="admin.css?v=3">
+<link rel="stylesheet" href="admin.css?v=6">
 </head>
 <body>
 <header>
@@ -90,7 +90,7 @@
     <ol class="rule">
      <li>上學期已獲本助學金，且具低收／中低收／特殊境遇身分</li>
      <li>具政府低收入、中低收入資格（含特殊境遇家庭）</li>
-     <li>本人或二等親內領有身心障礙手冊或重大傷病卡</li>
+     <li>本人或二等親內領有身心障礙證明或重大傷病卡</li>
      <li>無房產者</li>
      <li>家戶年所得較低者</li>
      <li>年級較高者</li>
@@ -118,7 +118,8 @@
  </div>
  <div class="card">
   <div class="row" style="justify-content:space-between"><h2 style="margin:0">申請人清單（<span id="cnt">0</span> 位）</h2>
-   <input id="q" placeholder="搜尋姓名、編號、系所" style="font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:8px;min-width:260px"></div>
+   <div class="row"><button class="btn cloudonly" onclick="openEdit()">＋ 新增紙本申請人</button><input id="q" aria-label="搜尋申請人" placeholder="搜尋姓名、編號、系所" style="font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:8px;min-width:260px"></div></div>
+  <p id="qInfo" class="muted hidden" style="margin:8px 0 0"></p>
   <div class="tablewrap" style="margin-top:14px;max-height:70vh"><table id="dataTable"></table></div>
  </div>
 </section>
@@ -128,7 +129,7 @@
  <div class="card noprint">
   <div class="chead"><h2>文件核對</h2></div>
   <div class="legend" style="margin-bottom:14px"><span><span class="dk ok">✓</span> 已繳</span><span><span class="dk pend">?</span> 待核對</span><span><span class="dk no">✕</span> 缺件或退回</span><span><span class="dk na">—</span> 免附</span><span>數字為上傳檔案數，點選格子可查看</span></div>
-  <div class="row"><select id="dShow" class="btn"><option value="all">顯示全部申請人</option><option value="pend">只看有文件待核對的人</option><option value="miss">只看缺件或被退回的人</option><option value="auto" class="cloudonly">只看有「系統通過」文件的人</option></select>
+  <div class="row"><select id="dShow" aria-label="顯示範圍" class="btn"><option value="all">顯示全部申請人</option><option value="pend">只看有文件待核對的人</option><option value="miss">只看缺件或被退回的人</option><option value="auto" class="cloudonly">只看有「系統通過」文件的人</option></select>
    <button class="btn pri" id="startReviewBtn" onclick="startReview()">開始核對（<span id="pendN">0</span> 份待核對）</button>
    <button class="btn adminonly cloudonly" onclick="startSpot()">抽查系統通過的文件</button><button class="btn localonly" onclick="allDocs()">把目前顯示的人全部設為已繳</button></div>
  </div>
@@ -139,7 +140,7 @@
    <input type="file" id="ffile" multiple accept=".pdf,.jpg,.jpeg,.png,.heic,.webp" class="hidden"></div>
   <p class="note" style="margin-top:10px">檔名包含「編號＋文件名稱」就會自動歸檔並打勾，例如：<b>U001_成績單.pdf</b>、<b>G003 戶籍謄本.jpg</b>、<b>U012-推薦函.pdf</b>。亦可點選下表格子，個別上傳。</p>
   <p class="note cloudonly"><b>系統先看過：</b>初步檢查無誤之文件自動標示為「✓ 系統通過」（可由上方選單抽查）；有疑義者標示「?」，待人工核對。</p>
-  <p class="note localonly"><b>上傳不等於通過：</b>上傳後只會標成「? 待核對」，要按「逐一核對」看過內容、按「符合」才算繳交。系統另外會自動抓：檔案格式不對、檔案太小（可能空白）、同一個檔案重複用在不同文件或不同人身上。</p>
+  <p class="note localonly"><b>上傳不等於通過：</b>上傳後只會標成「? 待核對」，要按「開始核對」看過內容、按「符合」才算繳交。系統另外會自動抓：檔案格式不對、檔案太小（可能空白）、同一個檔案重複用在不同文件或不同人身上。</p>
   <p class="note localonly">檔案只存在這台電腦的瀏覽器裡，不會上傳到網路；換電腦或清除瀏覽器資料後會消失，原始檔請另外保存。</p>
   <div id="fmsg"></div></div>
  </details>
@@ -151,9 +152,9 @@
  <div class="card noprint">
   <div class="row">
    <span>顯示：</span>
-   <select id="fLevel" class="btn"><option value="all">全部學制</option><option value="U">大學部</option><option value="G">碩博士班</option></select>
-   <select id="fStatus" class="btn"><option value="all">全部結果</option><option value="ok">正取（含追加）</option><option value="wait">備取</option><option value="hold">待補件</option><option value="late">逾期未補件</option><option value="no">不符合</option></select>
-   <input id="fq" placeholder="搜尋姓名、編號" class="btn" style="cursor:text;min-width:200px">
+   <select id="fLevel" aria-label="學制篩選" class="btn"><option value="all">全部學制</option><option value="U">大學部</option><option value="G">碩博士班</option></select>
+   <select id="fStatus" aria-label="結果篩選" class="btn"><option value="all">全部結果</option><option value="ok">正取（含追加）</option><option value="wait">備取</option><option value="hold">待補件</option><option value="late">逾期未補件</option><option value="no">不符合</option></select>
+   <input id="fq" aria-label="搜尋姓名或編號" placeholder="搜尋姓名、編號" class="btn" style="cursor:text;min-width:200px">
   </div>
   <div class="note" style="margin-top:12px">點不符合原因標籤，只看該原因的申請人（再點一次取消）：</div>
   <div class="tagbar" id="tagBar"></div>
@@ -165,7 +166,7 @@
 <section id="t-groups" class="hidden">
  <div class="card noprint">
   <h2>評審分組</h2>
-  <p>所有申請案依學制、排名平均分配到各組，每組件數與難易度接近，評審可直接拿名單審閱自傳與推薦函。組數可在「規則設定」修改。</p>
+  <p>所有申請案依學制、排名平均分配到各組，每組件數與難易度接近，評審可直接拿名單審閱自傳與推薦函。組數可在「設定」修改。</p>
  </div>
  <div id="groupBox"></div>
 </section>
@@ -195,7 +196,7 @@
   <h2>審查人員名單</h2>
   <p class="note">僅名單內人員登入後可查閱資料。「管理者」可修改規則、刪除及匯出；「審查委員」僅核對文件及填寫評審意見。<br>新增後，請通知系統管理員開通這個 Email 的登入帳號。</p>
   <div class="tablewrap"><table id="rvTable"></table></div>
-  <div class="row" style="margin-top:12px"><input id="rvEmail" placeholder="Email" class="btn" style="cursor:text;min-width:240px"><input id="rvName" placeholder="姓名" class="btn" style="cursor:text;width:140px"><select id="rvRole" class="btn"><option value="reviewer">審查委員</option><option value="admin">管理者</option></select><button class="btn pri" onclick="rvAdd()">＋ 新增</button></div>
+  <div class="row" style="margin-top:12px"><input id="rvEmail" aria-label="審查人員 Email" placeholder="Email" class="btn" style="cursor:text;min-width:240px"><input id="rvName" aria-label="審查人員姓名" placeholder="姓名" class="btn" style="cursor:text;width:140px"><select id="rvRole" aria-label="審查人員身分" class="btn"><option value="reviewer">審查委員</option><option value="admin">管理者</option></select><button class="btn pri" onclick="rvAdd()">＋ 新增</button></div>
  </div>
  <div class="card cloudonly">
   <div class="row" style="justify-content:space-between"><h2 style="margin:0">異動紀錄</h2><button class="btn sm" onclick="loadAudit()">載入最近 200 筆</button></div>
@@ -220,7 +221,7 @@
 <dialog id="bdlg" style="width:min(620px,95vw)">
  <div class="dlg-h"><span>退回原因</span><button class="xbtn" aria-label="關閉" onclick="bdlg.close()">✕</button></div>
  <div class="dlg-b"><p style="margin:0 0 10px">請點選退件原因（可複選），將記錄並供補件通知使用：</p><div id="bChips" class="tagbar"></div>
-  <label class="f" style="margin-top:14px">補充說明（可不填）<textarea id="bNote" placeholder="例如：請重新拍攝第 2 頁"></textarea></label></div>
+  <label class="f" style="margin-top:14px">補充說明（可不填）<textarea id="bNote" placeholder="例如：請重新拍攝第 2 頁"></textarea></label><div id="bErr" role="alert" style="color:var(--bad);font-weight:700;font-size:18px;margin-top:8px"></div></div>
  <div class="dlg-f"><button class="btn" onclick="bdlg.close()">取消</button><button class="btn dangerfill" id="bOk">確定退回</button></div>
 </dialog>
 <dialog id="wdlg" style="width:min(520px,94vw)">
@@ -244,6 +245,6 @@
  <div class="dlg-f"><button class="btn danger adminonly" id="delBtn">刪除</button><span style="flex:1"></span><button class="btn" onclick="dlg.close()">取消</button><button class="btn pri" onclick="saveEdit()">儲存</button></div>
 </dialog>
 
-<script src="admin.js?v=11"></script>
+<script src="admin.js?v=14"></script>
 </body>
 </html>
