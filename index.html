@@ -121,7 +121,7 @@
  <div class="card">
   <div class="row" style="justify-content:space-between"><h2 style="margin:0">申請人清單（<span id="cnt">0</span> 位）</h2>
    <div class="row"><button class="btn cloudonly" onclick="openEdit()">＋ 新增紙本申請人</button><input id="q" aria-label="搜尋申請人" placeholder="搜尋姓名、編號、系所" style="font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:8px;min-width:260px"></div></div>
-  <p id="qInfo" class="muted hidden" style="margin:8px 0 0"></p>
+  <p id="qInfo" class="muted hidden" style="margin:8px 0 0;overflow-wrap:anywhere"></p>
   <div class="tablewrap" style="margin-top:14px;max-height:70vh"><table id="dataTable"></table></div>
  </div>
 </section>
@@ -256,6 +256,6 @@
  <div class="dlg-f"><button class="btn danger adminonly" id="delBtn">刪除</button><span style="flex:1"></span><button class="btn" onclick="dlg.close()">取消</button><button class="btn pri" onclick="saveEdit()">儲存</button></div>
 </dialog>
 
-<script src="admin.js?v=15"></script>
+<script src="admin.js?v=16"></script>
 </body>
 </html>

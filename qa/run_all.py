@@ -141,6 +141,20 @@ def main():
         check('學生頁無程式錯誤', not errs, errs)
         pg.close()
 
+        # 3b. 學生端完整送出申請（示範模式）→ 必須拿到申請編號與查詢碼
+        pg, errs = new_page(b, base, 390, 844)
+        pg.goto(f'{base}/apply.html'); pg.wait_for_timeout(1500)
+        pg.evaluate("startDemo()"); pg.wait_for_timeout(500)
+        pg.evaluate("(()=>{const g=document.querySelector('#dpCap .go');if(g)g.click()})()"); pg.wait_for_timeout(800)
+        pg.evaluate("go('home');startNew()"); pg.wait_for_timeout(400)
+        vals = {'name': '測試生', 'studentNo': 'B1100001', 'phone': '0912345678', 'email': 't@example.com', 'nation': '本國', 'level': '大學部', 'div': '日間部', 'dept': '電機工程系', 'grade': '2', 'score': '82', 'family': '雙親', 'incSelf': '0', 'fatherName': '測父', 'incF': '30萬', 'motherName': '測母', 'incM': '20萬', 'house': '無', 'addr': '台北市測試路1號'}
+        pg.evaluate("v=>{const f=document.getElementById('v-form');for(const[k,x]of Object.entries(v)){const e=f.querySelector('[name='+k+']');if(e){e.value=x;e.dispatchEvent(new Event('change',{bubbles:true}))}}f.querySelector('[name=consent]').checked=true;if(typeof famUI==='function')famUI()}", vals)
+        pg.evaluate("document.getElementById('sendBtn').click()"); pg.wait_for_timeout(2500)
+        got = pg.evaluate("[!document.getElementById('v-code').classList.contains('hidden'),(document.getElementById('cNo')||{}).textContent||'',(document.getElementById('cCode')||{}).textContent||'']")
+        check('學生完整送出申請→取得申請編號與查詢碼', got[0] and got[1] and got[2], f'{got} {errs}')
+        check('學生送出流程無程式錯誤', not errs, errs)
+        pg.close()
+
         # 4. 後台導覽完整走完（正常速度與快速連按）
         for gap in (1.2, 0.2):
             pg, errs = new_page(b, base)

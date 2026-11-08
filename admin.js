@@ -591,9 +591,11 @@ loadIdx=async function(){
  if(!CLOUD)return _loadIdx();
  FALL=CDOCS.map(cRec);FIDX={};FALL.forEach(r=>(FIDX[r.k]=FIDX[r.k]||[]).push(r));
  const pn=document.getElementById('pendN');const np=FALL.filter(r=>r.st==='pend').length;if(pn)pn.textContent=np;const nb=document.getElementById('navPend');if(nb){nb.textContent=np;nb.classList.toggle('hidden',!np)}};
-function mapDocs(a){
- for(const f of FIELDS.filter(f=>f.doc)){
-  const L=CDOCS.filter(d=>d.applicant_id===a._cid&&d.doc_type===f.k);
+let DIDX=null;function docIdx(){const m=new Map();for(const d of CDOCS){const k=d.applicant_id+'|'+d.doc_type;let L=m.get(k);if(!L)m.set(k,L=[]);L.push(d)}return m}
+const DOCFS=()=>FIELDS.filter(f=>f.doc);
+function mapDocs(a,idx){idx=idx||DIDX||(DIDX=docIdx());
+ for(const f of DOCFS()){
+  const L=idx.get(a._cid+'|'+f.k)||[];
   if(L.length){a[f.k]=L.some(d=>d.review_status==='ok')?'已附':L.some(d=>d.review_status==='pend')?'待核對':'退回';continue}
   const m=(a._review.docs||{})[f.k];
   a[f.k]=m||(f.doc===3?'無須':'未附');
@@ -602,7 +604,7 @@ function mapApp(r){const f=r.form||{};
  const rv=r.review||{};const a={...f,id:r.app_no,_cid:r.id,_review:rv,_at:r.created_at,override:rv.override||'依系統',overNote:rv.overNote||''};if(rv.fam)a.fam=rv.fam;
  if(!a.fam){const ad=normAddr(f.addr);if(ad)a.fam=ad;const k=[f.fatherName,f.motherName,f.guardianName].filter(Boolean).join('/');if(k)a.famGuess=k}
  mapDocs(a);return a}
-syncDoc=function(k){if(!CLOUD)return _syncDoc(k);CAPPS.forEach(mapDocs)};
+syncDoc=function(k){if(!CLOUD)return _syncDoc(k);const idx=docIdx();DIDX=idx;CAPPS.forEach(a=>mapDocs(a,idx))};
 setSt=async function(id,st,note){
  if(!CLOUD)return _setSt(nid(id),st,note);
  if(LOCKED!==id){const c=await lockDoc(id);if(c.err){netStop();return}if(!c.ok){alert((RVN[c.by]||c.by||'其他審查人員')+' 正在核對這份文件，請稍後再試');return}}
@@ -639,7 +641,7 @@ delFile=async function(id){
  const d=CDOCS.find(x=>x.id===id);if(!d)return;
  if(!await wrote(await SBC.from('documents').delete().eq('id',id).select('id'),'刪除'))return;
  {const rm=await SBC.storage.from('docs').remove([d.path]);if(rm&&rm.error)alert('紀錄已刪除，但雲端檔案刪除失敗，請稍後通知系統管理者清除。')}
- CDOCS=CDOCS.filter(x=>x.id!==id)};
+ CDOCS=CDOCS.filter(x=>x.id!==id);DIDX=null};
 putFile=async function(k,file){
  if(!CLOUD)return _putFile(k,file);
  const[who,dk]=k.split('|');const a=CAPPS.find(x=>String(x.id)===who);if(!a)throw new Error('找不到申請人');
@@ -650,7 +652,7 @@ putFile=async function(k,file){
  const h=await sha(file);
  const{data,error}=await SBC.from('documents').insert({applicant_id:a._cid,doc_type:dk,path,file_name:file.name,mime,size:file.size,sha256:h||null}).select().single();
  if(error){await SBC.storage.from('docs').remove([path]);throw error}
- CDOCS.push(data);
+ CDOCS.push(data);DIDX=null;
  SBC.functions.invoke('analyze',{body:{document_id:data.id}}).then(()=>refreshDoc(data.id));
 };
 async function refreshDoc(id){const{data}=await SBC.from('documents').select('*').eq('id',id).single();if(!data)return;const i=CDOCS.findIndex(d=>d.id===id);if(i>=0)CDOCS[i]=data;else CDOCS.push(data);syncDoc();await loadIdx();render()}
@@ -715,7 +717,7 @@ let CLSEQ=0;async function cloudLoad(){const seq=++CLSEQ;
  const rv=await SBC.from('reviewers').select('email,name');if(seq!==CLSEQ)return false;RVN={};(rv.data||[]).forEach(r=>RVN[r.email.toLowerCase()]=r.name||r.email);
  const err=ap.error||dc.error||st.error;if(err){if(bar)bar.textContent='讀取失敗';alert(/fetch|network|網路|Failed/i.test(err.message||'')?'網路連線中斷，無法讀取資料。請確認網路後按「重新整理」。':'讀取資料失敗，請稍後按「重新整理」再試。（'+String(err.message||'').slice(0,60)+'）');return false}
  CAPPS_RAW={};ap.data.forEach(r=>CAPPS_RAW[r.id]=r);
- CDOCS=dc.data.filter(d=>!d.withdrawn_at);CAPPS=ap.data.map(mapApp);APPS=CAPPS;BLOBS={};BORD=[];
+ CDOCS=dc.data.filter(d=>!d.withdrawn_at);DIDX=docIdx();CAPPS=ap.data.map(mapApp);APPS=CAPPS;BLOBS={};BORD=[];
  const stuck=CDOCS.filter(d=>d.ai_status==='pending'&&d.review_status==='pend'&&!d.reviewed_by&&Date.now()-Date.parse(d.created_at)>120e3).slice(0,10);
  stuck.forEach(d=>SBC.functions.invoke('analyze',{body:{document_id:d.id}}).then(()=>refreshDoc(d.id)).catch(()=>{}));
  S=Object.assign({},DEF,(st.data&&st.data.data)||{});

@@ -377,7 +377,7 @@ async function submitForm(e){
  const{f,errs}=collect();
  if(errs.length){errs.forEach(([k,m])=>markErr(k,m));err.innerHTML=`<b>有 ${errs.length} 處需修正：</b><div class="esum">${errs.map(([k,m])=>{const lb=document.querySelector(`#v-form [name=${k}]`)?.closest('label');const t=lb?([...lb.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim()||lb.textContent.trim()).slice(0,24):k;return`<a href="#" onclick="event.preventDefault();const el=document.querySelector('#v-form [name=${k}]');el.scrollIntoView({block:'center'});el.focus()">${esc(t)}</a>`}).join('、')}</div>`;err.classList.remove('hidden');
   err.scrollIntoView({block:'center'});return}
- {const w=[];const inc=k=>+(f[k]||0);const house=single?inc('incSelf')+inc('incG'):inc('incSelf')+inc('incF')+inc('incM');
+ {const w=[];const inc=k=>+(f[k]||0);const single=f.family==='單親';const house=single?inc('incSelf')+inc('incG'):inc('incSelf')+inc('incF')+inc('incM');
   if(/僑|陸|外/.test(f.nation))w.push('本助學金限本國籍學生');
   if(/進修|夜間|在職/.test(f.div+f.dept))w.push('本助學金限日間部學生');
   if(/資訊工程|資工|電子商務|物理|生物/.test(f.dept)||!/電子|電機|電資|電控|光電|通訊|機電|自動化|半導體|機械|工業工程|紡織|材料/.test(f.dept))w.push('補助科系為電子、電機相關及機械、工業工程、紡織材料相關系所');
@@ -403,7 +403,7 @@ let LOGGING=false;async function doLogin(){if(LOGGING)return;LOGGING=true;const 
 async function _doLogin(){let no=half($('#lgNo').value).replace(/\s/g,'').toUpperCase();if(no)no=no[0]+no.slice(1).replace(/O/g,'0').replace(/[IL]/g,'1');const code=half($('#lgCode').value).replace(/[\s-]/g,'').toUpperCase();const e=$('#lgErr');e.classList.add('hidden');
  if(!no){e.textContent='請輸入申請編號（例：U001）';e.classList.remove('hidden');return}
  if(!/^[A-Z0-9]{8}$/.test(code)){e.textContent=`查詢碼為 8 碼英文及數字（目前輸入 ${code.length} 碼），請再確認`;e.classList.remove('hidden');return}
- ME={no,code};const ok=await refresh(true);if(ok){if($('#lgRemember').checked)save();else dropMine(no);go('docs')}else{e.textContent=LASTERR;e.classList.remove('hidden');ME=null}}
+ for(const k in UP)delete UP[k];ME={no,code};const ok=await refresh(true);if(ok){if($('#lgRemember').checked)save();else dropMine(no);go('docs')}else{e.textContent=LASTERR;e.classList.remove('hidden');ME=null}}
 let LASTERR='';
 async function manualRefresh(b){if(b.disabled)return;b.disabled=true;const t=b.textContent;b.textContent='更新中…';const ok=await refresh();b.textContent=ok?'✓ 已更新':'更新失敗，請確認網路';setTimeout(()=>{b.textContent=t;b.disabled=false},1800)}
 function half(s){return String(s??'').replace(/[\uff01-\uff5e]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xfee0)).replace(/\u3000/g,' ')}
