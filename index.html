@@ -531,7 +531,7 @@ async function uploadMany(files){
 let FCUR=null;const fdlg=$('#fdlg');
 function openFiles(i,k){FCUR={i,k};const f=FIELDS.find(f=>f.k===k);$('#fdlgTitle').textContent=`${APPS[i].name}｜${f.l.replace('文件-','')}`;listFiles();fdlg.showModal()}
 function listFiles(){const L=FIDX[fkey(APPS[FCUR.i],FCUR.k)]||[];
- $('#fdlgList').innerHTML=L.length?L.map(r=>`<div style="flex-wrap:wrap"><span>📄 ${esc(r.name)} ${stBadge(r)}${(r.flags||[]).map(f=>`<div class="reason" style="border:0;padding:2px 0">⚠ ${esc(f)}</div>`).join('')}${r.summary?`<div class="note" style="border:0;padding:2px 0">系統判讀：${esc(r.summary)}</div>`:''}${r.note?`<div class="note" style="border:0;padding:2px 0">退回原因：${esc(r.note)}</div>`:''}</span><button class="btn sm" onclick="viewFile('${r.id}')">開啟</button><button class="btn sm" onclick="setSt('${r.id}','ok').then(()=>{listFiles();render()})">✓ 符合</button><button class="btn sm danger" onclick="rejectFile('${r.id}').then(()=>{listFiles();render()})">✕ 退回</button><button class="btn sm danger" onclick="rmFile('${r.id}')">刪除</button></div>`).join(''):'<p class="muted">尚未上傳檔案</p>'}
+ $('#fdlgList').innerHTML=L.length?L.map(r=>`<div style="flex-wrap:wrap"><span>📄 ${esc(r.name)} ${stBadge(r)}${r.lockBy?`<span class="rtag wait">🔒 ${esc(r.lockBy)} 核對中</span>`:''}${(r.flags||[]).map(f=>`<div class="reason" style="border:0;padding:2px 0">⚠ ${esc(f)}</div>`).join('')}${r.summary?`<div class="note" style="border:0;padding:2px 0">系統判讀：${esc(r.summary)}</div>`:''}${r.note?`<div class="note" style="border:0;padding:2px 0">退回原因：${esc(r.note)}</div>`:''}</span><button class="btn sm" onclick="viewFile('${r.id}')">開啟</button><button class="btn sm" onclick="setSt('${r.id}','ok').then(()=>{listFiles();render()})">✓ 符合</button><button class="btn sm danger" onclick="rejectFile('${r.id}').then(()=>{listFiles();render()})">✕ 退回</button><button class="btn sm danger" onclick="rmFile('${r.id}')">刪除</button></div>`).join(''):'<p class="muted">尚未上傳檔案</p>'}
 function stBadge(r){const s=r.st||'pend';return s==='ok'?'<span class="rtag ok">✓ 已核對符合</span>':s==='bad'?'<span class="rtag bad">✕ 已退回</span>':'<span class="rtag wait">? 待核對</span>'}
 async function rejectFile(id){const n=prompt('退回原因（例如：不是成績單、看不清楚、缺頁）：','內容不符');if(n===null)return;await setSt(id,'bad',n)}
 // 逐一核對
@@ -670,6 +670,7 @@ function loadDemo(){
 
 // ===== 雲端模式（審查人員登入後，讀寫雲端申請資料與文件）=====
 const CFG=window.SB_CONFIG||{};
+let RVN={},LOCKED=null,SKIPPED=[];
 let SBC=null,CLOUD=false,CAPPS=[],CDOCS=[],CUSER='',LOCAL_BAK=null,BLOBS={};
 try{if(CFG.key&&!/^__/.test(CFG.key)&&window.supabase)SBC=window.supabase.createClient(CFG.url,CFG.key)}catch(e){}
 const DOCKEYS=['d_id','d_tr','d_hh','d_prop','d_inc','d_rec','d_wel','d_dis','d_unemp'];
@@ -684,7 +685,8 @@ getFile=async function(id){
 };
 function cRec(d){const a=CAPPS.find(x=>x._cid===d.applicant_id);const ai=d.ai||{};
  const flags=d.ai_status==='pending'||d.ai_status==='running'?['系統還在檢查這份文件，可稍後按「重新整理」再看']:(ai.issues||[]);
- return{id:d.id,k:(a?a.id:'?')+'|'+d.doc_type,name:d.file_name||d.path.split('/').pop(),type:d.mime||'',size:d.size,h:d.sha256,flags,summary:ai.summary||'',st:d.review_status||'pend',note:d.review_note||'',by:d.reviewed_by||''}}
+ const lk=d.locked_by&&d.locked_by!==CUSER.toLowerCase()&&d.locked_at&&Date.now()-Date.parse(d.locked_at)<6e5?(RVN[d.locked_by]||d.locked_by):'';
+ return{lockBy:lk,id:d.id,k:(a?a.id:'?')+'|'+d.doc_type,name:d.file_name||d.path.split('/').pop(),type:d.mime||'',size:d.size,h:d.sha256,flags,summary:ai.summary||'',st:d.review_status||'pend',note:d.review_note||'',by:d.reviewed_by||''}}
 loadIdx=async function(){
  if(!CLOUD)return _loadIdx();
  FALL=CDOCS.map(cRec);FIDX={};FALL.forEach(r=>(FIDX[r.k]=FIDX[r.k]||[]).push(r));
@@ -703,10 +705,26 @@ function mapApp(r){const f=r.form||{};
 syncDoc=function(k){if(!CLOUD)return _syncDoc(k);CAPPS.forEach(mapDocs)};
 setSt=async function(id,st,note){
  if(!CLOUD)return _setSt(nid(id),st,note);
- const patch={review_status:st,review_note:note||null,reviewed_by:CUSER,reviewed_at:new Date().toISOString()};
+ if(LOCKED!==id){const c=await lockDoc(id);if(!c.ok){alert((RVN[c.by]||c.by||'其他審查人員')+' 正在核對這份文件，請稍後再試');return}}
+ const patch={review_status:st,review_note:note||null,reviewed_by:CUSER,reviewed_at:new Date().toISOString(),locked_by:null,locked_at:null};
  const{error}=await SBC.from('documents').update(patch).eq('id',id);
  if(error){alert('儲存失敗：'+error.message);return}
- Object.assign(CDOCS.find(d=>d.id===id)||{},patch);await loadIdx();syncDoc()};
+ Object.assign(CDOCS.find(d=>d.id===id)||{},patch);if(LOCKED===id)LOCKED=null;await loadIdx();syncDoc()};
+async function lockDoc(id){const{data,error}=await SBC.rpc('claim_document',{p_id:id});if(error)return{ok:false,by:'',err:error.message};if(data.ok)LOCKED=id;return data}
+async function unlockDoc(){if(CLOUD&&LOCKED){const id=LOCKED;LOCKED=null;await SBC.rpc('release_document',{p_id:id})}}
+const _showReview=showReview,_startReview=startReview;
+showReview=async function(){
+ if(!CLOUD)return _showReview();
+ await unlockDoc();
+ while(RI<RQ.length){const id=RQ[RI];const c=await lockDoc(id);
+  if(c.ok&&c.status==='pend')break;
+  if(c.ok)await unlockDoc();else SKIPPED.push(RVN[c.by]||c.by||'其他審查人員');
+  RI++}
+ if(RI>=RQ.length&&SKIPPED.length){const n=SKIPPED.length,who=[...new Set(SKIPPED)].join('、');SKIPPED=[];rdlg.close();await cloudLoad();alert(`你的部分核對完成。\n有 ${n} 份文件正由 ${who} 核對中，已自動跳過。`);return}
+ return _showReview()};
+startReview=async function(){if(CLOUD){SKIPPED=[];await cloudLoad()}return _startReview()};
+rdlg.addEventListener('close',()=>{unlockDoc()});
+window.addEventListener('pagehide',()=>{unlockDoc()});
 delFile=async function(id){
  if(!CLOUD)return _delFile(nid(id));
  const d=CDOCS.find(x=>x.id===id);if(!d)return;
@@ -772,6 +790,7 @@ async function cloudLoad(){
   SBC.from('applicants').select('*').order('app_no').range(0,4999),
   SBC.from('documents').select('*').order('created_at').range(0,19999),
   SBC.from('settings').select('*').eq('id',1).maybeSingle()]);
+ const rv=await SBC.from('reviewers').select('email,name');RVN={};(rv.data||[]).forEach(r=>RVN[r.email.toLowerCase()]=r.name||r.email);
  const err=ap.error||dc.error||st.error;if(err){alert('讀取雲端資料失敗：'+err.message);return false}
  CAPPS_RAW={};ap.data.forEach(r=>CAPPS_RAW[r.id]=r);
  CDOCS=dc.data;CAPPS=ap.data.map(mapApp);APPS=CAPPS;BLOBS={};
