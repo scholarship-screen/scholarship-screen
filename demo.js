@@ -84,3 +84,47 @@ window.DemoClient=function(){
    _demoLogin(){session={user:{email:'demo@example.tw'}}}}
  }};
 })();
+
+// ===== 自動播放介紹 =====
+(function(){
+const css=`#dpCap{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(640px,calc(100vw - 24px));margin:0;background:#1d2733;color:#fff;border:0;border-radius:16px;padding:18px 20px 14px;box-shadow:0 16px 48px rgba(0,0,0,.35);font:18px/1.65 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;z-index:2147483647}
+#dpCap b.t{display:block;font-size:21px;margin-bottom:4px;color:#cfe8b8}
+#dpCap .ctl{display:flex;gap:8px;align-items:center;margin-top:12px}
+#dpCap .ctl span{flex:1;font-size:15px;color:#b9c4d0}
+#dpCap .ctl button{font:inherit;font-size:16px;font-weight:600;border:1px solid #5b6876;background:#2b3644;color:#fff;border-radius:10px;padding:8px 14px;cursor:pointer}
+#dpCap .ctl button.go{background:#3d6b2f;border-color:#3d6b2f}
+#dpCap .bar{height:4px;background:#3a4553;border-radius:9px;margin-top:10px;overflow:hidden}#dpCap .bar i{display:block;height:100%;background:#9bbb45;width:0}
+.dp-hl{outline:4px solid #9bbb45!important;outline-offset:3px;border-radius:10px;animation:dpPulse 1.2s ease-in-out infinite}
+@keyframes dpPulse{50%{outline-color:rgba(155,187,69,.35)}}
+.dp-tap{animation:dpTap .5s ease-out}
+@keyframes dpTap{0%{box-shadow:0 0 0 0 rgba(155,187,69,.9)}100%{box-shadow:0 0 0 22px rgba(155,187,69,0)}}
+@media(prefers-reduced-motion:reduce){.dp-hl{animation:none}.dp-tap{animation:none}#dpCap .bar i{transition:none!important}}`;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let steps=[],i=0,paused=false,timer=null,run=0,cap=null;
+function ensure(){if(cap)return;const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+ cap=document.createElement('div');cap.id='dpCap';cap.setAttribute('role','status');cap.setAttribute('aria-live','polite');
+ cap.innerHTML='<b class="t"></b><div class="b"></div><div class="bar"><i></i></div><div class="ctl"><span class="n"></span><button class="pz">暫停</button><button class="nx">下一步</button><button class="go">結束介紹</button></div>';
+ document.body.appendChild(cap);
+ cap.querySelector('.pz').onclick=()=>{paused=!paused;cap.querySelector('.pz').textContent=paused?'繼續':'暫停';if(!paused)arm()};
+ cap.querySelector('.nx').onclick=()=>{next()};
+ cap.querySelector('.go').onclick=()=>stop()}
+function top(){if(cap.dataset.off)return;const ds=[...document.querySelectorAll('dialog[open]')];const host=ds.length?ds[ds.length-1]:document.body;if(cap.parentNode!==host)host.appendChild(cap);cap.style.display='block'}
+setInterval(()=>{if(cap&&!cap.dataset.off)top()},400);
+function clearHl(){document.querySelectorAll('.dp-hl').forEach(e=>e.classList.remove('dp-hl'))}
+function hl(sel){clearHl();const el=typeof sel==='string'?document.querySelector(sel):sel;if(el){el.classList.add('dp-hl');try{el.scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}}return el}
+async function tap(sel){const el=typeof sel==='string'?document.querySelector(sel):sel;if(!el)return;hl(el);await sleep(900);el.classList.add('dp-tap');setTimeout(()=>el.classList.remove('dp-tap'),600);await sleep(250);el.click();await sleep(400);top()}
+async function type(sel,text){const el=document.querySelector(sel);if(!el)return;hl(el);el.focus();el.value='';for(const ch of text){el.value+=ch;el.dispatchEvent(new Event('input',{bubbles:true}));await sleep(110)}}
+async function show(){const my=++run;clearTimeout(timer);const s=steps[i];
+ cap.querySelector('.t').textContent=s.t;cap.querySelector('.b').innerHTML=s.b;cap.querySelector('.n').textContent=`${i+1} / ${steps.length}`;
+ cap.querySelector('.nx').textContent=i===steps.length-1?'自己操作看看':'下一步';
+ const bar=cap.querySelector('.bar i');bar.style.transition='none';bar.style.width='0';top();
+ try{if(s.do)await s.do({hl,tap,type,sleep,until})}catch(e){console.log(e)}
+ if(my!==run)return;top();arm()}
+function arm(){clearTimeout(timer);if(paused)return;const s=steps[i],ms=s.ms||5000;const bar=cap.querySelector('.bar i');
+ bar.style.transition='none';bar.style.width='0';requestAnimationFrame(()=>{bar.style.transition=`width ${ms}ms linear`;bar.style.width='100%'});
+ timer=setTimeout(()=>next(),ms)}
+function next(){if(i>=steps.length-1){stop();return}i++;show()}
+function stop(){run++;clearTimeout(timer);clearHl();cap.dataset.off='1';cap.style.display='none';if(window.__dpEnd)window.__dpEnd()}
+const until=async(fn,ms=8000)=>{const t=Date.now();while(Date.now()-t<ms){try{if(fn())return true}catch(e){}await sleep(150)}return false};
+window.DemoPlayer={play(list){ensure();delete cap.dataset.off;steps=list;i=0;paused=false;cap.querySelector('.pz').textContent='暫停';top();show()},helpers:{hl,tap,type,sleep,until}};
+})();

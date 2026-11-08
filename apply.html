@@ -79,7 +79,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
  <img src="logo.png" alt="社團法人台灣松樑教育公益促進協會">
  <h1>清寒及弱勢助學金　線上申請</h1>
 </header>
-<div id="demoBar" class="hidden" style="background:#1e4e8c;color:#fff;padding:10px 16px;font-size:17px;text-align:center"><b>示範模式</b>：這是假的申請資料，可以隨意操作，不會真的送出。<button class="btn sm" style="margin-left:8px" onclick="location.reload()">離開示範</button></div>
+<div id="demoBar" class="hidden" style="background:#1e4e8c;color:#fff;padding:10px 16px;font-size:17px;text-align:center"><b>示範模式</b>：這是假的申請資料，可以隨意操作，不會真的送出。<button class="btn sm" style="margin-left:8px" onclick="window.DemoPlayer.play(studentDemoSteps())">重播介紹</button><button class="btn sm" style="margin-left:8px" onclick="location.reload()">離開示範</button></div>
 <main>
 <div id="cfgErr" class="alert bad hidden">申請系統暫時無法使用，請稍後再試。</div>
 <div class="steps hidden" id="stepbar"><div id="s1">1 填資料</div><div id="s2">2 記編號</div><div id="s3">3 傳文件</div><div id="s4">4 完成</div></div>
@@ -419,10 +419,26 @@ function finish(){
  go('done')}
 
 let DEMO=false;
-function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=1';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
+function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=2';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
+
+function studentDemoSteps(){
+ const card=txt=>[...document.querySelectorAll('#docList .doc')].find(d=>d.querySelector('.t .tag')&&d.querySelector('.t .tag').textContent.includes(txt));
+ const cardOf=k=>{const i=DOCS.filter(d=>needed(d)!=='hide').findIndex(d=>d.k===k);return document.querySelectorAll('#docList .doc')[i]};
+ return[
+ {t:'為什麼改成線上申請？',b:'以前要印表格、跑學校交紙本，缺一份文件就要再跑一趟，也不知道審查進度。<br>現在用手機就能申請、拍照上傳，缺什麼、被退回什麼，隨時都看得到。<br>隨時可以按「暫停」或「結束介紹」。',ms:8000,do:async h=>{go('home')}},
+ {t:'學生用手機就能申請',b:'不用登入。先填資料，送出後會拿到申請編號和查詢碼。',ms:4500,do:async h=>{go('home');h.hl('#startBtn')}},
+ {t:'填表很簡單',b:'寫「30萬」「82.5分」系統會自動換算；漏填或填錯會用紅框標出來，並告訴你哪裡要改。',ms:4500,do:async h=>{startNew();await h.sleep(300);await h.type('[name=name]','林小芸');await h.type('[name=score]','82.5分');await h.type('[name=incSelf]','3萬')}},
+ {t:'送出後上傳文件',b:'這是一份已經送出的示範申請。最上方的進度條，告訴學生必要文件傳了幾份。',ms:5000,do:async h=>{ME={no:'U001',code:'DEMO2026'};await refresh(true);go('docs');await h.sleep(300);h.hl('#prog')}},
+ {t:'被退回的文件會寫原因',b:'審查委員退回時寫的原因，學生在這裡看得到，照著重傳就好。',ms:5500,do:async h=>{h.hl(card('請重傳')||'#docList')}},
+ {t:'用手機拍照上傳',b:'系統會自動壓縮照片，上傳後先做初步檢查。',ms:4500,do:async h=>{const c=cardOf('d_hh');h.hl(c);await h.sleep(900);
+   const cv=document.createElement('canvas');cv.width=900;cv.height=1200;const g=cv.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,900,1200);g.fillStyle='#222';g.font='bold 52px sans-serif';g.fillText('全戶戶籍謄本',260,160);g.font='34px sans-serif';g.fillText('戶長：林美華',90,280);g.fillText('列印日期：2026-11-08',90,340);
+   const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',.85));await pick('d_hh',{files:[new File([blob],'戶籍謄本.jpg',{type:'image/jpeg'})],set value(v){}});await h.sleep(300);h.hl(cardOf('d_hh'))}},
+ {t:'檢查沒問題就收到了',b:'顯示「審核通過」或「已收到」。傳錯的照片可以自己按「刪除」再重傳。',ms:5000,do:async h=>{h.hl(cardOf('d_hh'))}},
+ {t:'還沒拿到的文件可以之後補',b:'補件期限前，用申請編號和查詢碼，在任何手機或電腦登入都能補傳、看進度。',ms:5500,do:async h=>{h.hl(card('尚未上傳')||'#prog')}},
+ {t:'示範結束',b:'換你自己操作看看。這是假的申請，不會真的送出。',ms:6000,do:async h=>{h.hl('#prog')}}]}
 async function startDemo(){try{await loadDemoJs()}catch(e){alert(e.message);return}
  sb=window.DemoClient();DEMO=true;$('#demoBar').classList.remove('hidden');$('#cfgErr').classList.add('hidden');await loadInfo();$('#startBtn').disabled=false;$('#startBtn').textContent='開始申請';
- ME={no:'U001',code:'DEMO2026'};await refresh(true);go('docs')}
+ ME={no:'U001',code:'DEMO2026'};await refresh(true);go('docs');window.DemoPlayer.play(studentDemoSteps())}
 // ===== 啟動 =====
 document.querySelectorAll('label.req').forEach(l=>l.firstChild.after(Object.assign(document.createElement('span'),{className:'star',textContent:' *'})));
 famUI();

@@ -742,10 +742,30 @@ function exportReviewers(){
 async function checkKey(){try{const{data}=await SBC.functions.invoke('analyze',{body:{ping:true}});const bad=!data||data.key===false;
  const box=$('#keyWarn');box.classList.toggle('hidden',!bad)}catch(e){}}
 let DEMO=false;
-function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=1';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
+function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=2';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
+
+function adminDemoSteps(){
+ const pendIdx=(no,k)=>RQ.findIndex(id=>{const r=FALL.find(x=>x.id===id);return r&&r.k===no+'|'+k});
+ return[
+ {t:'為什麼要做這個系統？',b:'以前每年近百位學生的申請，都是紙本或 Excel：<br>・承辦要一份份對照文件、打電話追補件<br>・委員要對著幾十條規則手算資格與排名，容易出錯<br>・學生的所得、身障等個資散在各處，不好保護',ms:9000,do:async h=>{tab('home')}},
+ {t:'這個系統幫大家做了什麼',b:'・學生用手機線上申請、拍照上傳，自己查進度、補件<br>・文件先自動做初步檢查，委員只需要看有疑問的<br>・資格、優先順序、正取備取依協會規則自動算好<br>・資料集中、有權限控管，每一筆修改都有紀錄',ms:9000,do:async h=>{tab('home')}},
+ {t:'接下來實際看一次',b:'系統會自動示範審查委員和承辦人員的工作，約 1 分鐘。<br>隨時可以按「暫停」或「結束介紹」。',ms:5000,do:async h=>{tab('home');h.hl('#hello')}},
+ {t:'一登入就知道要做什麼',b:'首頁會告訴委員還有幾份文件等著核對，按「開始核對」就開始。',ms:3000,do:async h=>{tab('home');await h.tap('#hello .btn');await h.until(()=>rdlg.open&&!LOADING)}},
+ {t:'左邊：這份應該是什麼文件',b:'會顯示學生姓名、這份應該是哪一種文件，還有初步檢查發現的問題。',do:async h=>{await h.until(()=>!LOADING);h.hl('#rInfo')}},
+ {t:'右邊：學生上傳的原檔',b:'看不清楚可以放大、旋轉，或用新分頁打開原檔。',do:async h=>{h.hl('#rView');await h.sleep(700);await h.tap('#vTool button:nth-child(2)')}},
+ {t:'沒問題，就按「符合」',b:'按下去會自動跳到下一份文件。',ms:3500,do:async h=>{vz(0);await h.tap('#rOk');await h.until(()=>!LOADING&&!BUSY)}},
+ {t:'有問題的文件，系統會提醒',b:'例如這份「成績單」，其實是一張風景照。',ms:5000,do:async h=>{const j=pendIdx('U002','d_tr');if(j>=0){await revJump(j);await h.until(()=>!LOADING&&!BUSY)}h.hl(document.querySelector('#rInfo .alert:not([style*="e8f0fa"])')||'#rInfo')}},
+ {t:'退回：點選原因就好',b:'系統已經先勾好原因，也可以再寫補充說明。學生登入後會看到這個原因。',ms:5000,do:async h=>{await h.tap('#rBad');await h.until(()=>bdlg.open);await h.sleep(300);h.hl('#bChips')}},
+ {t:'確定退回',b:'這位學生會列為「待補件」，不是不符合。',ms:3500,do:async h=>{await h.tap('#bOk');await h.until(()=>!bdlg.open&&!LOADING&&!BUSY)}},
+ {t:'上方小方格就是進度',b:'✓ 是符合、✕ 是退回。點任何一格都能回去改，按錯不用怕。<br>您正在看的文件會鎖住，其他委員會自動跳過，不會撞在一起。',ms:6000,do:async h=>{h.hl('#rStrip')}},
+ {t:'初篩結果自動排好',b:'資格、優先順序、正取／備取都依協會規則算好，並寫出不符合的原因。',ms:5500,do:async h=>{rdlg.close();await h.sleep(300);tab('result');render();await h.sleep(300);h.hl('#resultBox .card')}},
+ {t:'每位學生的文件一覽',b:'綠色是已繳、橘色待核對、紅色缺件或退回。點任何一格就能看檔案。',ms:5000,do:async h=>{tab('docs');await h.sleep(300);h.hl('#docTable')}},
+ {t:'承辦專用：設定與匯出',b:'每年在這裡填申請截止日、補件期限、聯絡方式，學生頁會自動顯示。<br>名單可以匯出 Excel，也有給評審的去識別版。',ms:6000,do:async h=>{tab('settings');await h.sleep(300);h.hl('#setForm1')}},
+ {t:'示範結束',b:'現在換您自己操作看看。這裡都是假資料，怎麼按都不會影響真正的系統。',ms:6000,do:async h=>{tab('home');h.hl('#hello')}}]}
 async function startDemo(){try{await loadDemoJs()}catch(e){alert(e.message);return}
+ try{localStorage.setItem('sch_tour_done_demo@example.tw','1')}catch(e){}
  SBC=window.DemoClient();SBC.auth._demoLogin();DEMO=true;$('#demoBar').classList.remove('hidden');$('#demoBar').style.display='flex';if(ldlg.open)ldlg.close();
- $('#applyUrl').textContent=new URL('apply.html',location.href).href;await enterCloud()}
+ $('#applyUrl').textContent=new URL('apply.html',location.href).href;await enterCloud();window.DemoPlayer.play(adminDemoSteps())}
 $('#q').oninput=renderData;$('#fLevel').onchange=render;$('#fStatus').onchange=render;$('#fq').oninput=render;$('#dShow').onchange=renderDocs;
 if(SBC&&!/[?&]offline\b/.test(location.search))document.body.classList.add('gated');
 load();renderSettings();render();loadIdx().then(render).then(async()=>{if(SBC){const ok=await enterCloud();if(ok)document.body.classList.remove('gated')}});

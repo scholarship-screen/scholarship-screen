@@ -10,7 +10,7 @@
 <title>松樑教育公益促進協會助學金 初審系統</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
-<link rel="stylesheet" href="admin.css?v=2">
+<link rel="stylesheet" href="admin.css?v=3">
 </head>
 <body>
 <header>
@@ -22,7 +22,7 @@
   <details class="menu cloudonly" id="userMenu"><summary class="btn" id="userBtn">帳號</summary><div class="pop"><div class="mi" id="userInfo"></div><button onclick="this.closest('details').open=false;leaveCloud()">登出</button></div></details>
  </div>
 </header>
-<div id="demoBar" class="hidden noprint" style="background:#1e4e8c;color:#fff;padding:10px 24px;font-size:17px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><b>示範模式</b><span>這裡都是假資料，可以隨意操作，什麼都不會存到雲端。重新整理頁面就恢復原狀。</span><button class="btn sm" style="margin-left:auto" onclick="location.reload()">離開示範</button></div>
+<div id="demoBar" class="hidden noprint" style="background:#1e4e8c;color:#fff;padding:10px 24px;font-size:17px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><b>示範模式</b><span>這裡都是假資料，可以隨意操作，什麼都不會存到雲端。重新整理頁面就恢復原狀。</span><button class="btn sm" style="margin-left:auto" onclick="window.DemoPlayer.play(adminDemoSteps())">重播介紹</button><button class="btn sm" onclick="location.reload()">離開示範</button></div>
 <nav>
  <button data-t="home" class="on">總覽</button>
  <button data-t="docs">文件核對<span class="count hidden" id="navPend"></span></button>
@@ -44,6 +44,16 @@
   <h2 style="font-size:28px;margin-bottom:10px">助學金初審系統</h2>
   <p style="font-size:19px;color:var(--ink-2);margin:0 0 26px">審查委員與承辦人員請登入。<br>還沒有帳號的話，可以先看示範。</p>
   <div class="row" style="justify-content:center;gap:14px"><button class="btn pri lg" onclick="cloudBtnClick()">審查人員登入</button><button class="btn lg" onclick="startDemo()">看示範</button></div>
+  <div style="text-align:left;margin:30px 0 0;padding:20px 22px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md)">
+   <div style="font-size:19px;font-weight:700;color:var(--brand-900);margin-bottom:8px">為什麼有這個系統</div>
+   <p style="margin:0 0 10px;font-size:17px;color:var(--ink-2)">以前每年近百份申請都是紙本或 Excel：承辦要一份份對照文件、追補件，委員要對著規則手算資格與排名，學生的個資也散在各處。</p>
+   <ul style="margin:0;padding-left:22px;font-size:17px;color:var(--ink-2);line-height:1.8">
+    <li>學生用手機線上申請、拍照上傳，自己查進度、補件</li>
+    <li>文件先自動初步檢查，委員只看有疑問的</li>
+    <li>資格、優先順序、正取備取依協會規則自動算好</li>
+    <li>資料集中保管、有權限控管，每筆修改都有紀錄</li>
+   </ul>
+  </div>
   <p class="note" style="margin-top:28px">學生申請請用另一個網址：<a id="gateApply" href="apply.html" style="color:var(--brand-600)">學生線上申請</a></p>
   </div>
 </section>
@@ -223,6 +233,6 @@
  <div class="dlg-f"><button class="btn danger adminonly" id="delBtn">刪除</button><span style="flex:1"></span><button class="btn" onclick="dlg.close()">取消</button><button class="btn pri" onclick="saveEdit()">儲存</button></div>
 </dialog>
 
-<script src="admin.js?v=2"></script>
+<script src="admin.js?v=3"></script>
 </body>
 </html>
