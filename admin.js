@@ -743,7 +743,7 @@ function exportReviewers(){
 async function checkKey(){try{const{data}=await SBC.functions.invoke('analyze',{body:{ping:true}});const bad=!data||data.key===false;
  const box=$('#keyWarn');box.classList.toggle('hidden',!bad)}catch(e){}}
 let DEMO=false;
-function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=8';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
+function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=9';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
 
 function adminDemoSteps(){
  const pendIdx=(no,k)=>RQ.findIndex(id=>{const r=FALL.find(x=>x.id===id);return r&&r.k===no+'|'+k});
@@ -767,6 +767,7 @@ async function startDemo(){try{await loadDemoJs()}catch(e){alert(e.message);retu
  try{localStorage.setItem('sch_tour_done_demo@example.tw','1')}catch(e){}
  SBC=window.DemoClient();SBC.auth._demoLogin();DEMO=true;$('#demoBar').classList.remove('hidden');$('#demoBar').style.display='flex';if(ldlg.open)ldlg.close();
  $('#applyUrl').textContent=new URL('apply.html',location.href).href;await enterCloud();window.DemoPlayer.play(adminDemoSteps(),{onDone:demoToLogin})}
+function replayDemo(){try{sessionStorage.setItem('sch_replay_demo','1');localStorage.setItem('sch_seen_intro','1')}catch(e){}scrollTo(0,0);location.reload()}
 function demoToLogin(){try{sessionStorage.setItem('sch_after_demo','1');localStorage.setItem('sch_seen_intro','1')}catch(e){}scrollTo(0,0);location.reload()}
 $('#q').oninput=renderData;$('#fLevel').onchange=render;$('#fStatus').onchange=render;$('#fq').oninput=render;$('#dShow').onchange=renderDocs;
 const ONLINE=!/[?&]offline\b/.test(location.search);if(ONLINE&&(SBC||CFG.key))document.body.classList.add('gated');
@@ -775,4 +776,5 @@ const wdlg=$('#wdlg');if(window.MASCOT){$('#gMascot').innerHTML=MASCOT(96)}
 wdlg.addEventListener('close',()=>{try{localStorage.setItem('sch_seen_intro','1')}catch(e){}});
 try{load();renderSettings();render()}catch(e){console.error(e)}
 const idxP=Promise.race([loadIdx(),new Promise(r=>setTimeout(r,3000))]).then(()=>{try{render()}catch(e){}});
-idxP.then(async()=>{if(SBC){const ok=await enterCloud();if(ok)document.body.classList.remove('gated');else{let seen=false;try{seen=!!localStorage.getItem('sch_seen_intro')}catch(e){}let after=false;try{after=!!sessionStorage.getItem('sch_after_demo');sessionStorage.removeItem('sch_after_demo')}catch(e){}if(after&&document.body.classList.contains('gated')){cloudBtnClick()}else if(!seen&&document.body.classList.contains('gated')){if(window.MASCOT)$('#wMascot').innerHTML=MASCOT(130,'fly');wdlg.showModal()}}}});
+let REPLAY=false;try{REPLAY=!!sessionStorage.getItem('sch_replay_demo');sessionStorage.removeItem('sch_replay_demo')}catch(e){}
+idxP.then(async()=>{if(REPLAY){if(wdlg.open)wdlg.close();await startDemo();document.body.classList.remove('gated');return}if(SBC){const ok=await enterCloud();if(ok)document.body.classList.remove('gated');else{let seen=false;try{seen=!!localStorage.getItem('sch_seen_intro')}catch(e){}let after=false;try{after=!!sessionStorage.getItem('sch_after_demo');sessionStorage.removeItem('sch_after_demo')}catch(e){}if(after&&document.body.classList.contains('gated')){cloudBtnClick()}else if(!seen&&document.body.classList.contains('gated')){if(window.MASCOT)$('#wMascot').innerHTML=MASCOT(130,'fly');wdlg.showModal()}}}});
