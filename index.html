@@ -8,7 +8,7 @@
 <meta property="og:description" content="83 位申請人，一秒完成初篩：資格檢查、原因標籤、優先排名、正取備取、評審分組。">
 <meta property="og:type" content="website">
 <title>松樑教育公益促進協會助學金 初審系統</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script src="mascot.js?v=5"></script>
 <link rel="stylesheet" href="admin.css?v=3">
@@ -45,7 +45,8 @@
   <div id="gMascot"></div>
   <h2 style="font-size:28px;margin-bottom:10px">助學金初審系統</h2>
   <p style="font-size:19px;color:var(--ink-2);margin:0 0 26px">限審查委員與承辦人員登入使用。<br>尚未取得帳號，可先觀看示範。</p>
-  <div class="row" style="justify-content:center;gap:14px"><button class="btn pri lg" onclick="cloudBtnClick()">審查人員登入</button><button class="btn lg" onclick="startDemo()">觀看示範</button></div>
+  <p id="gateErr" class="hidden" style="color:var(--err);font-size:17px;margin:0 0 18px">連線元件載入失敗，無法登入。請確認網路連線後重新整理頁面。</p>
+  <div class="row" style="justify-content:center;gap:14px"><button class="btn pri lg" onclick="SBC?cloudBtnClick():location.reload()">審查人員登入</button><button class="btn lg" onclick="startDemo()">觀看示範</button></div>
   <div style="text-align:left;margin:30px 0 0;padding:20px 22px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md)">
    <div style="font-size:19px;font-weight:700;color:var(--brand-900);margin-bottom:8px">系統用途</div>
    <p style="margin:0 0 10px;font-size:17px;color:var(--ink-2)">取代紙本與 Excel 作業，減少人工對照文件、電話追補件與手算排名。</p>
@@ -227,7 +228,7 @@
   <div id="wMascot"></div>
   <h2 style="margin:10px 0 6px;font-size:24px;color:var(--brand-900)">歡迎使用助學金初審系統</h2>
   <p style="margin:0 0 22px;font-size:18px;color:var(--ink-2)">首次使用，建議先觀看 1 分鐘介紹：<br>系統用途及審查操作流程。</p>
-  <div class="row" style="justify-content:center;gap:12px"><button class="btn pri lg" onclick="wdlg.close();startDemo()">觀看介紹</button><button class="btn lg" onclick="wdlg.close()">直接登入</button></div>
+  <div class="row" style="justify-content:center;gap:12px"><button class="btn pri lg" onclick="wdlg.close();startDemo()">觀看介紹</button><button class="btn lg" onclick="wdlg.close();cloudBtnClick()">直接登入</button></div>
  </div>
 </dialog>
 <dialog id="ldlg">
@@ -243,6 +244,6 @@
  <div class="dlg-f"><button class="btn danger adminonly" id="delBtn">刪除</button><span style="flex:1"></span><button class="btn" onclick="dlg.close()">取消</button><button class="btn pri" onclick="saveEdit()">儲存</button></div>
 </dialog>
 
-<script src="admin.js?v=7"></script>
+<script src="admin.js?v=8"></script>
 </body>
 </html>

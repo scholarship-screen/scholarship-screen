@@ -232,7 +232,7 @@ let DB=null,FIDX={};
 function idb(){return new Promise((ok,no)=>{try{const r=indexedDB.open('sch_files',1);r.onupgradeneeded=()=>r.result.createObjectStore('f',{keyPath:'id',autoIncrement:true}).createIndex('k','k');r.onsuccess=()=>{DB=r.result;ok(DB)};r.onerror=()=>no(r.error)}catch(e){no(e)}})}
 const fkey=(a,dk)=>(String(a.id||a.name).trim())+'|'+dk;
 let FALL=[];
-async function loadIdx(){try{await idb();const all=await new Promise(ok=>{const q=DB.transaction('f').objectStore('f').getAll();q.onsuccess=()=>ok(q.result)});FALL=all.map(({blob,...r})=>r);FIDX={};FALL.forEach(r=>(FIDX[r.k]=FIDX[r.k]||[]).push(r))}catch(e){FIDX={};FALL=[]}
+async function loadIdx(){try{await idb();const all=await new Promise(ok=>{const q=DB.transaction('f').objectStore('f').getAll();q.onsuccess=()=>ok(q.result);q.onerror=()=>ok([])});FALL=all.map(({blob,...r})=>r);FIDX={};FALL.forEach(r=>(FIDX[r.k]=FIDX[r.k]||[]).push(r))}catch(e){FIDX={};FALL=[]}
  const pn=document.getElementById('pendN');const np=FALL.filter(r=>(r.st||'pend')==='pend').length;if(pn)pn.textContent=np;const nb=document.getElementById('navPend');if(nb){nb.textContent=np;nb.classList.toggle('hidden',!np)}}
 async function sha(file){try{const b=await crypto.subtle.digest('SHA-256',await file.arrayBuffer());return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return''}}
 const DOCNAME=k=>(FIELDS.find(f=>f.k===k)||{l:k}).l.replace('文件-','');
@@ -767,7 +767,10 @@ async function startDemo(){try{await loadDemoJs()}catch(e){alert(e.message);retu
  SBC=window.DemoClient();SBC.auth._demoLogin();DEMO=true;$('#demoBar').classList.remove('hidden');$('#demoBar').style.display='flex';if(ldlg.open)ldlg.close();
  $('#applyUrl').textContent=new URL('apply.html',location.href).href;await enterCloud();window.DemoPlayer.play(adminDemoSteps())}
 $('#q').oninput=renderData;$('#fLevel').onchange=render;$('#fStatus').onchange=render;$('#fq').oninput=render;$('#dShow').onchange=renderDocs;
-if(SBC&&!/[?&]offline\b/.test(location.search))document.body.classList.add('gated');
+const ONLINE=!/[?&]offline\b/.test(location.search);if(ONLINE&&(SBC||CFG.key))document.body.classList.add('gated');
+if(ONLINE&&!SBC&&CFG.key){const g=$('#gateErr');if(g)g.classList.remove('hidden')}
 const wdlg=$('#wdlg');if(window.MASCOT){$('#gMascot').innerHTML=MASCOT(96)}
 wdlg.addEventListener('close',()=>{try{localStorage.setItem('sch_seen_intro','1')}catch(e){}});
-load();renderSettings();render();loadIdx().then(render).then(async()=>{if(SBC){const ok=await enterCloud();if(ok)document.body.classList.remove('gated');else{let seen=false;try{seen=!!localStorage.getItem('sch_seen_intro')}catch(e){}if(!seen&&document.body.classList.contains('gated')){if(window.MASCOT)$('#wMascot').innerHTML=MASCOT(130,'fly');wdlg.showModal()}}}});
+try{load();renderSettings();render()}catch(e){console.error(e)}
+const idxP=Promise.race([loadIdx(),new Promise(r=>setTimeout(r,3000))]).then(()=>{try{render()}catch(e){}});
+idxP.then(async()=>{if(SBC){const ok=await enterCloud();if(ok)document.body.classList.remove('gated');else{let seen=false;try{seen=!!localStorage.getItem('sch_seen_intro')}catch(e){}if(!seen&&document.body.classList.contains('gated')){if(window.MASCOT)$('#wMascot').innerHTML=MASCOT(130,'fly');wdlg.showModal()}}}});
