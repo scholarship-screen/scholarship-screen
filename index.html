@@ -10,7 +10,7 @@
 <title>松樑教育公益促進協會助學金 初審系統</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
-<script src="mascot.js?v=2"></script>
+<script src="mascot.js?v=4"></script>
 <link rel="stylesheet" href="admin.css?v=3">
 </head>
 <body>
@@ -233,7 +233,7 @@
 <dialog id="ldlg">
  <form onsubmit="doLogin(event)">
  <div class="dlg-h"><span>審查人員登入</span><button type="button" class="xbtn" aria-label="關閉" onclick="ldlg.close()">✕</button></div>
- <div class="dlg-b"><label class="f">Email<input id="lgEmail" type="email" autocomplete="username" required></label><label class="f" style="margin-top:14px">密碼<input id="lgPw" type="password" autocomplete="current-password" required></label><div id="lgErr" class="reason" style="margin-top:12px;font-size:17px"></div><p class="note">帳號由管理者建立。登入後看到的是學生線上申請的資料。</p><p class="note">尚未取得帳號？<button type="button" class="btn text" onclick="startDemo()">觀看示範</button></p></div>
+ <div class="dlg-b"><label class="f">Email<input id="lgEmail" type="email" autocomplete="username" required></label><label class="f" style="margin-top:14px">密碼<input id="lgPw" type="password" autocomplete="current-password" required></label><div id="lgErr" class="reason" style="margin-top:12px;font-size:17px"></div><p class="note">帳號由本會系統管理者核發，請勿與他人共用。</p><div style="margin-top:10px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);font-size:16px;color:var(--ink-2);line-height:1.7"><b style="color:var(--brand-900)">資料安全</b><br>・全程加密連線（HTTPS），資料加密儲存<br>・僅審查人員名單內帳號得以登入存取<br>・依身分分級授權，所有修改留存紀錄<br>・閒置或帳號移除後即無法存取</div><p class="note">尚未取得帳號？<button type="button" class="btn text" onclick="startDemo()">觀看示範</button></p></div>
  <div class="dlg-f"><button class="btn pri" type="submit">登入</button></div>
  </form>
 </dialog>
