@@ -89,18 +89,18 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
 <section id="v-home" class="hidden">
  <div class="choice" style="margin-bottom:18px">
   <button class="btn pri big" id="startBtn" onclick="startNew()">開始申請</button>
-  <button class="btn big" onclick="go('login')">我已經申請過：查進度、補傳文件</button>
+  <button class="btn big" onclick="go('login')">已申請：查進度、補傳文件</button>
  </div>
  <div class="card" id="introCard" style="display:flex;gap:14px;align-items:center;background:#eef5e6;border-color:#cfe0bf">
   <div id="sMascot" style="flex:none"></div>
-  <div style="flex:1"><b style="font-size:19px;color:#1e3020">第一次申請嗎？</b><div style="font-size:17px;color:#4a5563">我是小松，用 1 分鐘帶你看怎麼申請、怎麼補件。</div>
+  <div style="flex:1"><b style="font-size:19px;color:#1e3020">第一次申請嗎？</b><div style="font-size:17px;color:#4a5563">1 分鐘示範：申請、上傳文件、補件流程。</div>
   <button class="btn sm" style="margin-top:8px;background:#3d6b2f;color:#fff;border-color:#3d6b2f" onclick="startDemo()">看 1 分鐘示範</button></div>
  </div>
  <div class="card" id="resumeCard" style="display:none">
   <h2>歡迎回來</h2>
-  <p>這支手機記得你的申請：<b id="resumeNo"></b></p>
+  <p>此裝置已記錄申請編號：<b id="resumeNo"></b></p>
   <button class="btn pri big" onclick="resumeSaved()">查看進度、補傳文件</button>
-  <p style="text-align:center;margin:12px 0 0"><button class="btn sm" onclick="forget()">這不是我的申請，清除</button></p>
+  <p style="text-align:center;margin:12px 0 0"><button class="btn sm" onclick="forget()">非本人申請，清除紀錄</button></p>
  </div>
  <div class="card">
   <h2>申請須知</h2>
@@ -129,7 +129,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
 
 <!-- 第 1 步：填表（新申請或修改） -->
 <form id="v-form" class="hidden" novalidate onsubmit="submitForm(event)">
- <div class="alert info hidden" id="editNote">你正在修改已送出的資料。改完按最下面的「儲存修改」。</div>
+ <div class="alert info hidden" id="editNote">正在修改已送出的資料，修改完成請按最下方「儲存修改」。</div>
  <div class="card">
   <h2>一、基本資料</h2>
   <div class="grid">
@@ -164,7 +164,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
   <p class="note">年所得照「綜合所得稅各類所得資料清單」上每個人的合計金額填；沒有所得填 0。可以寫「30萬」，系統會自動換算。</p>
   <div class="grid">
    <label class="f req">家庭型態<select name="family" onchange="famUI()"><option value="">請選擇</option><option>雙親</option><option value="單親">單親（只跟一位家長同住或由一位家長扶養）</option></select></label>
-   <label class="f req">你本人的年所得（元）<input name="incSelf" inputmode="numeric"></label>
+   <label class="f req">申請人本人年所得（元）<input name="incSelf" inputmode="numeric"></label>
   </div>
   <div class="grid" id="famBoth">
    <label class="f req">父親姓名<input name="fatherName"></label>
@@ -173,9 +173,9 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
    <label class="f req">母親年所得（元）<input name="incM" inputmode="numeric"></label>
   </div>
   <div class="grid hidden" id="famSingle">
-   <label class="f req">扶養你的家長姓名<input name="guardianName"></label>
-   <label class="f req">他／她是你的<select name="guardianRel"><option value="">請選擇</option><option>母親</option><option>父親</option><option>其他親屬</option></select></label>
-   <label class="f req">他／她的年所得（元）<input name="incG" inputmode="numeric"></label>
+   <label class="f req">扶養家長姓名<input name="guardianName"></label>
+   <label class="f req">與申請人關係<select name="guardianRel"><option value="">請選擇</option><option>母親</option><option>父親</option><option>其他親屬</option></select></label>
+   <label class="f req">扶養家長年所得（元）<input name="incG" inputmode="numeric"></label>
   </div>
   <div class="grid">
    <label class="f req">家中是否有房屋或土地<small>以財產清單為準</small><select name="house"><option value="">請選擇</option><option>無</option><option>有</option></select></label>
@@ -192,18 +192,18 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
   <ul>
    <li><b>誰看得到：</b>只有協會與合作學校的審查人員。</li>
    <li><b>用來做什麼：</b>審查助學金資格、通知結果與補件。</li>
-   <li><b>存多久：</b>結案後保存 5 年，之後銷毀；你隨時可以要求查詢、更正或刪除。</li>
+   <li><b>存多久：</b>結案後保存 5 年，之後銷毀；可隨時要求查詢、更正或刪除。</li>
   </ul>
   <details class="help"><summary>▸ 看完整的個人資料蒐集告知</summary>
    社團法人台灣松樑教育公益促進協會（以下稱本會）依個人資料保護法第 8 條告知：<br>
    1. 蒐集目的：辦理助學金申請之資格審查、核發、聯繫及相關統計。<br>
-   2. 蒐集類別：你在本表填寫的資料及上傳的文件，包含姓名、聯絡方式、就學與成績資料、家庭成員姓名、所得與財產資料、福利或身心障礙身分證明。<br>
+   2. 蒐集類別：申請人於本表填寫的資料及上傳的文件，包含姓名、聯絡方式、就學與成績資料、家庭成員姓名、所得與財產資料、福利或身心障礙身分證明。<br>
    3. 利用期間、地區、對象及方式：於本年度助學金審查期間及結案後 5 年內，由本會及合作學校之審查人員以電子或書面方式利用。資料存放於本會委託之雲端資料庫（伺服器位於韓國首爾，傳輸與存放皆有加密），僅授權審查人員可以讀取。<br>
-   4. 你的權利：可以向本會請求查詢、閱覽、製給複本、補充或更正、停止蒐集處理利用或刪除。<br>
-   5. 你可以自由選擇是否提供資料；未提供或提供不完整，將無法完成審查。<br>
-   家庭成員資料（家長姓名、所得）由你代為提供，請先告知家人並取得同意。
+   4. 申請人權利：可以向本會請求查詢、閱覽、製給複本、補充或更正、停止蒐集處理利用或刪除。<br>
+   5. 申請人可自由選擇是否提供資料；未提供或提供不完整，將無法完成審查。<br>
+   家庭成員資料（家長姓名、所得）由申請人代為提供，請先告知家人並取得同意。
   </details>
-  <label class="chk"><input type="checkbox" name="consent">我已了解並同意，所填資料與上傳文件皆屬實。</label>
+  <label class="chk"><input type="checkbox" name="consent">已了解並同意，所填資料與上傳文件皆屬實。</label>
  </div>
 
  <div id="err1" class="alert bad hidden" role="alert"></div>
@@ -218,7 +218,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
   <p>請<b>截圖</b>保存下面兩組號碼。換手機、用電腦補傳文件、查進度都會用到。</p>
   <div class="codebox"><div class="l">申請編號</div><div class="v" id="cNo"></div></div>
   <div class="codebox"><div class="l">查詢碼</div><div class="v" id="cCode" style="font-family:ui-monospace,Menlo,Consolas,monospace"></div></div>
-  <button class="btn pri big" onclick="go('docs')">我截圖了，開始上傳文件</button>
+  <button class="btn pri big" onclick="go('docs')">已截圖，開始上傳文件</button>
  </div>
 </section>
 
@@ -230,7 +230,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
    <button class="btn sm" id="editBtn" onclick="editForm()">修改申請資料</button>
   </div>
   <div id="dState"></div>
-  <p class="note" style="margin:10px 0 0">一份文件有好幾頁，就每頁拍一張、全部上傳。照片請拍清楚、四邊完整、不要反光。上傳後系統會先檢查一次，有問題會提醒你。</p>
+  <p class="note" style="margin:10px 0 0">一份文件有好幾頁，就每頁拍一張、全部上傳。照片請拍清楚、四邊完整、不要反光。上傳後系統會先做初步檢查，有問題會顯示提醒。</p>
  </div>
  <div class="prog" id="prog"></div>
  <div id="docList" aria-live="polite"></div>
@@ -244,7 +244,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
   <h2 id="doneTitle">申請完成</h2>
   <div class="codebox"><div class="l">申請編號</div><div class="v" id="fNo"></div></div>
   <div id="doneMiss"></div>
-  <p>審查結果將以 Email 或電話通知。想查進度或補件，隨時打開本網頁，按「我已經申請過」，輸入申請編號和查詢碼。</p>
+  <p>審查結果將以 Email 或電話通知。想查進度或補件，隨時打開本網頁，按「已申請：查進度、補傳文件」，輸入申請編號和查詢碼。</p>
   <button class="btn big" onclick="go('docs')">回去上傳文件／看進度</button>
  </div>
 </section>
@@ -258,7 +258,7 @@ const CFG=window.SB_CONFIG||{};
 let sb=null;
 const tfetch=(u,o={})=>{const ac=new AbortController();const t=setTimeout(()=>ac.abort(),/storage\/v1\/object|functions\/v1/.test(String(u))?120000:30000);if(o.signal)o.signal.addEventListener('abort',()=>ac.abort());return fetch(u,{...o,signal:ac.signal}).catch(e=>{if(e.name==='AbortError')throw new Error('網路太慢，請換個地方或稍後再試');throw new Error('網路連線失敗，請檢查網路後再試')}).finally(()=>clearTimeout(t))};
 try{if(CFG.key&&!/^__/.test(CFG.key)&&window.supabase)sb=window.supabase.createClient(CFG.url,CFG.key,{auth:{persistSession:false},global:{fetch:tfetch}})}catch(e){}
-const HOWTAX='可以帶身分證到任何一個國稅局分局或稽徵所臨櫃免費申請，當場拿到；家人的資料要由家人本人去，或你帶家人的身分證和委託書代辦。有自然人憑證或已註冊健保卡的話，也可以在財政部的網站線上查詢列印。實際方式以國稅局公告為準。';
+const HOWTAX='可以帶身分證到任何一個國稅局分局或稽徵所臨櫃免費申請，當場拿到；家人的資料要由家人本人去，或攜帶家人身分證與委託書代辦。有自然人憑證或已註冊健保卡的話，也可以在財政部的網站線上查詢列印。實際方式以國稅局公告為準。';
 const DOCS=[
  {k:'d_id',l:'學生證或在學證明',d:'學生證正反面，或學校開立的在學證明'},
  {k:'d_tr',l:'前學期成績單',d:'要看得到學業平均、操行成績；有班級排名更好'},
@@ -330,7 +330,7 @@ async function submitForm(e){
   if(EDIT){const{data,error}=await sb.rpc('student_save',{p_no:ME.no,p_code:ME.code,p_form:f});if(error)throw error;if(data)throw new Error(data);await refresh(true);alert('已儲存修改');go('docs')}
   else{f.clientToken=TOKEN;const{data,error}=await sb.rpc('submit_application',{p_form:f});if(error)throw error;
    ME={no:data.app_no,code:data.code};save();$('#cNo').textContent=data.app_no;$('#cCode').textContent=data.code;await refresh(true);go('code')}
- }catch(ex){err.textContent=/截止/.test(ex.message)?'本次申請已截止。':/已經送出過/.test(ex.message)?'這份申請剛剛已經送出成功了。請回首頁按「我已經申請過」，或聯絡承辦人員取得申請編號。':'送出失敗：'+(ex.message||ex);err.classList.remove('hidden')}
+ }catch(ex){err.textContent=/截止/.test(ex.message)?'本次申請已截止。':/已經送出過/.test(ex.message)?'這份申請剛剛已經送出成功了。請回首頁按「已申請：查進度、補傳文件」，或聯絡承辦人員取得申請編號。':'送出失敗：'+(ex.message||ex);err.classList.remove('hidden')}
  finally{btn.disabled=false;btn.textContent=old}
 }
 
@@ -347,7 +347,7 @@ async function resumeSaved(){const ok=await refresh(true);if(ok)go('docs');else{
 
 // ===== 文件 =====
 function needed(d){const f=ST.form||{};if(d.skipPrev&&f.prev==='是')return'skip';if(d.need)return d.need(f)?(d.opt?'opt':'need'):'hide';return'need'}
-function whoNeeds(){const f=ST.form||{};return f.family==='單親'?['你本人',f.guardianRel||'家長']:['你本人','父親','母親']}
+function whoNeeds(){const f=ST.form||{};return f.family==='單親'?['申請人本人',f.guardianRel||'家長']:['申請人本人','父親','母親']}
 function docState(d){const L=(ST.docs||[]).filter(x=>x.type===d.k),run=(UP[d.k]||[]).some(x=>x.st==='run');
  if(L.some(x=>x.status==='ok'))return['ok','已通過'];
  if(run)return['wait','上傳中'];
@@ -420,7 +420,7 @@ function finish(){
  const list=[...new Set([...miss,...bad])];
  $('#fNo').textContent=ST.app_no;
  $('#doneTitle').textContent=list.length?'資料已送出，還有文件要補':'申請完成';
- $('#doneMiss').innerHTML=list.length?`<div class="alert warn"><b>還需要補上：</b><ul class="miss">${list.map(d=>`<li>${esc(d.l)}</li>`).join('')}</ul>${(INFO.supDeadline||INFO.deadline)?`請在 <b>${fmtDate(INFO.supDeadline||INFO.deadline)}</b> 前補齊。`:'請盡快補齊。'}拿到文件後，用申請編號和查詢碼回來上傳就可以了。</div>`:'<div class="alert ok">必要文件都上傳了。審查人員看過後，你可以回來查看每份文件的狀態。</div>';
+ $('#doneMiss').innerHTML=list.length?`<div class="alert warn"><b>還需要補上：</b><ul class="miss">${list.map(d=>`<li>${esc(d.l)}</li>`).join('')}</ul>${(INFO.supDeadline||INFO.deadline)?`請在 <b>${fmtDate(INFO.supDeadline||INFO.deadline)}</b> 前補齊。`:'請盡快補齊。'}拿到文件後，用申請編號和查詢碼回來上傳就可以了。</div>`:'<div class="alert ok">必要文件都上傳了。審查完成後，可回到本頁查看每份文件的狀態。</div>';
  go('done')}
 
 let DEMO=false;
@@ -430,9 +430,9 @@ function studentDemoSteps(){
  const card=txt=>[...document.querySelectorAll('#docList .doc')].find(d=>d.querySelector('.t .tag')&&d.querySelector('.t .tag').textContent.includes(txt));
  const cardOf=k=>{const i=DOCS.filter(d=>needed(d)!=='hide').findIndex(d=>d.k===k);return document.querySelectorAll('#docList .doc')[i]};
  return[
- {t:'為什麼改成線上申請？',b:'以前要印表格、跑學校交紙本，缺一份文件就要再跑一趟，也不知道審查進度。<br>現在用手機就能申請、拍照上傳，缺什麼、被退回什麼，隨時都看得到。<br>隨時可以按「暫停」或「結束介紹」。',ms:8000,do:async h=>{go('home')}},
+ {t:'線上申請的好處',b:'不必列印表格、到校繳交紙本；缺件或被退回的文件、審查進度，都能在手機上查詢並補件。<br>可隨時按「暫停」或「結束介紹」。',ms:8000,do:async h=>{go('home')}},
  {t:'學生用手機就能申請',b:'不用登入。先填資料，送出後會拿到申請編號和查詢碼。',ms:4500,do:async h=>{go('home');h.hl('#startBtn')}},
- {t:'填表很簡單',b:'寫「30萬」「82.5分」系統會自動換算；漏填或填錯會用紅框標出來，並告訴你哪裡要改。',ms:4500,do:async h=>{startNew();await h.sleep(300);await h.type('[name=name]','林小芸');await h.type('[name=score]','82.5分');await h.type('[name=incSelf]','3萬')}},
+ {t:'填表很簡單',b:'寫「30萬」「82.5分」系統會自動換算；漏填或填錯會以紅框標示，並列出需修改的欄位。',ms:4500,do:async h=>{startNew();await h.sleep(300);await h.type('[name=name]','林小芸');await h.type('[name=score]','82.5分');await h.type('[name=incSelf]','3萬')}},
  {t:'送出後上傳文件',b:'這是一份已經送出的示範申請。最上方的進度條，告訴學生必要文件傳了幾份。',ms:5000,do:async h=>{ME={no:'U001',code:'DEMO2026'};await refresh(true);go('docs');await h.sleep(300);h.hl('#prog')}},
  {t:'被退回的文件會寫原因',b:'審查委員退回時寫的原因，學生在這裡看得到，照著重傳就好。',ms:5500,do:async h=>{h.hl(card('請重傳')||'#docList')}},
  {t:'用手機拍照上傳',b:'系統會自動壓縮照片，上傳後先做初步檢查。',ms:4500,do:async h=>{const c=cardOf('d_hh');h.hl(c);await h.sleep(900);
@@ -440,7 +440,7 @@ function studentDemoSteps(){
    const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',.85));await pick('d_hh',{files:[new File([blob],'戶籍謄本.jpg',{type:'image/jpeg'})],set value(v){}});await h.sleep(300);h.hl(cardOf('d_hh'))}},
  {t:'檢查沒問題就收到了',b:'顯示「審核通過」或「已收到」。傳錯的照片可以自己按「刪除」再重傳。',ms:5000,do:async h=>{h.hl(cardOf('d_hh'))}},
  {t:'還沒拿到的文件可以之後補',b:'補件期限前，用申請編號和查詢碼，在任何手機或電腦登入都能補傳、看進度。',ms:5500,do:async h=>{h.hl(card('尚未上傳')||'#prog')}},
- {t:'示範結束',b:'換你自己操作看看。這是假的申請，不會真的送出。',ms:6000,do:async h=>{h.hl('#prog')}}]}
+ {t:'示範結束',b:'接下來可自行操作。示範申請為虛構資料，不會送出。',ms:6000,do:async h=>{h.hl('#prog')}}]}
 async function startDemo(){try{await loadDemoJs()}catch(e){alert(e.message);return}
  sb=window.DemoClient();DEMO=true;$('#demoBar').classList.remove('hidden');$('#cfgErr').classList.add('hidden');await loadInfo();$('#startBtn').disabled=false;$('#startBtn').textContent='開始申請';
  ME={no:'U001',code:'DEMO2026'};await refresh(true);go('docs');window.DemoPlayer.play(studentDemoSteps())}

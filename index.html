@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="助學金初審系統：匯入申請資料，自動檢查資格、標示不符原因、依優先順序排名並分出正取備取。資料只存在你的電腦，不上傳。">
+<meta name="description" content="助學金初審系統：匯入申請資料，自動檢查資格、標示不符原因、依優先順序排名並分出正取備取。資料只存在本機電腦，不上傳。">
 <meta property="og:title" content="助學金初審系統">
 <meta property="og:description" content="83 位申請人，一秒完成初篩：資格檢查、原因標籤、優先排名、正取備取、評審分組。">
 <meta property="og:type" content="website">
@@ -44,19 +44,19 @@
  <div class="card" style="max-width:620px;margin:40px auto;text-align:center;padding:40px 28px">
   <div id="gMascot"></div>
   <h2 style="font-size:28px;margin-bottom:10px">助學金初審系統</h2>
-  <p style="font-size:19px;color:var(--ink-2);margin:0 0 26px">審查委員與承辦人員請登入。<br>還沒有帳號的話，可以先看示範。</p>
+  <p style="font-size:19px;color:var(--ink-2);margin:0 0 26px">限審查委員與承辦人員登入使用。<br>尚未取得帳號，可先觀看示範。</p>
   <div class="row" style="justify-content:center;gap:14px"><button class="btn pri lg" onclick="cloudBtnClick()">審查人員登入</button><button class="btn lg" onclick="startDemo()">看示範</button></div>
   <div style="text-align:left;margin:30px 0 0;padding:20px 22px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md)">
-   <div style="font-size:19px;font-weight:700;color:var(--brand-900);margin-bottom:8px">為什麼有這個系統</div>
-   <p style="margin:0 0 10px;font-size:17px;color:var(--ink-2)">以前每年近百份申請都是紙本或 Excel：承辦要一份份對照文件、追補件，委員要對著規則手算資格與排名，學生的個資也散在各處。</p>
+   <div style="font-size:19px;font-weight:700;color:var(--brand-900);margin-bottom:8px">系統用途</div>
+   <p style="margin:0 0 10px;font-size:17px;color:var(--ink-2)">取代紙本與 Excel 作業，減少人工對照文件、電話追補件與手算排名。</p>
    <ul style="margin:0;padding-left:22px;font-size:17px;color:var(--ink-2);line-height:1.8">
-    <li>學生用手機線上申請、拍照上傳，自己查進度、補件</li>
-    <li>文件先自動初步檢查，委員只看有疑問的</li>
-    <li>資格、優先順序、正取備取依協會規則自動算好</li>
-    <li>資料集中保管、有權限控管，每筆修改都有紀錄</li>
+    <li><b>線上申請</b>：學生以手機填表、拍照上傳文件，補件期限前可查進度、補件</li>
+    <li><b>文件初步檢查</b>：自動比對文件種類、姓名、日期與申請資料，有疑問才交委員核對</li>
+    <li><b>資格自動計算</b>：依協會規則判定資格、優先順序、正取與備取</li>
+    <li><b>資料集中管理</b>：權限分級控管，所有修改留存紀錄</li>
    </ul>
   </div>
-  <p class="note" style="margin-top:28px">學生申請請用另一個網址：<a id="gateApply" href="apply.html" style="color:var(--brand-600)">學生線上申請</a></p>
+  <p style="margin-top:28px"><a id="gateApply" href="apply.html" class="btn" style="width:100%">學生獎學金申請入口</a></p>
   </div>
 </section>
 
@@ -225,8 +225,8 @@
 <dialog id="wdlg" style="width:min(520px,94vw)">
  <div style="padding:30px 28px 24px;text-align:center">
   <div id="wMascot"></div>
-  <h2 style="margin:10px 0 6px;font-size:24px;color:var(--brand-900)">歡迎！我是小松</h2>
-  <p style="margin:0 0 22px;font-size:18px;color:var(--ink-2)">第一次來嗎？我用 1 分鐘帶您看看<br>這個系統為什麼做、怎麼用。</p>
+  <h2 style="margin:10px 0 6px;font-size:24px;color:var(--brand-900)">歡迎使用助學金初審系統</h2>
+  <p style="margin:0 0 22px;font-size:18px;color:var(--ink-2)">第一次使用，建議先看 1 分鐘介紹：<br>系統用途與審查操作流程。</p>
   <div class="row" style="justify-content:center;gap:12px"><button class="btn pri lg" onclick="wdlg.close();startDemo()">看 1 分鐘介紹</button><button class="btn lg" onclick="wdlg.close()">直接登入</button></div>
  </div>
 </dialog>
@@ -243,6 +243,6 @@
  <div class="dlg-f"><button class="btn danger adminonly" id="delBtn">刪除</button><span style="flex:1"></span><button class="btn" onclick="dlg.close()">取消</button><button class="btn pri" onclick="saveEdit()">儲存</button></div>
 </dialog>
 
-<script src="admin.js?v=4"></script>
+<script src="admin.js?v=5"></script>
 </body>
 </html>

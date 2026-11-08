@@ -308,7 +308,7 @@ async function showReview(){
   ${SPOT&&!RS[id]&&r.by==='auto'?'<div class="decided" style="background:var(--info-bg);color:var(--info)">抽查：系統已判定通過，請確認是否正確</div>':''}
   ${st?`<div class="decided" style="background:var(--${st}bg);color:var(--${st})">${st==='ok'?'✓ 已標為「符合」':'✕ 已標為「退回」：'+esc(r.note||'')}　（可以重新選）</div>`:''}
   ${r.summary?`<div class="alert" style="margin:8px 0;background:#e8f0fa;color:#1d3f8a">初步檢查：${esc(r.summary)}</div>`:''}${(r.flags||[]).map(f=>`<div class="alert" style="margin:6px 0">⚠ ${esc(f)}</div>`).join('')}
-  ${(r.summary||(r.flags||[]).length)?'<div class="note">初步檢查只是提醒，可能會錯，請以您的判斷為準。</div>':''}
+  ${(r.summary||(r.flags||[]).length)?'<div class="note">初步檢查只是提醒，可能會錯，以審查人員判斷為準。</div>':''}
   <div class="checklist"><b>請確認：</b><br>① 是這份文件嗎？<br>② 姓名是申請人或家人嗎？<br>③ 日期在期限內嗎？<br>④ 姓名、數字、日期看得清楚嗎？</div>`;
  const isImg=/image\//.test(r.type),isPdf=/pdf/.test(r.type)||/\.pdf$/i.test(r.name);
  $('#vOpen').href=RURL;$('#vTool').querySelectorAll('button').forEach(b=>b.classList.toggle('hidden',!isImg));
@@ -321,9 +321,9 @@ function finishReview(byUser){
  if(byUser){
   if(left.length&&!confirm(`本次已核對：符合 ${ok} 份、退回 ${bad} 份。\n還有 ${left.length} 份略過或還沒看，下次按「逐一核對」會再出現。\n\n確定先結束嗎？`))return;
   rdlg.close();render();return}
- if(left.length&&confirm(`已經看到最後一份了。\n本次核對：符合 ${ok} 份、退回 ${bad} 份。\n\n還有 ${left.length} 份您按了「略過」，要現在回去看嗎？`)){RQ=left;RS={};RI=0;DIR=1;showReview();return}
+ if(left.length&&confirm(`已經看到最後一份了。\n本次核對：符合 ${ok} 份、退回 ${bad} 份。\n\n還有 ${left.length} 份按了「略過」，要現在回去看嗎？`)){RQ=left;RS={};RI=0;DIR=1;showReview();return}
  rdlg.close();render();
- alert((left.length?`本次核對：符合 ${ok} 份、退回 ${bad} 份。\n還有 ${left.length} 份略過，下次按「逐一核對」會再出現。`:`全部核對完成。\n符合 ${ok} 份、退回 ${bad} 份。\n辛苦了，謝謝您！`)+(lock?`\n\n另有 ${lock} 份正由其他委員核對中，已自動跳過。`:'')+(other?`\n${other} 份已由其他委員完成。`:''));
+ alert((left.length?`本次核對：符合 ${ok} 份、退回 ${bad} 份。\n還有 ${left.length} 份略過，下次按「逐一核對」會再出現。`:`全部核對完成。\n符合 ${ok} 份、退回 ${bad} 份。\n辛苦了，謝謝！`)+(lock?`\n\n另有 ${lock} 份正由其他委員核對中，已自動跳過。`:'')+(other?`\n${other} 份已由其他委員完成。`:''));
 }
 let LOADING=false;
 function guard(){if(BUSY||LOADING)return false;BUSY=true;['rOk','rBad','rSkip','rPrev'].forEach(i=>$('#'+i).disabled=true);return true}
@@ -476,7 +476,7 @@ const tfetch=(u,o={})=>{const ac=new AbortController();const t=setTimeout(()=>ac
 try{if(CFG.key&&!/^__/.test(CFG.key)&&window.supabase)SBC=window.supabase.createClient(CFG.url,CFG.key,{global:{fetch:tfetch}})}catch(e){}
 // 寫入後沒有任何資料被更新，多半是登入過期或已被移出審查名單
 async function wrote(res,what){if(res.error){alert(what+'失敗：'+res.error.message);return false}if(Array.isArray(res.data)&&!res.data.length){await sessionLost();return false}return true}
-async function sessionLost(){alert('登入已過期，或您的帳號已不在審查人員名單內。\n剛剛的變更沒有存到，請重新登入後再做一次。');try{await SBC.auth.signOut()}catch(e){}location.reload()}
+async function sessionLost(){alert('登入已過期，或此帳號已不在審查人員名單內。\n剛剛的變更沒有存到，請重新登入後再做一次。');try{await SBC.auth.signOut()}catch(e){}location.reload()}
 const DOCKEYS=['d_id','d_tr','d_hh','d_prop','d_inc','d_rec','d_wel','d_dis','d_unemp'];
 const nid=id=>typeof id==='string'&&/^\d+$/.test(id)?+id:id;
 const _load=load,_save=save,_loadIdx=loadIdx,_getFile=getFile,_setSt=setSt,_delFile=delFile,_putFile=putFile,_syncDoc=syncDoc,_toggleDoc=toggleDoc,_saveEdit=saveEdit,_saveSettings=saveSettings,_clearAll=clearAll,_loadDemo=loadDemo,_allDocs=allDocs;
@@ -634,15 +634,15 @@ if(SBC){if(SBC.auth.onAuthStateChange)SBC.auth.onAuthStateChange(ev=>{if(ev==='S
 
 // ===== 使用導覽（第一次登入自動出現；右上角「使用說明」可再看）=====
 const TOUR_STEPS=()=>{const nm=RVN[CUSER.toLowerCase()];const L=[
- {title:`歡迎${nm?'，'+nm:''}！`,body:'謝謝您擔任助學金審查委員。<br>接下來用 1 分鐘，帶您看一遍要做的事。<br><br>放心，按錯都可以改，不會一按就無法挽回。'},
- {sel:'#hello',tab:'home',title:'您的工作只有一件：核對文件',body:'首頁會告訴您還有幾份文件要看。<br>按「<b>開始核對</b>」，系統就一份一份帶您看。<br><br>其他分頁可以參考，不用動。'},
+ {title:`歡迎${nm?'，'+nm:''}！`,body:'感謝擔任助學金審查委員。<br>以下用 1 分鐘說明審查工作。<br><br>放心，按錯都可以改，不會一按就無法挽回。'},
+ {sel:'#hello',tab:'home',title:'審查工作：核對文件',body:'首頁顯示待核對文件數量。<br>按「<b>開始核對</b>」，系統逐份顯示文件。<br><br>其他分頁供參考，不需操作。'},
  {sel:'#startReviewBtn',tab:'docs',title:'三個按鈕',body:'<b style="color:var(--ok)">✓ 符合</b>：這份文件可以用<br><b style="color:var(--bad)">✕ 退回</b>：學生要重交，點選原因就好，不用打字<br><b>略過</b>：晚點再看，<u>不算完成</u>，下次會再出現'},
- {sel:'#startReviewBtn',tab:'docs',title:'按錯了怎麼辦？',body:'按「<b>◀ 上一份</b>」回去重新選；<br>或點視窗上方的小方格，直接跳到那一份。<br><br>您正在看的文件會鎖住，其他委員會自動跳過，不會撞在一起。'},
- {sel:'#startReviewBtn',tab:'docs',title:'初步檢查只是提醒',body:'大部分文件系統已經先看過、自動通過。<br>標 ⚠ 的才需要您確認，例如：<br>・是不是這份文件<br>・姓名是不是學生或家人<br>・日期是否在 3 個月內<br>・分數和申請表一不一樣<br><br>系統可能會錯，<b>以您的判斷為準</b>。'},
+ {sel:'#startReviewBtn',tab:'docs',title:'按錯了怎麼辦？',body:'按「<b>◀ 上一份</b>」回去重新選；<br>或點視窗上方的小方格，直接跳到那一份。<br><br>開啟中的文件會鎖定，其他委員自動跳過，不會重複核對。'},
+ {sel:'#startReviewBtn',tab:'docs',title:'初步檢查只是提醒',body:'大部分文件系統已經先看過、自動通過。<br>標 ⚠ 的文件才需人工確認，例如：<br>・是不是這份文件<br>・姓名是不是學生或家人<br>・日期是否在 3 個月內<br>・分數和申請表一不一樣<br><br>系統可能出錯，<b>以審查人員判斷為準</b>。'},
  {sel:'#docTable',tab:'docs',title:'每個人的文件一覽',body:'<span class="dk ok">✓</span> 已繳　<span class="dk pend">?</span> 待核對　<span class="dk no">✕</span> 缺件或退回<br><br>點任何一格，就能看這位學生上傳的檔案。'},
  {sel:'nav button[data-t="result"]',tab:'result',title:'初篩結果自動算好',body:'資格、優先順序、正取／備取都依協會規則自動排好。<br><br>文件還沒核對完時，名單是<b>暫定</b>的；被退回文件的學生會列為「<b>待補件</b>」，不是不符合。'}];
  if(ISADMIN)L.push({sel:'nav button[data-t="settings"]',tab:'settings',title:'管理者專用：規則設定',body:'這裡可以設定<b>截止日</b>和<b>聯絡方式</b>（學生頁會顯示）、新增或移除審查人員，也可以查看<b>異動紀錄</b>：誰在什麼時候改了什麼。'});
- L.push({sel:'#tourBtn',tab:'home',title:'隨時可以再看一次',body:'忘記怎麼用，按右上角「<b>使用說明</b>」就能重看。<br>中途離開沒關係，進度都已經存好了。<br><br>辛苦您了，謝謝！'});
+ L.push({sel:'#tourBtn',tab:'home',title:'隨時可以再看一次',body:'忘記怎麼用，按右上角「<b>使用說明</b>」就能重看。<br>中途離開沒關係，進度均已自動儲存。<br><br>辛苦了，謝謝！'});
  return L};
 let TI=0,TS=[];
 function tourKey(){return'sch_tour_done_'+(CUSER||'local').toLowerCase()}
@@ -690,9 +690,9 @@ function badNotes(x){const who=fkey(x.a,'');return FALL.filter(r=>r.k.startsWith
 function renderHello(){if(!CLOUD){$('#hello').innerHTML='';return}
  const nm=RVN[CUSER.toLowerCase()]||'',n=FALL.filter(r=>(r.st||'pend')==='pend').length;
  const c=provCount();
- $('#hello').innerHTML=n?`<div class="next"><div><h2>${esc(nm||'您')}好，目前有 <span class="big">${n} 份</span>文件等您核對</h2><p>每份大約 30 秒。全部核對完，初篩結果才會定案。</p></div><button class="btn pri lg" onclick="tab('docs');startReview()">開始核對</button></div>`
-  :c.late?`<div class="next late"><div><h2>${esc(nm||'您')}好，文件都核對完了</h2><p>${c.late} 位學生逾期未補件，請在委員會議決定是否受理。</p></div><button class="btn lg" onclick="tab('result');$('#fStatus').value='late';render()">查看逾期名單</button></div>`
-  :`<div class="next"><div><h2>${esc(nm||'您')}好，目前沒有待核對的文件</h2><p>${c.hold?`還有 ${c.hold} 位學生在補件中，補交後會再出現在這裡。`:'辛苦了，謝謝您。'}</p></div><button class="btn lg" onclick="tab('result')">查看初篩結果</button></div>`}
+ $('#hello').innerHTML=n?`<div class="next"><div><h2>${esc(nm||'')}${nm?'，':''}目前有 <span class="big">${n} 份</span>文件待核對</h2><p>每份大約 30 秒。全部核對完，初篩結果才會定案。</p></div><button class="btn pri lg" onclick="tab('docs');startReview()">開始核對</button></div>`
+  :c.late?`<div class="next late"><div><h2>${esc(nm||'')}${nm?'，':''}文件已全部核對完成</h2><p>${c.late} 位學生逾期未補件，請在委員會議決定是否受理。</p></div><button class="btn lg" onclick="tab('result');$('#fStatus').value='late';render()">查看逾期名單</button></div>`
+  :`<div class="next"><div><h2>${esc(nm||'')}${nm?'，':''}目前沒有待核對的文件</h2><p>${c.hold?`還有 ${c.hold} 位學生在補件中，補交後會再出現在這裡。`:'辛苦了，謝謝。'}</p></div><button class="btn lg" onclick="tab('result')">查看初篩結果</button></div>`}
 function exportFollowup(){
  const list=R.filter(x=>(x.missing||[]).length||FALL.some(r=>r.k.startsWith(fkey(x.a,''))&&r.st==='bad'));
  if(!list.length){alert('目前沒有需要補件的申請人');return}
@@ -701,13 +701,13 @@ function exportFollowup(){
   return[x.a.id,x.a.name,x.a.phone||'',x.a.email||'',(x.missing||[]).filter(m=>!badT.includes(m)).join('、'),bad.map(r=>DOCNAME(r.k.split('|')[1])+'：'+(r.note||'')).join('；'),dl]})];
  sheetOut('補件通知',rows,'松樑助學金_補件通知名單_'+today())}
 async function loadReviewers(){if(!CLOUD)return;const{data}=await SBC.from('reviewers').select('*').order('created_at');RVL=data||[];
- $('#rvTable').innerHTML='<tr><th>Email</th><th>姓名</th><th>身分</th><th></th></tr>'+RVL.map(r=>`<tr><td>${esc(r.email)}</td><td>${esc(r.name||'')}</td><td>${r.role==='admin'?'管理者':'審查委員'}</td><td>${r.email.toLowerCase()===CUSER.toLowerCase()?'<span class="note">（您）</span>':`<button class="btn sm danger" onclick="rvDel('${esc(r.email)}')">移除</button>`}</td></tr>`).join('')}
+ $('#rvTable').innerHTML='<tr><th>Email</th><th>姓名</th><th>身分</th><th></th></tr>'+RVL.map(r=>`<tr><td>${esc(r.email)}</td><td>${esc(r.name||'')}</td><td>${r.role==='admin'?'管理者':'審查委員'}</td><td>${r.email.toLowerCase()===CUSER.toLowerCase()?'<span class="note">（目前登入）</span>':`<button class="btn sm danger" onclick="rvDel('${esc(r.email)}')">移除</button>`}</td></tr>`).join('')}
 let RVL=[];
 async function rvAdd(){const email=$('#rvEmail').value.trim().toLowerCase(),name=$('#rvName').value.trim(),role=$('#rvRole').value;
  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){alert('請輸入正確的 Email');return}
  const{error}=await SBC.from('reviewers').upsert({email,name,role});if(error){alert('新增失敗：'+error.message);return}
- $('#rvEmail').value='';$('#rvName').value='';await loadReviewers();alert(`已加入 ${name||email}。\n請通知系統管理員開通他的登入帳號（同一個 Email）。`)}
-async function rvDel(email){if(!confirm(`確定移除 ${email}？移除後他就看不到任何資料。`))return;const{error}=await SBC.from('reviewers').delete().eq('email',email);if(error){alert('移除失敗：'+error.message);return}loadReviewers()}
+ $('#rvEmail').value='';$('#rvName').value='';await loadReviewers();alert(`已加入 ${name||email}。\n請通知系統管理員開通此 Email 的登入帳號。`)}
+async function rvDel(email){if(!confirm(`確定移除 ${email}？移除後該帳號將無法查看任何資料。`))return;const{error}=await SBC.from('reviewers').delete().eq('email',email);if(error){alert('移除失敗：'+error.message);return}loadReviewers()}
 const AUDF={name:'姓名',score:'成績',incSelf:'本人所得',incF:'父所得',incM:'母所得',incG:'家長所得',override:'評審決議',overNote:'決議說明',memo:'自述',review_status:'核對結果',review_note:'退回原因',house:'房產',welfare:'福利身分',disab:'身障'};
 function auditDiff(r){
  if(r.action==='刪除')return'刪除：'+esc((r.before&&(r.before.app_no||r.before.file_name||r.before.doc_type))||r.row_id);
@@ -747,8 +747,8 @@ function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok
 function adminDemoSteps(){
  const pendIdx=(no,k)=>RQ.findIndex(id=>{const r=FALL.find(x=>x.id===id);return r&&r.k===no+'|'+k});
  return[
- {t:'為什麼要做這個系統？',b:'以前每年近百位學生的申請，都是紙本或 Excel：<br>・承辦要一份份對照文件、打電話追補件<br>・委員要對著幾十條規則手算資格與排名，容易出錯<br>・學生的所得、身障等個資散在各處，不好保護',ms:9000,do:async h=>{tab('home')}},
- {t:'這個系統幫大家做了什麼',b:'・學生用手機線上申請、拍照上傳，自己查進度、補件<br>・文件先自動做初步檢查，委員只需要看有疑問的<br>・資格、優先順序、正取備取依協會規則自動算好<br>・資料集中、有權限控管，每一筆修改都有紀錄',ms:9000,do:async h=>{tab('home')}},
+ {t:'為什麼要做這個系統？',b:'紙本與 Excel 作業的問題：<br>・承辦逐份對照文件、電話追補件<br>・委員依多項規則人工計算資格與排名，容易出錯<br>・所得、身障等個資分散保存，不易控管',ms:9000,do:async h=>{tab('home')}},
+ {t:'系統用途',b:'・線上申請：學生以手機填表、拍照上傳，可查進度、補件<br>・文件初步檢查：有疑問的文件才交委員核對<br>・資格自動計算：依協會規則判定資格、優先順序、正取與備取<br>・資料集中管理：權限分級控管，所有修改留存紀錄',ms:9000,do:async h=>{tab('home')}},
  {t:'接下來實際看一次',b:'系統會自動示範審查委員和承辦人員的工作，約 1 分鐘。<br>隨時可以按「暫停」或「結束介紹」。',ms:5000,do:async h=>{tab('home');h.hl('#hello')}},
  {t:'一登入就知道要做什麼',b:'首頁會告訴委員還有幾份文件等著核對，按「開始核對」就開始。',ms:3000,do:async h=>{tab('home');await h.tap('#hello .btn');await h.until(()=>rdlg.open&&!LOADING)}},
  {t:'左邊：這份應該是什麼文件',b:'會顯示學生姓名、這份應該是哪一種文件，還有初步檢查發現的問題。',do:async h=>{await h.until(()=>!LOADING);h.hl('#rInfo')}},
@@ -757,11 +757,11 @@ function adminDemoSteps(){
  {t:'有問題的文件，系統會提醒',b:'例如這份「成績單」，其實是一張風景照。',ms:5000,do:async h=>{const j=pendIdx('U002','d_tr');if(j>=0){await revJump(j);await h.until(()=>!LOADING&&!BUSY)}h.hl(document.querySelector('#rInfo .alert:not([style*="e8f0fa"])')||'#rInfo')}},
  {t:'退回：點選原因就好',b:'系統已經先勾好原因，也可以再寫補充說明。學生登入後會看到這個原因。',ms:5000,do:async h=>{await h.tap('#rBad');await h.until(()=>bdlg.open);await h.sleep(300);h.hl('#bChips')}},
  {t:'確定退回',b:'這位學生會列為「待補件」，不是不符合。',ms:3500,do:async h=>{await h.tap('#bOk');await h.until(()=>!bdlg.open&&!LOADING&&!BUSY)}},
- {t:'上方小方格就是進度',b:'✓ 是符合、✕ 是退回。點任何一格都能回去改，按錯不用怕。<br>您正在看的文件會鎖住，其他委員會自動跳過，不會撞在一起。',ms:6000,do:async h=>{h.hl('#rStrip')}},
+ {t:'上方小方格就是進度',b:'✓ 是符合、✕ 是退回。點任何一格都能回去改，按錯不用怕。<br>開啟中的文件會鎖定，其他委員自動跳過，不會重複核對。',ms:6000,do:async h=>{h.hl('#rStrip')}},
  {t:'初篩結果自動排好',b:'資格、優先順序、正取／備取都依協會規則算好，並寫出不符合的原因。',ms:5500,do:async h=>{rdlg.close();await h.sleep(300);tab('result');render();await h.sleep(300);h.hl('#resultBox .card')}},
  {t:'每位學生的文件一覽',b:'綠色是已繳、橘色待核對、紅色缺件或退回。點任何一格就能看檔案。',ms:5000,do:async h=>{tab('docs');await h.sleep(300);h.hl('#docTable')}},
  {t:'承辦專用：設定與匯出',b:'每年在這裡填申請截止日、補件期限、聯絡方式，學生頁會自動顯示。<br>名單可以匯出 Excel，也有給評審的去識別版。',ms:6000,do:async h=>{tab('settings');await h.sleep(300);h.hl('#setForm1')}},
- {t:'示範結束',b:'現在換您自己操作看看。這裡都是假資料，怎麼按都不會影響真正的系統。',ms:6000,do:async h=>{tab('home');h.hl('#hello')}}]}
+ {t:'示範結束',b:'接下來可自行操作。示範資料皆為虛構，任何操作都不會影響正式系統。',ms:6000,do:async h=>{tab('home');h.hl('#hello')}}]}
 async function startDemo(){try{await loadDemoJs()}catch(e){alert(e.message);return}
  try{localStorage.setItem('sch_tour_done_demo@example.tw','1')}catch(e){}
  SBC=window.DemoClient();SBC.auth._demoLogin();DEMO=true;$('#demoBar').classList.remove('hidden');$('#demoBar').style.display='flex';if(ldlg.open)ldlg.close();
