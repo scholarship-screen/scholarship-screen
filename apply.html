@@ -79,6 +79,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
  <img src="logo.png" alt="社團法人台灣松樑教育公益促進協會">
  <h1>清寒及弱勢助學金　線上申請</h1>
 </header>
+<div id="demoBar" class="hidden" style="background:#1e4e8c;color:#fff;padding:10px 16px;font-size:17px;text-align:center"><b>示範模式</b>：這是假的申請資料，可以隨意操作，不會真的送出。<button class="btn sm" style="margin-left:8px" onclick="location.reload()">離開示範</button></div>
 <main>
 <div id="cfgErr" class="alert bad hidden">申請系統暫時無法使用，請稍後再試。</div>
 <div class="steps hidden" id="stepbar"><div id="s1">1 填資料</div><div id="s2">2 記編號</div><div id="s3">3 傳文件</div><div id="s4">4 完成</div></div>
@@ -88,6 +89,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
  <div class="choice" style="margin-bottom:18px">
   <button class="btn pri big" id="startBtn" onclick="startNew()">開始申請</button>
   <button class="btn big" onclick="go('login')">我已經申請過：查進度、補傳文件</button>
+  <button class="btn" style="border:0;background:none;color:var(--pri);text-decoration:underline" onclick="startDemo()">先看示範：申請完成後的畫面長什麼樣子</button>
  </div>
  <div class="card" id="resumeCard" style="display:none">
   <h2>歡迎回來</h2>
@@ -267,7 +269,7 @@ const KEY='sch_apply_v2';
 let ME=null,INFO={},LOCAL={};   // ME: {no, code}; STATUS: 伺服器回傳
 let ST=null;const UP={};         // UP[k] = 本次上傳中的檔案
 
-function save(){try{localStorage.setItem(KEY,JSON.stringify({...ME,exp:Date.now()+7*864e5}))}catch(e){}}
+function save(){if(DEMO)return;try{localStorage.setItem(KEY,JSON.stringify({...ME,exp:Date.now()+7*864e5}))}catch(e){}}
 function forget(){if(!confirm('要清除這支手機上記住的申請嗎？（申請本身不會被刪除，之後可以用申請編號和查詢碼再登入）'))return;try{localStorage.removeItem(KEY)}catch(e){}ME=null;ST=null;$('#resumeCard').style.display='none';go('home')}
 function go(v){
  ['home','login','form','code','docs','done'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
@@ -416,6 +418,11 @@ function finish(){
  $('#doneMiss').innerHTML=list.length?`<div class="alert warn"><b>還需要補上：</b><ul class="miss">${list.map(d=>`<li>${esc(d.l)}</li>`).join('')}</ul>${(INFO.supDeadline||INFO.deadline)?`請在 <b>${fmtDate(INFO.supDeadline||INFO.deadline)}</b> 前補齊。`:'請盡快補齊。'}拿到文件後，用申請編號和查詢碼回來上傳就可以了。</div>`:'<div class="alert ok">必要文件都上傳了。審查人員看過後，你可以回來查看每份文件的狀態。</div>';
  go('done')}
 
+let DEMO=false;
+function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=1';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
+async function startDemo(){try{await loadDemoJs()}catch(e){alert(e.message);return}
+ sb=window.DemoClient();DEMO=true;$('#demoBar').classList.remove('hidden');$('#cfgErr').classList.add('hidden');await loadInfo();$('#startBtn').disabled=false;$('#startBtn').textContent='開始申請';
+ ME={no:'U001',code:'DEMO2026'};await refresh(true);go('docs')}
 // ===== 啟動 =====
 document.querySelectorAll('label.req').forEach(l=>l.firstChild.after(Object.assign(document.createElement('span'),{className:'star',textContent:' *'})));
 famUI();
