@@ -101,7 +101,7 @@ const css=`#dpCap{position:fixed;left:50%;bottom:16px;transform:translateX(-50%)
 @keyframes dpTap{0%{box-shadow:0 0 0 0 rgba(155,187,69,.9)}100%{box-shadow:0 0 0 22px rgba(155,187,69,0)}}
 @media(prefers-reduced-motion:reduce){.dp-hl{animation:none}.dp-tap{animation:none}#dpCap .bar i{transition:none!important}}`;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-let onDone=null,steps=[],i=0,paused=false,timer=null,run=0,cap=null;
+let chain=Promise.resolve(),onDone=null,steps=[],i=0,paused=false,timer=null,run=0,cap=null;
 function ensure(){if(cap)return;const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
  cap=document.createElement('div');cap.id='dpCap';cap.setAttribute('role','status');cap.setAttribute('aria-live','polite');
  cap.innerHTML='<div style="display:flex;gap:14px;align-items:flex-start"><div class="m" style="flex:none;margin-top:-4px">'+(window.MASCOT?window.MASCOT(72,'fly'):'')+'</div><div style="flex:1"><b class="t"></b><div class="b"></div></div></div><div class="bar"><i></i></div><div class="ctl"><span class="n"></span><button class="pz">暫停</button><button class="nx">下一步</button><button class="go">結束介紹</button></div>';
@@ -119,7 +119,7 @@ async function show(){const my=++run;clearTimeout(timer);const s=steps[i];
  cap.querySelector('.t').textContent=s.t;cap.querySelector('.b').innerHTML=s.b;cap.querySelector('.n').textContent=`${i+1} / ${steps.length}`;
  cap.querySelector('.nx').textContent=i===steps.length-1?'開始操作':'下一步';
  const bar=cap.querySelector('.bar i');bar.style.transition='none';bar.style.width='0';top();if(i>0&&(i===steps.length-1||i%4===0)&&window.MASCOT_HOP)MASCOT_HOP(cap);
- try{if(s.do)await s.do({hl,tap,type,sleep,until})}catch(e){console.log(e)}
+ chain=chain.then(async()=>{if(cap.dataset.off)return;try{if(s.do)await s.do({hl,tap,type,sleep,until})}catch(e){console.log(e)}});await chain;
  if(my!==run)return;top();arm()}
 function arm(){clearTimeout(timer);if(paused)return;if(i>=steps.length-1&&onDone){const b=cap.querySelector('.bar i');b.style.transition='none';b.style.width='100%';return}const s=steps[i],ms=s.ms||5000;const bar=cap.querySelector('.bar i');
  bar.style.transition='none';bar.style.width='0';requestAnimationFrame(()=>{bar.style.transition=`width ${ms}ms linear`;bar.style.width='100%'});

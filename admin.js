@@ -742,7 +742,7 @@ function exportReviewers(){
 async function checkKey(){try{const{data}=await SBC.functions.invoke('analyze',{body:{ping:true}});const bad=!data||data.key===false;
  const box=$('#keyWarn');box.classList.toggle('hidden',!bad)}catch(e){}}
 let DEMO=false;
-function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=7';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
+function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=8';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
 
 function adminDemoSteps(){
  const pendIdx=(no,k)=>RQ.findIndex(id=>{const r=FALL.find(x=>x.id===id);return r&&r.k===no+'|'+k});
@@ -755,8 +755,8 @@ function adminDemoSteps(){
  {t:'原始檔案',b:'右側顯示申請人上傳之原檔，可放大、旋轉，或以新分頁開啟。',do:async h=>{h.hl('#rView');await h.sleep(700);await h.tap('#vTool button:nth-child(2)')}},
  {t:'符合',b:'文件無誤者點選「符合」，系統自動進入下一份。',ms:3500,do:async h=>{vz(0);await h.tap('#rOk');await h.until(()=>!LOADING&&!BUSY)}},
  {t:'疑義提醒',b:'初步檢查發現疑義時顯示提醒，例如此份「成績單」實為風景照片。',ms:5000,do:async h=>{const j=pendIdx('U002','d_tr');if(j>=0){await revJump(j);await h.until(()=>!LOADING&&!BUSY)}h.hl(document.querySelector('#rInfo .alert:not([style*="e8f0fa"])')||'#rInfo')}},
- {t:'退回',b:'系統依初步檢查結果預先勾選退件原因，亦可填寫補充說明；申請人登入後可查閱退件原因。',ms:5000,do:async h=>{await h.tap('#rBad');await h.until(()=>bdlg.open);await h.sleep(300);h.hl('#bChips')}},
- {t:'確定退回',b:'該申請人列為「待補件」，非資格不符。',ms:3500,do:async h=>{await h.tap('#bOk');await h.until(()=>!bdlg.open&&!LOADING&&!BUSY)}},
+ {t:'退回',b:'系統依初步檢查結果預先勾選退件原因，亦可填寫補充說明；申請人登入後可查閱退件原因。',ms:5000,do:async h=>{if(!rdlg.open)return;const j=pendIdx('U002','d_tr');if(j>=0&&j!==RI){await revJump(j);await h.until(()=>!LOADING&&!BUSY)}if(!bdlg.open){await h.tap('#rBad');await h.until(()=>bdlg.open)}await h.sleep(300);if(!document.querySelector('#bChips .on'))await h.tap('#bChips [data-i]');h.hl('#bChips')}},
+ {t:'確定退回',b:'該申請人列為「待補件」，非資格不符。',ms:3500,do:async h=>{if(!bdlg.open)return;if(!document.querySelector('#bChips .on')&&!$('#bNote').value.trim())await h.tap('#bChips [data-i]');await h.tap('#bOk');await h.until(()=>!bdlg.open&&!LOADING&&!BUSY)}},
  {t:'核對進度',b:'上方進度格：✓ 為符合、✕ 為退回，點選可返回修改。<br>開啟中之文件自動鎖定，其他委員將略過，避免重複核對。',ms:6000,do:async h=>{h.hl('#rStrip')}},
  {t:'初篩結果',b:'資格、優先順序、正取及備取依協會規則自動計算，並列出不符資格原因。',ms:5500,do:async h=>{rdlg.close();await h.sleep(300);tab('result');render();await h.sleep(300);h.hl('#resultBox .card')}},
  {t:'文件一覽',b:'綠色為已繳、橘色為待核對、紅色為缺件或退回；點選格子可查看檔案。',ms:5000,do:async h=>{tab('docs');await h.sleep(300);h.hl('#docTable')}},
