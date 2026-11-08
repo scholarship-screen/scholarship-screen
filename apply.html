@@ -89,7 +89,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
   <h2>申請須知</h2>
   <ul style="margin:0;padding-left:24px">
    <li>限本國籍、日間部學生；補助電子、電機、光電、物理、通訊、生物、機電、紡織材料、機械、工業工程等相關系所。</li>
-   <li>先填資料、送出後就會拿到<b>申請編號</b>和<b>查詢碼</b>。文件可以之後再補，截止日前用任何手機或電腦都能回來上傳。</li>
+   <li>先填資料、送出後就會拿到<b>申請編號</b>和<b>查詢碼</b>。文件可以之後再補，補件期限前用任何手機或電腦都能回來上傳。</li>
    <li>文件用手機拍照或 PDF 都可以。</li>
   </ul>
  </div>
@@ -267,7 +267,7 @@ function go(v){
 function fmtDate(d){if(!d)return'';const t=new Date(d+'T00:00:00');return`${t.getFullYear()-1911} 年 ${t.getMonth()+1} 月 ${t.getDate()} 日`}
 async function loadInfo(){
  try{const{data}=await sb.rpc('public_info');INFO=data||{}}catch(e){}
- const bits=[];if(INFO.deadline)bits.push(`申請及補件截止：<b>${fmtDate(INFO.deadline)}</b>`);if(INFO.announce)bits.push(`預計公告：<b>${esc(INFO.announce)}</b>`);if(INFO.contact)bits.push(`聯絡承辦：<b>${esc(INFO.contact)}</b>`);
+ const SUP=INFO.supDeadline||INFO.deadline;const bits=[];if(INFO.deadline)bits.push(`申請截止：<b>${fmtDate(INFO.deadline)}</b>`);if(INFO.supDeadline&&INFO.supDeadline!==INFO.deadline)bits.push(`補件期限：<b>${fmtDate(INFO.supDeadline)}</b>`);if(INFO.announce)bits.push(`預計公告：<b>${esc(INFO.announce)}</b>`);if(INFO.contact)bits.push(`聯絡承辦：<b>${esc(INFO.contact)}</b>`);
  $('#infobar').innerHTML=bits.map(b=>`<span>${b}</span>`).join('');
  document.querySelectorAll('.ct').forEach(e=>e.textContent=INFO.contact?'（'+INFO.contact+'）':'');
  $('#foot').innerHTML=INFO.contact?`有問題請聯絡協會承辦人員：${esc(INFO.contact)}`:'';
@@ -401,7 +401,7 @@ function finish(){
  const list=[...new Set([...miss,...bad])];
  $('#fNo').textContent=ST.app_no;
  $('#doneTitle').textContent=list.length?'資料已送出，還有文件要補':'申請完成 🎉';
- $('#doneMiss').innerHTML=list.length?`<div class="alert warn"><b>還需要補上：</b><ul class="miss">${list.map(d=>`<li>${esc(d.l)}</li>`).join('')}</ul>${INFO.deadline?`請在 <b>${fmtDate(INFO.deadline)}</b> 前補齊。`:'請盡快補齊。'}拿到文件後，用申請編號和查詢碼回來上傳就可以了。</div>`:'<div class="alert ok">必要文件都上傳了。審查人員看過後，你可以回來查看每份文件的狀態。</div>';
+ $('#doneMiss').innerHTML=list.length?`<div class="alert warn"><b>還需要補上：</b><ul class="miss">${list.map(d=>`<li>${esc(d.l)}</li>`).join('')}</ul>${(INFO.supDeadline||INFO.deadline)?`請在 <b>${fmtDate(INFO.supDeadline||INFO.deadline)}</b> 前補齊。`:'請盡快補齊。'}拿到文件後，用申請編號和查詢碼回來上傳就可以了。</div>`:'<div class="alert ok">必要文件都上傳了。審查人員看過後，你可以回來查看每份文件的狀態。</div>';
  go('done')}
 
 // ===== 啟動 =====

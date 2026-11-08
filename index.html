@@ -107,6 +107,7 @@ body.cloud .localonly{display:none!important}
 body:not(.cloud) .cloudonly{display:none!important}
 body.cloud:not(.admin) .adminonly{display:none!important}
 .st.hold{background:#e8f0fa;color:#1d3f8a}
+.st.late{background:#fde2e1;color:#8c1d18}
 .stat.hold .n{color:#1d3f8a}
 .prov{background:#fff4dd;color:#7a4b00;border:1px solid #f0d49a;border-radius:12px;padding:14px 18px;margin-bottom:16px;font-size:18px}
 .hello{background:linear-gradient(135deg,#edf4e6,#fff);border:1px solid #cfe0bf;border-radius:14px;padding:22px 24px;margin-bottom:20px}
@@ -224,7 +225,7 @@ dialog::backdrop{background:rgba(20,30,45,.45)}
   <p>點格子就能切換：<span class="dk ok">✓</span> 已附　<span class="dk no">✕</span> 未附　<span class="dk na">—</span> 無須／免附　<span class="dk pend">?</span> 已上傳、待人工核對。缺件會判「文件不全」；核對後不符會判「文件退回」。</p>
   <div class="row"><select id="dShow" class="btn"><option value="all">全部申請人</option><option value="miss">只看缺件／退回者</option><option value="pend">只看待核對者</option><option value="auto" class="cloudonly">有「系統通過」文件的人（抽查）</option></select>
    <button class="btn pri" id="startReviewBtn" onclick="startReview()">逐一核對上傳文件（<span id="pendN">0</span> 份）</button>
-   <button class="btn adminonly cloudonly" onclick="exportFollowup()">📋 匯出補件通知名單</button><button class="btn localonly" onclick="allDocs()">把目前顯示的人全部設為「已附」</button></div>
+   <button class="btn adminonly cloudonly" onclick="startSpot()">🎲 抽查系統通過的文件</button><button class="btn adminonly cloudonly" onclick="exportFollowup()">📋 匯出補件通知名單</button><button class="btn localonly" onclick="allDocs()">把目前顯示的人全部設為「已附」</button></div>
  </div>
  <div class="card noprint adminonly">
   <h2>上傳文件電子檔</h2>
@@ -245,9 +246,10 @@ dialog::backdrop{background:rgba(20,30,45,.45)}
   <div class="row">
    <span>顯示：</span>
    <select id="fLevel" class="btn"><option value="all">全部學制</option><option value="U">大學部</option><option value="G">碩博士班</option></select>
-   <select id="fStatus" class="btn"><option value="all">全部結果</option><option value="ok">正取（含追加）</option><option value="wait">備取</option><option value="hold">待補件</option><option value="no">不符合</option></select>
+   <select id="fStatus" class="btn"><option value="all">全部結果</option><option value="ok">正取（含追加）</option><option value="wait">備取</option><option value="hold">待補件</option><option value="late">逾期未補件</option><option value="no">不符合</option></select>
    <input id="fq" placeholder="搜尋姓名、編號" class="btn" style="cursor:text;min-width:200px">
   </div>
+  <div class="row adminonly" style="margin-top:12px"><button class="btn" onclick="exportReviewers()">🔒 匯出評審用名單（去識別）</button><span class="note">不含聯絡方式與所得金額，姓名遮蔽中間字，適合發給評審委員。</span></div>
   <div class="note" style="margin-top:12px">點不符合原因標籤，只看該原因的申請人（再點一次取消）：</div>
   <div class="tagbar" id="tagBar"></div>
  </div>
@@ -364,8 +366,8 @@ const FIELDS=[
  {k:'override',l:'評審決議',opt:['依系統','評審排除','評審追加']},
  {k:'overNote',l:'決議說明'}
 ];
-const DEF={org:'清寒及弱勢助學金',quotaU:29,quotaG:4,incomeLimit:1000000,scoreMin:70,rankPct:50,aRatio:'2/3',groups:5,
- conductMin:75,otherMax:50000,penalty:'大過以上',
+const DEF={org:'清寒及弱勢助學金',quotaU:29,quotaG:4,incomeLimit:600000,spotPct:10,kwX:'資訊工程,資工',scoreMin:70,rankPct:50,aRatio:'2/3',groups:5,
+ conductMin:75,otherMax:50000,penalty:'警告',
  kwA:'電子,電機,光電,物理,通訊,生物,機電,自動化,半導體',kwB:'紡織,材料,機械,工業工程,工業管理',backfill:'是'};
 let S=Object.assign({},DEF), APPS=[], R=[];
 const $=s=>document.querySelector(s);
@@ -379,7 +381,7 @@ function num(v){if(v==null||v==='')return 0;let s=String(v).replace(/[,\s元]/g,
 const yes=v=>/^(是|有|y|yes|1|v|✓|true|○)$/i.test(String(v??'').trim());
 function gradeNum(v){const s=String(v??'');const m=s.match(/\d+/);if(m)return+m[0];const c='一二三四五六七'.indexOf((s.match(/[一二三四五六七]/)||[''])[0]);return c>=0?c+1:0}
 function ratio(){const s=String(S.aRatio).trim();if(s.includes('/')){const[a,b]=s.split('/').map(Number);return a/b}const n=parseFloat(s);return n>1?n/100:n}
-function cat(dept){const d=String(dept||'');if(S.kwA.split(/[,，、]/).some(k=>k.trim()&&d.includes(k.trim())))return'A';if(S.kwB.split(/[,，、]/).some(k=>k.trim()&&d.includes(k.trim())))return'B';return null}
+function cat(dept){const d=String(dept||'');if(String(S.kwX||'').split(/[,，、]/).some(k=>k.trim()&&d.includes(k.trim())))return null;if(S.kwA.split(/[,，、]/).some(k=>k.trim()&&d.includes(k.trim())))return'A';if(S.kwB.split(/[,，、]/).some(k=>k.trim()&&d.includes(k.trim())))return'B';return null}
 const lvl=a=>/碩|博|研究/.test(a.level||'')?'G':'U';
 const wan=n=>(n/10000).toFixed(1)+' 萬';
 
@@ -423,16 +425,16 @@ function compute(){
   if(x.score<smin&&x.rank<=rp&&!x.reasons.length)x.notes.push(`班排補足｜成績未達 ${smin}，以班排前 ${x.rank}% 符合`);
   return x;
  });
+ // 同一家庭：都可以通過，只加註標籤
+ const fams={};R.forEach(x=>{const f=String(x.a.fam||'').trim();if(f)(fams[f]=fams[f]||[]).push(x)});
+ Object.values(fams).filter(g=>g.length>1).forEach(g=>g.forEach(x=>x.notes.push('同家庭｜與 '+g.filter(y=>y!==x).map(y=>(y.a.id?y.a.id+' ':'')+y.a.name).join('、')+' 同一家庭')));
+ const pastSup=S.supDeadline&&Date.now()>new Date(S.supDeadline+'T23:59:59+08:00').getTime();
  const key=x=>[x.p1?1:0,x.welfare?1:0,x.disab?1:0,x.noHouse?1:0,-x.house,x.grade,x.score];
  const cmp=(p,q)=>{const a=key(p),b=key(q);for(let i=0;i<a.length;i++)if(a[i]!==b[i])return b[i]-a[i];return 0};
  const out={};
  for(const L of['U','G']){
   const N=+(L==='U'?S.quotaU:S.quotaG);
   let el=R.filter(x=>x.L===L&&!x.reasons.length).sort(cmp);
-  // 同一家庭限一人
-  const seen={};
-  el.forEach(x=>{const f=String(x.a.fam||'').trim();if(!f)return;if(seen[f]){x.reasons.push(`同家庭限一人｜同家庭的 ${seen[f]} 排名較前`)}else seen[f]=x.a.name});
-  el=el.filter(x=>!x.reasons.length);
   el.forEach((x,k)=>x.rk=k+1);
   const aMin=Math.ceil(N*ratio()-1e-9),bMax=Math.max(0,N-aMin);
   let a=0,b=0;const ch=new Set();
@@ -441,7 +443,7 @@ function compute(){
   if(ch.size<N&&S.backfill==='是'){for(const x of el){if(ch.size>=N)break;if(!ch.has(x)){ch.add(x);bf++;x.notes.push('名額回流｜電子電機類人數不足，名額回流')}}}
   let w=0;
   el.forEach(x=>{if(ch.has(x))x.st='ok';else{x.st='wait';x.wn=++w;if(!x.notes.some(n=>n.startsWith('類別')))x.notes.push(`名額已滿｜排名第 ${x.rk}，名額 ${N} 名已滿`)}});
-  R.filter(x=>x.L===L&&x.reasons.length).forEach(x=>x.st=x.hold?'hold':'no');
+  R.filter(x=>x.L===L&&x.reasons.length).forEach(x=>{x.st=x.hold?(pastSup?'late':'hold'):'no';if(x.st==='late')x.notes.push('逾期未補件｜補件期限 '+S.supDeadline+' 已過，請委員會議決定')});
   R.filter(x=>x.L===L&&x.a.override==='評審追加'&&x.st!=='ok').forEach(x=>{x.st='add';x.reasons=x.reasons.filter(r=>!r.startsWith('評審'));x.overrode=x.reasons.slice();x.reasons=[];x.notes.push('評審追加｜'+(x.a.overNote||'評審會議決議追加'))});
   out[L]={N,aMin,bMax,a:[...ch].filter(x=>x.cat==='A').length,b:[...ch].filter(x=>x.cat==='B').length,bf,el};
  }
@@ -465,7 +467,7 @@ function rTags(x,detail=true){
  const dt=detail?[...x.reasons,...x.notes].filter(detOf).map(r=>`<div class="rdet">${esc(tagOf(r))}：${esc(detOf(r))}</div>`).join(''):'';
  return (bad+nt)?`<div>${bad}${nt}</div>${dt}`:'<span class="rtag ok">✓ 全部符合</span>';
 }
-function stTag(x){return{ok:'<span class="st ok">正取</span>',add:'<span class="st add">追加正取</span>',wait:`<span class="st wait">備取 ${x.wn||''}</span>`,hold:'<span class="st hold">待補件</span>',no:'<span class="st no">不符合</span>'}[x.st]}
+function stTag(x){return{ok:'<span class="st ok">正取</span>',add:'<span class="st add">追加正取</span>',wait:`<span class="st wait">備取 ${x.wn||''}</span>`,hold:'<span class="st hold">待補件</span>',late:'<span class="st late">逾期未補件</span>',no:'<span class="st no">不符合</span>'}[x.st]}
 
 function render(){
  const O=compute();save();
@@ -473,17 +475,17 @@ function render(){
  const c=s=>R.filter(x=>s.includes(x.st)).length;
  $('#stats').innerHTML=`
   <div class="stat"><div class="n">${R.length}</div><div class="l">申請人數</div></div>
-  <div class="stat"><div class="n">${R.length-c(['no','hold'])}</div><div class="l">符合資格</div></div>
+  <div class="stat"><div class="n">${R.length-c(['no','hold','late'])}</div><div class="l">符合資格</div></div>
   <div class="stat ok"><div class="n">${c(['ok','add'])}</div><div class="l">正取（含追加 ${c(['add'])}）</div></div>
   <div class="stat warn"><div class="n">${c(['wait'])}</div><div class="l">備取</div></div>
-  <div class="stat hold"><div class="n">${c(['hold'])}</div><div class="l">待補件</div></div>
+  <div class="stat hold"><div class="n">${c(['hold','late'])}</div><div class="l">待補件${c(['late'])?`（逾期 ${c(['late'])}）`:''}</div></div>
   <div class="stat bad"><div class="n">${c(['no'])}</div><div class="l">不符合資格</div></div>`;
  $('#provHome').innerHTML=provHtml();
  renderHello();
  const tc=tagCounts();
  $('#reasonStat').innerHTML=tc.length?`<h2>不符合原因統計</h2><p class="note">一人可能有多個原因。點標籤直接看名單。</p><div class="tagbar">${tc.map(([t,n])=>`<span class="rtag bad" onclick="TF='';setTF('${t}')">✕ ${esc(t)}　${n} 人</span>`).join('')}</div>`:'';
  $('#reasonStat').classList.toggle('hidden',!tc.length);
- $('#ruleList').innerHTML=`<li>本國籍、日間部學生（不含進修部、夜間部、推廣教育、空大）</li><li>科系：電子、電機相關（至少 ${esc(S.aRatio)} 名額）；紡織材料、機械、工業工程（其餘名額）</li><li>未享公費，其他獎學金每學期未達 ${wan(num(S.otherMax))}</li><li>申請人＋父母年所得合計 ${wan(num(S.incomeLimit))} 以下（單親：申請人＋監護人）</li><li>前學期成績 ${S.scoreMin} 分以上，或班排前 ${S.rankPct}%；操行 ${S.conductMin} 分（乙等）以上</li><li>無因故意行為遭記「${esc(S.penalty)}」以上懲處</li><li>必要文件齊全：學生證、成績單、戶籍謄本、財產清單、所得清單、推薦函（續領者免附後兩項）。不全視為無效</li><li>勾選福利身分或身障者，須附證明才列入優先條件</li><li>同一家庭：大學部最多一人、碩博士最多一人</li>`;
+ $('#ruleList').innerHTML=`<li>本國籍、日間部學生（不含進修部、夜間部、推廣教育、空大）</li><li>科系：電子、電機相關（至少 ${esc(S.aRatio)} 名額）；紡織材料、機械、工業工程（其餘名額）</li><li>未享公費，其他獎學金每學期未達 ${wan(num(S.otherMax))}</li><li>申請人＋父母年所得合計 ${wan(num(S.incomeLimit))} 以下（單親：申請人＋監護人）</li><li>前學期成績 ${S.scoreMin} 分以上，或班排前 ${S.rankPct}%；操行 ${S.conductMin} 分（乙等）以上</li><li>無因故意行為遭記「${esc(S.penalty)}」以上懲處</li><li>必要文件齊全：學生證、成績單、戶籍謄本、財產清單、所得清單、推薦函（續領者免附後兩項）。不全視為無效</li><li>勾選福利身分或身障者，須附證明才列入優先條件</li><li>同一家庭的兄弟姊妹都可以通過，系統會加註「同家庭」標籤供委員參考</li><li>資訊工程（資工）系不列入電子電機類</li>`;
  renderData();renderResult(O);renderGroups();renderDocs();
 }
 
@@ -507,7 +509,7 @@ function renderResult(O){
   if(fl!=='all'&&fl!==L)continue;
   const o=O[L],nm=L==='U'?'大學部':'碩博士班';
   const all=R.filter(x=>x.L===L);if(!all.length)continue;
-  const order={ok:0,add:1,wait:2,hold:3,no:4};
+  const order={ok:0,add:1,wait:2,hold:3,late:3.5,no:4};
   let list=all.sort((p,q)=>order[p.st]-order[q.st]||((p.rk||999)-(q.rk||999)));
   if(fs!=='all')list=list.filter(x=>fs==='ok'?['ok','add'].includes(x.st):x.st===fs);
   if(TF)list=list.filter(x=>[...x.reasons,...x.notes].some(r=>tagOf(r)===TF));
@@ -602,8 +604,8 @@ function askReason(hint){return new Promise(ok=>{let done=false;const sel=new Se
  bdlg.showModal()})}
 async function rejectFile(id){const r=FALL.find(x=>String(x.id)===String(id));const n=await askReason(r&&r.flags);if(n===null)return;await setSt(id,'bad',n)}
 // 逐一核對
-let RQ=[],RI=0,RURL=null,RS={},RALL={},DIR=1,VZ=1,VR=0,BUSY=false;const rdlg=$('#rdlg');
-function startReview(){RQ=FALL.filter(r=>(r.st||'pend')==='pend').map(r=>r.id);RI=0;RS={};RALL={};DIR=1;if(!RQ.length){alert('目前沒有待核對的文件 👍');return}rdlg.showModal();showReview()}
+let SPOT=false,RQ=[],RI=0,RURL=null,RS={},RALL={},DIR=1,VZ=1,VR=0,BUSY=false;const rdlg=$('#rdlg');
+function startReview(){SPOT=false;RQ=FALL.filter(r=>(r.st||'pend')==='pend').map(r=>r.id);RI=0;RS={};RALL={};DIR=1;if(!RQ.length){alert('目前沒有待核對的文件 👍');return}rdlg.showModal();showReview()}
 function stripHtml(){return RQ.map((id,i)=>{const v=RS[id];const c=v==='ok'?'ok':v==='bad'?'bad':v==='skip'?'skip':v==='lock'||v==='other'?'lock':'';return`<span class="${c} ${i===RI?'cur':''}" title="${v==='ok'?'符合':v==='bad'?'退回':v==='skip'?'略過':v==='lock'?'其他委員核對中':v==='other'?'其他委員已完成':'未看'}" onclick="revJump(${i})">${v==='ok'?'✓':v==='bad'?'✕':v==='skip'?'…':v==='lock'||v==='other'?'🔒':i+1}</span>`}).join('')}
 function vz(d){VZ=d===0?1:Math.max(.4,Math.min(4,VZ*(d>0?1.3:1/1.3)));vApply()}
 function vr(){VR=(VR+90)%360;vApply()}
@@ -615,10 +617,11 @@ async function showReview(){if(RURL){URL.revokeObjectURL(RURL);RURL=null}
  const[who,dk]=r.k.split('|');const a=APPS.find(a=>String(a.id||a.name).trim()===who)||{};
  RURL=URL.createObjectURL(r.blob);VZ=1;VR=0;
  const done=Object.values(RALL).length;
- $('#rTitle').textContent=`核對文件　第 ${RI+1} 份，共 ${RQ.length} 份（已完成 ${done}）`;
+ $('#rTitle').textContent=`${SPOT?'抽查':'核對'}文件　第 ${RI+1} 份，共 ${RQ.length} 份（已完成 ${done}）`;
  $('#rStrip').innerHTML=stripHtml();
- const st=RS[id]==='ok'||r.st==='ok'?'ok':RS[id]==='bad'||r.st==='bad'?'bad':'';
+ const st=SPOT&&!RS[id]&&r.by==='auto'?'':RS[id]==='ok'||r.st==='ok'?'ok':RS[id]==='bad'||r.st==='bad'?'bad':'';
  $('#rInfo').innerHTML=`<div style="font-size:22px;font-weight:700">${esc(who)}　${esc(a.name||'')}</div>${a.dept?`<div class="note">${esc(a.dept)}　${esc(a.level||'')}</div>`:''}<div style="font-size:20px;margin:8px 0 4px">這份應該是：<br><b style="color:var(--pri)">${esc(DOCNAME(dk))}</b></div><div class="note">檔名：${esc(r.name)}</div>
+  ${SPOT&&!RS[id]&&r.by==='auto'?'<div class="decided" style="background:#e8f0fa;color:#1d3f8a">🎲 抽查：系統已判定通過，請確認是否正確</div>':''}
   ${st?`<div class="decided" style="background:var(--${st}bg);color:var(--${st})">${st==='ok'?'✓ 已標為「符合」':'✕ 已標為「退回」：'+esc(r.note||'')}　（可以重新選）</div>`:''}
   ${r.summary?`<div class="alert" style="margin:8px 0;background:#e8f0fa;color:#1d3f8a">系統判讀：${esc(r.summary)}</div>`:''}${(r.flags||[]).map(f=>`<div class="alert" style="margin:6px 0">⚠ ${esc(f)}</div>`).join('')}
   ${(r.summary||(r.flags||[]).length)?'<div class="note">系統判讀只是提醒，可能會錯，請以您的判斷為準。</div>':''}
@@ -728,23 +731,23 @@ function downloadTemplate(){
 }
 function exportResults(){
  if(!R.length){alert('尚無資料');return}
- const st=x=>({ok:'正取',add:'追加正取',wait:'備取'+(x.wn||''),hold:'待補件',no:'不符合'}[x.st]);
+ const st=x=>({ok:'正取',add:'追加正取',wait:'備取'+(x.wn||''),hold:'待補件',late:'逾期未補件',no:'不符合'}[x.st]);
  const pr=x=>[x.p1?'續領＋福利身分':x.welfare?x.a.welfare:'',x.disab?'身障／重傷':'',x.noHouse?'無房產':''].filter(Boolean).join('、');
  const head=['排名','結果','編號','姓名','學制','系所','年級','家戶年所得(元)','成績','班排%','優先條件','不符合標籤','不符合說明','備註','審查組'];
  const row=x=>[x.rk||'',st(x),x.a.id,x.a.name,x.a.level,x.a.dept,x.grade||'',x.house,x.a.score,x.rank<100?x.rank:'',pr(x),x.reasons.map(tagOf).join('、'),x.reasons.map(r=>tagOf(r)+'：'+detOf(r)).join('；'),x.notes.map(r=>tagOf(r)+(detOf(r)?'：'+detOf(r):'')).join('；'),x.grp];
- const order={ok:0,add:1,wait:2,hold:3,no:4};
+ const order={ok:0,add:1,wait:2,hold:3,late:3.5,no:4};
  const part=L=>[head,...R.filter(x=>x.L===L).sort((p,q)=>order[p.st]-order[q.st]||((p.rk||999)-(q.rk||999))).map(row)];
  const sheets=[['大學部',part('U')],['碩博士班',part('G')],['不符合資格',[head,...R.filter(x=>x.st==='no').map(row)]]];
  for(let g=1;g<=(+S.groups||1);g++)sheets.push([`第${g}組`,[['編號','姓名','學制','系所','系統初篩（原因）','優先條件','評審意見'],...R.filter(x=>x.grp===g).map(x=>[x.a.id,x.a.name,x.a.level,x.a.dept,st(x)+(x.reasons.length?'（'+x.reasons.map(tagOf).join('、')+'）':''),pr(x),''])]]);
- sheetOut(sheets,null,'松樑助學金_初篩結果_'+today()+(provCount().docs||provCount().hold?'_暫定':''));
+ sheetOut(sheets,null,'松樑助學金_初篩結果_機密_'+today()+(provCount().docs||provCount().hold||provCount().late?'_暫定':''));
 }
 async function clearAll(){if(confirm('確定清空全部申請資料與已上傳的文件電子檔？此動作無法復原。')){APPS=[];try{await idb();await new Promise(ok=>{const t=DB.transaction('f','readwrite');t.objectStore('f').clear();t.oncomplete=ok})}catch(e){}FIDX={};render()}}
 
 // ===== 設定 =====
-const SET=[['deadline','申請及補件截止日（學生頁會顯示；過了就不能送件、補件）','date'],['announce','預計公告結果時間（例：12 月中旬）'],['contact','承辦聯絡方式（學生頁會顯示，例：王小姐 02-1234-5678）'],['org','單位名稱（顯示在標題下方）'],['quotaU','大學部名額'],['quotaG','碩博士班名額'],['incomeLimit','家戶年所得上限（元）'],['scoreMin','學業成績門檻（分）'],['rankPct','成績未達時，班排前幾 %'],['aRatio','電子電機類最低比例（如 2/3）'],['groups','評審分組數'],['conductMin','操行成績門檻（分）'],['otherMax','其他獎學金每學期上限（元，達此金額即不符）'],['penalty','懲處排除門檻（記到這個等級以上就不符合）',['警告','小過','大過以上']],['kwA','電子電機類 系所關鍵字（逗號分隔）'],['kwB','紡織材料／機械／工工類 關鍵字'],['backfill','電子電機不足時，名額回流其他類',['是','否']]];
-function renderSettings(){$('#setForm').innerHTML=SET.map(([k,l,t])=>`<label class="f ${['deadline','announce','contact'].includes(k)?'cloudonly':''}" ${k.startsWith('kw')||k==='contact'?'style="grid-column:1/-1"':''}>${l}${Array.isArray(t)?`<select data-s="${k}">${t.map(o=>`<option ${String(S[k])===o?'selected':''}>${o}</option>`).join('')}</select>`:`<input data-s="${k}" ${t==='date'?'type="date"':''} value="${esc(S[k]??'')}">`}</label>`).join('')}
+const SET=[['deadline','本年度申請截止日（過了就不能送新申請）','date'],['supDeadline','本年度補件期限（過了學生就不能補傳；逾期的人會集中列出提醒委員）','date'],['spotPct','抽查比例（%）：系統自動通過的文件要抽查多少'],['announce','預計公告結果時間（例：12 月中旬）'],['contact','承辦聯絡方式（學生頁會顯示，例：王小姐 02-1234-5678）'],['org','單位名稱（顯示在標題下方）'],['quotaU','大學部名額'],['quotaG','碩博士班名額'],['incomeLimit','家戶年所得上限（元）'],['scoreMin','學業成績門檻（分）'],['rankPct','成績未達時，班排前幾 %'],['aRatio','電子電機類最低比例（如 2/3）'],['groups','評審分組數'],['conductMin','操行成績門檻（分）'],['otherMax','其他獎學金每學期上限（元，達此金額即不符）'],['penalty','懲處排除門檻（記到這個等級以上就不符合）',['警告','小過','大過以上']],['kwA','電子電機類 系所關鍵字（逗號分隔）'],['kwB','紡織材料／機械／工工類 關鍵字'],['kwX','不列入的系所關鍵字（例：資訊工程,資工）'],['backfill','電子電機不足時，名額回流其他類',['是','否']]];
+function renderSettings(){$('#setForm').innerHTML=SET.map(([k,l,t])=>`<label class="f ${['deadline','supDeadline','spotPct','announce','contact'].includes(k)?'cloudonly':''}" ${k.startsWith('kw')||k==='contact'||k==='supDeadline'?'style="grid-column:1/-1"':''}>${l}${Array.isArray(t)?`<select data-s="${k}">${t.map(o=>`<option ${String(S[k])===o?'selected':''}>${o}</option>`).join('')}</select>`:`<input data-s="${k}" ${t==='date'?'type="date"':''} value="${esc(S[k]??'')}">`}</label>`).join('')}
 function saveSettings(){document.querySelectorAll('[data-s]').forEach(e=>S[e.dataset.s]=e.value.trim());render();alert('已儲存，結果已重新計算')}
-function resetSettings(){if(confirm('把名額與門檻恢復成預設值？（截止日、聯絡方式不變）')){const keep={deadline:S.deadline,announce:S.announce,contact:S.contact};S=Object.assign({},DEF,keep);renderSettings();if(CLOUD)saveSettings();else render()}}
+function resetSettings(){if(confirm('把名額與門檻恢復成預設值？（截止日、聯絡方式不變）')){const keep={deadline:S.deadline,supDeadline:S.supDeadline,announce:S.announce,contact:S.contact};S=Object.assign({},DEF,keep);renderSettings();if(CLOUD)saveSettings();else render()}}
 
 // ===== 示範資料 =====
 function loadDemo(){
@@ -817,7 +820,7 @@ showReview=async function(){
  if(!CLOUD)return _showReview();
  await unlockDoc();
  while(RI>=0&&RI<RQ.length){const id=RQ[RI];const c=await lockDoc(id);
-  if(c.ok&&(c.status==='pend'||RS[id]==='ok'||RS[id]==='bad'))break;
+  if(c.ok&&(c.status==='pend'||SPOT||RS[id]==='ok'||RS[id]==='bad'))break;
   if(c.ok){await unlockDoc();RS[id]='other'}else RS[id]='lock';
   RI+=DIR}
  if(RI<0){RI=0;DIR=1;if(RS[RQ[0]]==='lock'||RS[RQ[0]]==='other'){RI=1;return showReview()}}
@@ -974,8 +977,8 @@ function maybeTour(){let done=false;try{done=!!localStorage.getItem(tourKey())}c
 
 // ===== 承辦用：未定案提示、補件名單、規則、名單、紀錄 =====
 const today=()=>{const d=new Date();return`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`};
-function provCount(){return{docs:FALL.filter(r=>(r.st||'pend')==='pend').length,hold:R.filter(x=>x.st==='hold').length}}
-function provHtml(){const c=provCount();if(!R.length||(!c.docs&&!c.hold))return'';return`<div class="prov noprint">⏳ <b>初篩尚未定案</b>：還有 ${c.docs} 份文件待核對${c.hold?`、${c.hold} 位待補件`:''}。目前的正取／備取是<b>暫定</b>，匯出的檔名會加上「暫定」。</div>`}
+function provCount(){return{docs:FALL.filter(r=>(r.st||'pend')==='pend').length,hold:R.filter(x=>x.st==='hold').length,late:R.filter(x=>x.st==='late').length}}
+function provHtml(){const c=provCount();if(!R.length||(!c.docs&&!c.hold&&!c.late))return'';if(!c.docs&&!c.hold)return`<div class="prov noprint" style="background:#fdecea;color:#8c1d18;border-color:#f3c3bf">📌 <b>補件期限已過</b>：${c.late} 位逾期未補件，已集中列在「初篩結果」的「逾期未補件」，請委員會議決定是否受理。</div>`;return`<div class="prov noprint">⏳ <b>初篩尚未定案</b>：還有 ${c.docs} 份文件待核對${c.hold?`、${c.hold} 位待補件`:''}${c.late?`、${c.late} 位逾期未補件（請委員會議決定）`:''}。目前的正取／備取是<b>暫定</b>，匯出的檔名會加上「暫定」。</div>`}
 function badNotes(x){const who=fkey(x.a,'');return FALL.filter(r=>r.k.startsWith(who)&&r.st==='bad').map(r=>`<div class="note">${esc(DOCNAME(r.k.split('|')[1]))}：${esc(r.note||'')}</div>`).join('')}
 function renderHello(){if(!CLOUD){$('#hello').innerHTML='';return}
  const nm=RVN[CUSER.toLowerCase()]||'',n=FALL.filter(r=>(r.st||'pend')==='pend').length;
@@ -1005,6 +1008,26 @@ function auditDiff(r){
 async function loadAudit(){const{data,error}=await SBC.from('audit_log').select('*').order('id',{ascending:false}).limit(200);if(error){alert('讀取失敗：'+error.message);return}
  const nameOf=r=>{const id=(r.after||r.before||{}).applicant_id||r.row_id;const a=CAPPS.find(x=>x._cid===id);return a?a.id+' '+a.name:''};
  $('#auditTable').innerHTML='<tr><th>時間</th><th>誰</th><th>對象</th><th>內容</th></tr>'+(data||[]).map(r=>`<tr><td>${new Date(r.at).toLocaleString('zh-TW',{hour12:false})}</td><td>${esc(RVN[(r.who||'').toLowerCase()]||r.who)}</td><td>${esc({applicants:'申請人',documents:'文件',settings:'規則'}[r.tbl]||r.tbl)} ${esc(nameOf(r))}${r.tbl==='documents'?'<br><span class="note">'+esc(DOCNAME(((r.after||r.before)||{}).doc_type||''))+'</span>':''}</td><td>${auditDiff(r)}</td></tr>`).join('')}
+
+async function startSpot(){
+ await cloudLoad();const auto=FALL.filter(r=>r.st==='ok'&&r.by==='auto');
+ if(!auto.length){alert('目前沒有需要抽查的系統通過文件');return}
+ const must=auto.filter(r=>/\|(d_wel|d_dis)$/.test(r.k)),rest=auto.filter(r=>!must.includes(r)).sort(()=>Math.random()-.5);
+ const pct=Math.max(0,Math.min(100,parseFloat(S.spotPct)||10)),pick=rest.slice(0,Math.ceil(rest.length*pct/100));
+ RQ=[...must,...pick].map(r=>r.id);
+ if(!confirm(`本次抽查 ${RQ.length} 份：\n・福利身分、身障證明 ${must.length} 份（影響優先順序，全部看）\n・其他文件隨機抽 ${pct}%：${pick.length} 份\n\n看過按「符合」就會改成「已核對符合」，下次不會再抽到。開始嗎？`))return;
+ SPOT=true;RI=0;RS={};RALL={};DIR=1;rdlg.showModal();showReview()}
+const mask=n=>{n=String(n||'');return n.length<=1?n:n.length===2?n[0]+'○':n[0]+'○'.repeat(n.length-2)+n[n.length-1]};
+function exportReviewers(){
+ if(!R.length){alert('尚無資料');return}
+ const st=x=>({ok:'正取',add:'追加正取',wait:'備取'+(x.wn||''),hold:'待補件',late:'逾期未補件',no:'不符合'}[x.st]);
+ const pr=x=>[x.p1?'①':'',x.welfare&&!x.p1?'②':'',x.disab?'③':'',x.noHouse?'④':''].filter(Boolean).join('');
+ const head=['排名','初篩結果','編號','姓名','學制','系所','年級','成績','優先條件（對照規則第幾項）','不符合原因','備註','自述／推薦重點','審查組','評審意見'];
+ const row=x=>[x.rk||'',st(x),x.a.id,mask(x.a.name),x.a.level,x.a.dept,x.grade||'',x.a.score,pr(x),x.reasons.map(tagOf).join('、'),x.notes.map(tagOf).join('、'),x.a.memo||'',x.grp,''];
+ const order={ok:0,add:1,wait:2,hold:3,late:3.5,no:4};
+ const part=L=>[head,...R.filter(x=>x.L===L).sort((p,q)=>order[p.st]-order[q.st]||((p.rk||999)-(q.rk||999))).map(row)];
+ const note=[['使用須知'],['本名單僅供本年度助學金評審使用，請勿轉寄、複製或上傳到其他地方。'],['會議結束後請將紙本交回承辦人員統一銷毀，電子檔請刪除（含下載資料夾與資源回收筒）。'],['優先條件：①續領且具福利身分 ②低收／中低收／特殊境遇 ③本人或二等親身障／重大傷病 ④無房產'],['匯出時間：'+new Date().toLocaleString('zh-TW',{hour12:false})]];
+ sheetOut([['使用須知',note],['大學部',part('U')],['碩博士班',part('G')]],null,'松樑助學金_評審用_機密_'+today()+(provCount().docs||provCount().hold||provCount().late?'_暫定':''))}
 
 $('#q').oninput=renderData;$('#fLevel').onchange=render;$('#fStatus').onchange=render;$('#fq').oninput=render;$('#dShow').onchange=renderDocs;
 load();renderSettings();render();loadIdx().then(render).then(()=>{if(SBC)enterCloud()});
