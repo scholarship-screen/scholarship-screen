@@ -108,7 +108,7 @@ function ensure(){if(cap)return;const st=document.createElement('style');st.text
  document.body.appendChild(cap);
  cap.querySelector('.pz').onclick=()=>{paused=!paused;cap.querySelector('.pz').textContent=paused?'繼續':'暫停';if(!paused)arm()};
  cap.querySelector('.nx').onclick=()=>{if(i>=steps.length-1&&onDone){const f=onDone;stop();f();return}next()};
- cap.querySelector('.go').onclick=()=>stop()}
+ cap.querySelector('.go').onclick=()=>{if(onDone){const f=onDone;stop();f();return}stop()}}
 function top(){if(cap.dataset.off)return;const ds=[...document.querySelectorAll('dialog[open]')];const host=ds.length?ds[ds.length-1]:document.body;if(cap.parentNode!==host)host.appendChild(cap);cap.style.display='block'}
 setInterval(()=>{if(cap&&!cap.dataset.off)top()},400);
 function clearHl(){document.querySelectorAll('.dp-hl').forEach(e=>e.classList.remove('dp-hl'))}
