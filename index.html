@@ -234,6 +234,7 @@ dialog::backdrop{background:rgba(20,35,25,.5)}
 
 <!-- 總覽 -->
 <section id="t-home">
+ <div id="keyWarn" class="prov late hidden noprint" style="background:var(--err-bg);color:var(--err);border-color:var(--err-bd)"><b>文件初步檢查還沒啟用</b>：學生上傳的文件不會自動檢查，全部要人工核對。請聯絡系統管理員設定判讀金鑰。</div>
  <div id="hello" class="cloudonly noprint"></div>
  <div id="provHome"></div>
  <div class="stats" id="stats"></div>
@@ -1022,7 +1023,7 @@ async function enterCloud(){
  CLOUD=true;CUSER=s.session.user.email;document.body.classList.add('cloud');
  const ra=await SBC.rpc('is_admin');ISADMIN=!!(ra&&ra.data);document.body.classList.toggle('admin',ISADMIN);
  
- await cloudLoad();$('#userBtn').textContent=(RVN[CUSER.toLowerCase()]||CUSER.split('@')[0])+' ▾';$('#userInfo').innerHTML=`${esc(CUSER)}<br>${ISADMIN?'管理者':'審查委員'}`;maybeTour();return true}
+ await cloudLoad();if(ISADMIN)checkKey();$('#userBtn').textContent=(RVN[CUSER.toLowerCase()]||CUSER.split('@')[0])+' ▾';$('#userInfo').innerHTML=`${esc(CUSER)}<br>${ISADMIN?'管理者':'審查委員'}`;maybeTour();return true}
 let LEAVING=false;
 async function leaveCloud(){
  if(!confirm('確定登出嗎？'))return;
@@ -1146,6 +1147,8 @@ function exportReviewers(){
  const note=[['使用須知'],['本名單僅供本年度助學金評審使用，請勿轉寄、複製或上傳到其他地方。'],['會議結束後請將紙本交回承辦人員統一銷毀，電子檔請刪除（含下載資料夾與資源回收筒）。'],['優先條件：①續領且具福利身分 ②低收／中低收／特殊境遇 ③本人或二等親身障／重大傷病 ④無房產'],['匯出時間：'+new Date().toLocaleString('zh-TW',{hour12:false})]];
  sheetOut([['使用須知',note],['大學部',part('U')],['碩博士班',part('G')]],null,'松樑助學金_評審用_機密_'+today()+(provCount().docs||provCount().hold||provCount().late?'_暫定':''))}
 
+async function checkKey(){try{const{data}=await SBC.functions.invoke('analyze',{body:{ping:true}});const bad=!data||data.key===false;
+ const box=$('#keyWarn');box.classList.toggle('hidden',!bad)}catch(e){}}
 $('#q').oninput=renderData;$('#fLevel').onchange=render;$('#fStatus').onchange=render;$('#fq').oninput=render;$('#dShow').onchange=renderDocs;
 load();renderSettings();render();loadIdx().then(render).then(()=>{if(SBC)enterCloud()});
 </script>
