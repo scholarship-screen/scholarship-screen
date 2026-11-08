@@ -89,6 +89,7 @@ window.DemoClient=function(){
 (function(){
 const css=`#dpCap{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(640px,calc(100vw - 24px));margin:0;background:#1d2733;color:#fff;border:0;border-radius:16px;padding:18px 20px 14px;box-shadow:0 16px 48px rgba(0,0,0,.35);font:18px/1.65 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;z-index:2147483647}
 #dpCap b.t{display:block;font-size:21px;margin-bottom:4px;color:#cfe8b8}
+@media(max-width:500px){#dpCap .m svg{width:48px;height:48px}}
 #dpCap .ctl{display:flex;gap:8px;align-items:center;margin-top:12px}
 #dpCap .ctl span{flex:1;font-size:15px;color:#b9c4d0}
 #dpCap .ctl button{font:inherit;font-size:16px;font-weight:600;border:1px solid #5b6876;background:#2b3644;color:#fff;border-radius:10px;padding:8px 14px;cursor:pointer}
@@ -103,7 +104,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let steps=[],i=0,paused=false,timer=null,run=0,cap=null;
 function ensure(){if(cap)return;const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
  cap=document.createElement('div');cap.id='dpCap';cap.setAttribute('role','status');cap.setAttribute('aria-live','polite');
- cap.innerHTML='<b class="t"></b><div class="b"></div><div class="bar"><i></i></div><div class="ctl"><span class="n"></span><button class="pz">暫停</button><button class="nx">下一步</button><button class="go">結束介紹</button></div>';
+ cap.innerHTML='<div style="display:flex;gap:14px;align-items:flex-start"><div class="m" style="flex:none;margin-top:-4px">'+(window.MASCOT?window.MASCOT(64,'wave'):'')+'</div><div style="flex:1"><b class="t"></b><div class="b"></div></div></div><div class="bar"><i></i></div><div class="ctl"><span class="n"></span><button class="pz">暫停</button><button class="nx">下一步</button><button class="go">結束介紹</button></div>';
  document.body.appendChild(cap);
  cap.querySelector('.pz').onclick=()=>{paused=!paused;cap.querySelector('.pz').textContent=paused?'繼續':'暫停';if(!paused)arm()};
  cap.querySelector('.nx').onclick=()=>{next()};
