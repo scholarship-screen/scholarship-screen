@@ -23,7 +23,7 @@
   <details class="menu cloudonly" id="userMenu"><summary class="btn" id="userBtn">帳號</summary><div class="pop"><div class="mi" id="userInfo"></div><button onclick="this.closest('details').open=false;leaveCloud()">登出</button></div></details>
  </div>
 </header>
-<div id="demoBar" class="hidden noprint" style="background:#1e4e8c;color:#fff;padding:10px 24px;font-size:17px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><b>示範模式</b><span>本頁為示範資料，所有操作均不會儲存；重新整理頁面即恢復原狀。</span><button class="btn sm" style="margin-left:auto" onclick="window.DemoPlayer.play(adminDemoSteps())">重播介紹</button><button class="btn sm" onclick="location.reload()">離開示範</button></div>
+<div id="demoBar" class="hidden noprint" style="background:#1e4e8c;color:#fff;padding:10px 24px;font-size:17px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><b>示範模式</b><span>本頁為示範資料，所有操作均不會儲存；重新整理頁面即恢復原狀。</span><button class="btn sm" style="margin-left:auto" onclick="window.DemoPlayer.play(adminDemoSteps(),{onDone:demoToLogin})">重播介紹</button><button class="btn sm" onclick="location.reload()">離開示範</button></div>
 <nav>
  <button data-t="home" class="on">總覽</button>
  <button data-t="docs">文件核對<span class="count hidden" id="navPend"></span></button>
@@ -244,6 +244,6 @@
  <div class="dlg-f"><button class="btn danger adminonly" id="delBtn">刪除</button><span style="flex:1"></span><button class="btn" onclick="dlg.close()">取消</button><button class="btn pri" onclick="saveEdit()">儲存</button></div>
 </dialog>
 
-<script src="admin.js?v=8"></script>
+<script src="admin.js?v=9"></script>
 </body>
 </html>

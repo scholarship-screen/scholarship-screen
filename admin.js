@@ -476,7 +476,7 @@ const tfetch=(u,o={})=>{const ac=new AbortController();const t=setTimeout(()=>ac
 try{if(CFG.key&&!/^__/.test(CFG.key)&&window.supabase)SBC=window.supabase.createClient(CFG.url,CFG.key,{global:{fetch:tfetch}})}catch(e){}
 // 寫入後沒有任何資料被更新，多半是登入過期或已被移出審查名單
 async function wrote(res,what){if(res.error){alert(what+'失敗：'+res.error.message);return false}if(Array.isArray(res.data)&&!res.data.length){await sessionLost();return false}return true}
-async function sessionLost(){alert('登入已逾時，或此帳號已不在審查人員名單內。\n本次變更未儲存，請重新登入後再操作。');try{await SBC.auth.signOut()}catch(e){}location.reload()}
+async function sessionLost(){alert('登入已逾時，或此帳號已不在審查人員名單內。\n本次變更未儲存，請重新登入後再操作。');try{await SBC.auth.signOut()}catch(e){}scrollTo(0,0);location.reload()}
 const DOCKEYS=['d_id','d_tr','d_hh','d_prop','d_inc','d_rec','d_wel','d_dis','d_unemp'];
 const nid=id=>typeof id==='string'&&/^\d+$/.test(id)?+id:id;
 const _load=load,_save=save,_loadIdx=loadIdx,_getFile=getFile,_setSt=setSt,_delFile=delFile,_putFile=putFile,_syncDoc=syncDoc,_toggleDoc=toggleDoc,_saveEdit=saveEdit,_saveSettings=saveSettings,_clearAll=clearAll,_loadDemo=loadDemo,_allDocs=allDocs;
@@ -742,7 +742,7 @@ function exportReviewers(){
 async function checkKey(){try{const{data}=await SBC.functions.invoke('analyze',{body:{ping:true}});const bad=!data||data.key===false;
  const box=$('#keyWarn');box.classList.toggle('hidden',!bad)}catch(e){}}
 let DEMO=false;
-function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=5';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
+function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=6';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
 
 function adminDemoSteps(){
  const pendIdx=(no,k)=>RQ.findIndex(id=>{const r=FALL.find(x=>x.id===id);return r&&r.k===no+'|'+k});
@@ -765,7 +765,8 @@ function adminDemoSteps(){
 async function startDemo(){try{await loadDemoJs()}catch(e){alert(e.message);return}
  try{localStorage.setItem('sch_tour_done_demo@example.tw','1')}catch(e){}
  SBC=window.DemoClient();SBC.auth._demoLogin();DEMO=true;$('#demoBar').classList.remove('hidden');$('#demoBar').style.display='flex';if(ldlg.open)ldlg.close();
- $('#applyUrl').textContent=new URL('apply.html',location.href).href;await enterCloud();window.DemoPlayer.play(adminDemoSteps())}
+ $('#applyUrl').textContent=new URL('apply.html',location.href).href;await enterCloud();window.DemoPlayer.play(adminDemoSteps(),{onDone:demoToLogin})}
+function demoToLogin(){try{sessionStorage.setItem('sch_after_demo','1');localStorage.setItem('sch_seen_intro','1')}catch(e){}scrollTo(0,0);location.reload()}
 $('#q').oninput=renderData;$('#fLevel').onchange=render;$('#fStatus').onchange=render;$('#fq').oninput=render;$('#dShow').onchange=renderDocs;
 const ONLINE=!/[?&]offline\b/.test(location.search);if(ONLINE&&(SBC||CFG.key))document.body.classList.add('gated');
 if(ONLINE&&!SBC&&CFG.key){const g=$('#gateErr');if(g)g.classList.remove('hidden')}
@@ -773,4 +774,4 @@ const wdlg=$('#wdlg');if(window.MASCOT){$('#gMascot').innerHTML=MASCOT(96)}
 wdlg.addEventListener('close',()=>{try{localStorage.setItem('sch_seen_intro','1')}catch(e){}});
 try{load();renderSettings();render()}catch(e){console.error(e)}
 const idxP=Promise.race([loadIdx(),new Promise(r=>setTimeout(r,3000))]).then(()=>{try{render()}catch(e){}});
-idxP.then(async()=>{if(SBC){const ok=await enterCloud();if(ok)document.body.classList.remove('gated');else{let seen=false;try{seen=!!localStorage.getItem('sch_seen_intro')}catch(e){}if(!seen&&document.body.classList.contains('gated')){if(window.MASCOT)$('#wMascot').innerHTML=MASCOT(130,'fly');wdlg.showModal()}}}});
+idxP.then(async()=>{if(SBC){const ok=await enterCloud();if(ok)document.body.classList.remove('gated');else{let seen=false;try{seen=!!localStorage.getItem('sch_seen_intro')}catch(e){}let after=false;try{after=!!sessionStorage.getItem('sch_after_demo');sessionStorage.removeItem('sch_after_demo')}catch(e){}if(after&&document.body.classList.contains('gated')){cloudBtnClick()}else if(!seen&&document.body.classList.contains('gated')){if(window.MASCOT)$('#wMascot').innerHTML=MASCOT(130,'fly');wdlg.showModal()}}}});

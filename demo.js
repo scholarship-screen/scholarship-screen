@@ -101,13 +101,13 @@ const css=`#dpCap{position:fixed;left:50%;bottom:16px;transform:translateX(-50%)
 @keyframes dpTap{0%{box-shadow:0 0 0 0 rgba(155,187,69,.9)}100%{box-shadow:0 0 0 22px rgba(155,187,69,0)}}
 @media(prefers-reduced-motion:reduce){.dp-hl{animation:none}.dp-tap{animation:none}#dpCap .bar i{transition:none!important}}`;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-let steps=[],i=0,paused=false,timer=null,run=0,cap=null;
+let onDone=null,steps=[],i=0,paused=false,timer=null,run=0,cap=null;
 function ensure(){if(cap)return;const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
  cap=document.createElement('div');cap.id='dpCap';cap.setAttribute('role','status');cap.setAttribute('aria-live','polite');
  cap.innerHTML='<div style="display:flex;gap:14px;align-items:flex-start"><div class="m" style="flex:none;margin-top:-4px">'+(window.MASCOT?window.MASCOT(72,'fly'):'')+'</div><div style="flex:1"><b class="t"></b><div class="b"></div></div></div><div class="bar"><i></i></div><div class="ctl"><span class="n"></span><button class="pz">暫停</button><button class="nx">下一步</button><button class="go">結束介紹</button></div>';
  document.body.appendChild(cap);
  cap.querySelector('.pz').onclick=()=>{paused=!paused;cap.querySelector('.pz').textContent=paused?'繼續':'暫停';if(!paused)arm()};
- cap.querySelector('.nx').onclick=()=>{next()};
+ cap.querySelector('.nx').onclick=()=>{if(i>=steps.length-1&&onDone){const f=onDone;stop();f();return}next()};
  cap.querySelector('.go').onclick=()=>stop()}
 function top(){if(cap.dataset.off)return;const ds=[...document.querySelectorAll('dialog[open]')];const host=ds.length?ds[ds.length-1]:document.body;if(cap.parentNode!==host)host.appendChild(cap);cap.style.display='block'}
 setInterval(()=>{if(cap&&!cap.dataset.off)top()},400);
@@ -121,11 +121,11 @@ async function show(){const my=++run;clearTimeout(timer);const s=steps[i];
  const bar=cap.querySelector('.bar i');bar.style.transition='none';bar.style.width='0';top();if(i>0&&(i===steps.length-1||i%4===0)&&window.MASCOT_HOP)MASCOT_HOP(cap);
  try{if(s.do)await s.do({hl,tap,type,sleep,until})}catch(e){console.log(e)}
  if(my!==run)return;top();arm()}
-function arm(){clearTimeout(timer);if(paused)return;const s=steps[i],ms=s.ms||5000;const bar=cap.querySelector('.bar i');
+function arm(){clearTimeout(timer);if(paused)return;if(i>=steps.length-1&&onDone){const b=cap.querySelector('.bar i');b.style.transition='none';b.style.width='100%';return}const s=steps[i],ms=s.ms||5000;const bar=cap.querySelector('.bar i');
  bar.style.transition='none';bar.style.width='0';requestAnimationFrame(()=>{bar.style.transition=`width ${ms}ms linear`;bar.style.width='100%'});
  timer=setTimeout(()=>next(),ms)}
 function next(){if(i>=steps.length-1){stop();return}i++;show()}
 function stop(){run++;clearTimeout(timer);clearHl();cap.dataset.off='1';cap.style.display='none';if(window.__dpEnd)window.__dpEnd()}
 const until=async(fn,ms=8000)=>{const t=Date.now();while(Date.now()-t<ms){try{if(fn())return true}catch(e){}await sleep(150)}return false};
-window.DemoPlayer={play(list){ensure();delete cap.dataset.off;if(window.MASCOT)cap.querySelector('.m').innerHTML=MASCOT(72,'fly');steps=list;i=0;paused=false;cap.querySelector('.pz').textContent='暫停';top();show()},helpers:{hl,tap,type,sleep,until}};
+window.DemoPlayer={play(list,opt){onDone=(opt&&opt.onDone)||null;ensure();delete cap.dataset.off;if(window.MASCOT)cap.querySelector('.m').innerHTML=MASCOT(72,'fly');steps=list;i=0;paused=false;cap.querySelector('.pz').textContent='暫停';top();show()},helpers:{hl,tap,type,sleep,until}};
 })();
