@@ -177,13 +177,12 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
    <label class="f req">系所<small>請填全名，例：電機工程系</small><input name="dept"></label>
    <label class="f req">年級<select name="grade"><option value="">請選擇</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
    <label class="f req">前學期學業平均成績<small>依成績單填寫，例：82.5</small><input name="score" inputmode="decimal"></label>
-   <label class="f">前學期班級排名<small>成績單未列排名者免填</small>
+   <label class="f">前學期班級或系排名<small>成績單列班排或系排皆可；未列者免填</small>
     <span class="pair"><span>第</span><input name="rankNo" inputmode="numeric" placeholder="10"><span>名，全班</span><input name="classSize" inputmode="numeric" placeholder="50"><span>人</span></span></label>
-   <label class="f req">前學期操行成績<small>分數或等第，例：85、甲；成績單未列者請填「無」</small><input name="conduct"></label>
    <label class="f req">曾因故意行為受懲處<select name="demerit"><option>無</option><option>警告</option><option>小過</option><option>大過以上</option></select></label>
    <label class="f req">是否為公費生<select name="gov"><option>否</option><option>是</option></select></label>
    <label class="f">本學期領取其他獎學金金額（元）<small>無者請填 0</small><input name="otherAid" inputmode="numeric" value="0"></label>
-   <label class="f req">上學期是否領過本助學金<small>續領者免附所得清單及推薦函</small><select name="prev"><option>否</option><option>是</option></select></label>
+   <label class="f req">上學期是否領過本助學金<select name="prev"><option>否</option><option>是</option></select></label>
   </div>
  </div>
 
@@ -288,12 +287,13 @@ const tfetch=(u,o={})=>{const ac=new AbortController();const t=setTimeout(()=>ac
 try{if(CFG.key&&!/^__/.test(CFG.key)&&window.supabase)sb=window.supabase.createClient(CFG.url,CFG.key,{auth:{persistSession:false},global:{fetch:tfetch}})}catch(e){}
 const HOWTAX='攜帶身分證至各地國稅局分局或稽徵所臨櫃免費申請，當場核發；家人資料須由本人申請，或攜帶其身分證及委託書代辦。持有自然人憑證或已註冊健保卡者，亦可於財政部網站線上查詢列印。實際方式以國稅局公告為準。';
 const DOCS=[
- {k:'d_id',sh:'學生證',l:'學生證或在學證明',d:'學生證正反面，或學校核發之在學證明'},
- {k:'d_tr',sh:'成績單',l:'前學期成績單',d:'須列有學業平均及操行成績；列有班級排名者為佳'},
+ {k:'d_id',sh:'學生證',l:'學生證或在學證明',d:'蓋有校章之學生證正反面，或學校核發之在學證明'},
+ {k:'d_tr',sh:'成績單',l:'前學期成績單',d:'須列有學業平均，並註明班級排名或系排名'},
+ {k:'d_merit',sh:'獎懲紀錄',l:'前一學期獎懲紀錄',d:'學校核發之獎懲紀錄（向學務處或生輔組申請）'},
  {k:'d_hh',sh:'戶籍謄本',l:'全戶戶籍謄本',d:'三個月內申請，需列出全戶成員',help:'攜帶身分證至各地戶政事務所申請，或以自然人憑證於內政部網站線上申請。'},
  {k:'d_prop',sh:'財產清單',l:'全國財產稅總歸戶財產查詢清單',d:'證明有無房屋、土地',who:1,help:HOWTAX},
- {k:'d_inc',sh:'所得清單',l:'綜合所得稅各類所得資料清單',d:'證明去年所得',who:1,skipPrev:1,help:HOWTAX},
- {k:'d_rec',sh:'推薦函',l:'導師或系主任推薦函',d:'須有推薦教師簽名',skipPrev:1},
+ {k:'d_inc',sh:'所得清單',l:'綜合所得稅各類所得資料清單',d:'證明去年所得；單親家庭只需扶養家長一方',who:1,help:HOWTAX},
+ {k:'d_rec',sh:'推薦函',l:'導師或系主任推薦函',d:'須有推薦教師簽名'},
  {k:'d_wel',sh:'福利身分證明',l:'低收入戶／中低收入戶／特殊境遇家庭證明',d:'區公所核發，且在有效期限內',need:f=>f.welfare&&f.welfare!=='無'},
  {k:'d_dis',sh:'身障／重大傷病證明',l:'身心障礙證明或重大傷病卡',d:'正反面各拍一張',need:f=>f.disab&&f.disab!=='無'},
  {k:'d_unemp',sh:'失業證明',l:'失業證明',d:'家庭成員失業者檢附，非必要文件',need:f=>f.unemp==='是',opt:1},
@@ -334,7 +334,7 @@ function markErr(name,msg){const el=$(`#v-form [name=${name}]`);const lb=el&&el.
 function collect(){
  const fm=$('#v-form'),f={};for(const el of fm.elements){if(!el.name)continue;f[el.name]=el.type==='checkbox'?el.checked:String(el.value).trim()}
  const errs=[];const need=(k,msg)=>{if(!f[k]){errs.push([k,msg||'此欄位為必填'])}};
- ['name','studentNo','phone','email','nation','level','div','dept','grade','score','conduct','family','incSelf','house'].forEach(k=>need(k,k==='nation'||k==='level'||k==='div'||k==='grade'||k==='family'||k==='house'?'請選擇一項':null));
+ ['name','studentNo','phone','email','nation','level','div','dept','grade','score','family','incSelf','house'].forEach(k=>need(k,k==='nation'||k==='level'||k==='div'||k==='grade'||k==='family'||k==='house'?'請選擇一項':null));
  const single=f.family==='單親';
  if(single){need('guardianName');need('guardianRel','請選擇一項');need('incG');delete f.fatherName;delete f.motherName;delete f.incF;delete f.incM}
  else if(f.family){need('fatherName');need('motherName');need('incF');need('incM');delete f.guardianName;delete f.guardianRel;delete f.incG}

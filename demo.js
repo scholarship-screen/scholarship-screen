@@ -1,7 +1,7 @@
 // 示範模式：用瀏覽器裡的假資料跑真正的畫面，什麼都不會存到雲端，重新整理就恢復原狀
 (function(){
 const uid=()=>crypto.randomUUID?crypto.randomUUID():'d'+Math.random().toString(36).slice(2)+Date.now();
-const NAMES={d_id:'學生證',d_tr:'成績單',d_hh:'全戶戶籍謄本',d_prop:'全國財產稅總歸戶財產查詢清單',d_inc:'綜合所得稅各類所得資料清單',d_rec:'推薦函',d_wel:'中低收入戶證明',d_dis:'身心障礙證明'};
+const NAMES={d_id:'學生證',d_tr:'成績單',d_merit:'獎懲紀錄',d_hh:'全戶戶籍謄本',d_prop:'全國財產稅總歸戶財產查詢清單',d_inc:'綜合所得稅各類所得資料清單',d_rec:'推薦函',d_wel:'中低收入戶證明',d_dis:'身心障礙證明'};
 function docSvg(type,name,extra,blur){
  if(type==='scenery')return`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8ec5f0"/><stop offset="1" stop-color="#e8f4ff"/></linearGradient></defs><rect width="1200" height="800" fill="url(#g)"/><path d="M0 560 L260 330 L470 520 L690 280 L1000 540 L1200 420 L1200 800 L0 800Z" fill="#5d8a4e"/><circle cx="980" cy="160" r="70" fill="#fff6c9"/></svg>`;
  const rows=(extra||[]).map((t,i)=>`<text x="90" y="${330+i*58}" font-size="30" fill="#333">${t}</text>`).join('');
@@ -10,16 +10,16 @@ function docSvg(type,name,extra,blur){
 const svgBlob=s=>new Blob([s],{type:'image/svg+xml'});
 
 function seed(){
- const DB={applicants:[],documents:[],files:{},reviewers:[{email:'demo@example.tw',name:'示範承辦',role:'admin'}],settings:[{id:1,data:{deadline:'2026-12-15',supDeadline:'2026-12-31',announce:'2027 年 1 月中旬',contact:'協會承辦 王小姐 02-2345-6789',incomeLimit:'600000',penalty:'警告',kwX:'資訊工程,資工'}}],audit_log:[]};
+ const DB={applicants:[],documents:[],files:{},reviewers:[{email:'demo@example.tw',name:'示範承辦',role:'admin'}],settings:[{id:1,data:{deadline:'2026-12-15',supDeadline:'2026-12-31',announce:'2027 年 1 月中旬',contact:'協會承辦 王小姐 02-2345-6789',incomeLimit:'1000000',penalty:'大過以上',kwX:'資訊工程,資工'}}],audit_log:[]};
  const P=[
-  ['U001','林怡君','電子工程系','3','單親',{guardianName:'林美華',guardianRel:'母親',incG:'260000'},'86','中低收入戶','無','無','否',{d_id:['ok'],d_tr:['ok',['學期平均：86.0','操行：甲']],d_hh:['bad',[],[],'戶籍謄本','照片右半部缺漏，請重新拍攝完整頁面'],d_prop:['pend',[],[],'財產清單，名下無房屋土地'],d_inc:['pend',[],[],'所得清單，母親 26 萬'],d_wel:['pend',['有效期限：2027-06-30'],[],'中低收入戶證明']}],
-  ['U002','陳冠宇','電機工程系','2','雙親',{fatherName:'陳建國',motherName:'張淑芬',incF:'320000',incM:'180000'},'78','無','無','無','否',{d_id:['ok'],d_tr:['scenery',[],['看起來不是「前學期成績單」，而是「無關的圖片或文件」'],'一張山景照片'],d_hh:['ok'],d_prop:['pend'],d_inc:['pend'],d_rec:['ok']}],
-  ['U003','黃詩涵','光電工程系','4','雙親',{fatherName:'黃志強',motherName:'吳雅婷',incF:'280000',incM:'150000'},'64','低收入戶','二等親內','無','否',{d_id:['ok'],d_tr:['pend',['學期平均：64.2'],['成績單平均 64.2 分，與申請表填的 68 分不同'],'成績單，學期平均 64.2 分'],d_hh:['blur',[],['文字不清楚'],'戶籍謄本，畫面模糊'],d_prop:['pend'],d_inc:['pend'],d_rec:['ok'],d_wel:['pend'],d_dis:['pend']}],
-  ['U004','張宗翰','機械工程系','3','雙親',{fatherName:'張文雄',motherName:'李秀英',incF:'300000',incM:'200000'},'88','無','無','有','否',{d_id:['ok'],d_tr:['ok'],d_hh:['bad',[],[],'戶籍謄本','列印日期超過三個月。請重新申請三個月內的謄本'],d_prop:['ok'],d_inc:['ok'],d_rec:['ok']}],
-  ['U005','吳佳穎','電子工程系','1','雙親',{fatherName:'吳俊傑',motherName:'許美玲',incF:'250000',incM:'120000'},'91','無','本人','無','否',{d_id:['ok'],d_tr:['ok'],d_hh:['ok'],d_prop:['ok'],d_inc:['ok'],d_dis:['ok']}],
-  ['U006','劉柏翰','資訊工程系','2','雙親',{fatherName:'劉正雄',motherName:'楊秀英',incF:'260000',incM:'190000'},'84','無','無','無','否',{d_id:['ok'],d_tr:['ok'],d_hh:['ok'],d_prop:['ok'],d_inc:['ok'],d_rec:['ok']}],
-  ['G001','楊承恩','電機工程系碩士班','1','雙親',{fatherName:'楊明德',motherName:'謝麗華',incF:'350000',incM:'210000'},'90','無','無','無','是',{d_id:['ok'],d_tr:['ok'],d_hh:['ok'],d_prop:['ok']}],
-  ['U007','蔡欣妤','電機工程系','2','單親',{guardianName:'蔡淑貞',guardianRel:'母親',incG:'230000'},'80','低收入戶','無','無','否',{d_id:['ok'],d_tr:['ok'],d_hh:['ok'],d_wel:['ok']}],
+  ['U001','林怡君','電子工程系','3','單親',{guardianName:'林美華',guardianRel:'母親',incG:'260000'},'86','中低收入戶','無','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['ok',['學期平均：86.0','操行：甲']],d_hh:['bad',[],[],'戶籍謄本','照片右半部缺漏，請重新拍攝完整頁面'],d_prop:['pend',[],[],'財產清單，名下無房屋土地'],d_inc:['pend',[],[],'所得清單，母親 26 萬'],d_wel:['pend',['有效期限：2027-06-30'],[],'中低收入戶證明']}],
+  ['U002','陳冠宇','電機工程系','2','雙親',{fatherName:'陳建國',motherName:'張淑芬',incF:'320000',incM:'180000'},'78','無','無','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['scenery',[],['看起來不是「前學期成績單」，而是「無關的圖片或文件」'],'一張山景照片'],d_hh:['ok'],d_prop:['pend'],d_inc:['pend'],d_rec:['ok']}],
+  ['U003','黃詩涵','光電工程系','4','雙親',{fatherName:'黃志強',motherName:'吳雅婷',incF:'280000',incM:'150000'},'64','低收入戶','二等親內','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['pend',['學期平均：64.2'],['成績單平均 64.2 分，與申請表填的 68 分不同'],'成績單，學期平均 64.2 分'],d_hh:['blur',[],['文字不清楚'],'戶籍謄本，畫面模糊'],d_prop:['pend'],d_inc:['pend'],d_rec:['ok'],d_wel:['pend'],d_dis:['pend']}],
+  ['U004','張宗翰','機械工程系','3','雙親',{fatherName:'張文雄',motherName:'李秀英',incF:'300000',incM:'200000'},'88','無','無','有','否',{d_id:['ok'],d_merit:['ok'],d_tr:['ok'],d_hh:['bad',[],[],'戶籍謄本','列印日期超過三個月。請重新申請三個月內的謄本'],d_prop:['ok'],d_inc:['ok'],d_rec:['ok']}],
+  ['U005','吳佳穎','電子工程系','1','雙親',{fatherName:'吳俊傑',motherName:'許美玲',incF:'250000',incM:'120000'},'91','無','本人','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['ok'],d_hh:['ok'],d_prop:['ok'],d_inc:['ok'],d_dis:['ok']}],
+  ['U006','劉柏翰','資訊工程系','2','雙親',{fatherName:'劉正雄',motherName:'楊秀英',incF:'260000',incM:'190000'},'84','無','無','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['ok'],d_hh:['ok'],d_prop:['ok'],d_inc:['ok'],d_rec:['ok']}],
+  ['G001','楊承恩','電機工程系碩士班','1','雙親',{fatherName:'楊明德',motherName:'謝麗華',incF:'350000',incM:'210000'},'90','無','無','無','是',{d_id:['ok'],d_merit:['ok'],d_tr:['ok'],d_hh:['ok'],d_prop:['ok'],d_inc:['ok'],d_rec:['ok']}],
+  ['U007','蔡欣妤','電機工程系','2','單親',{guardianName:'蔡淑貞',guardianRel:'母親',incG:'230000'},'80','低收入戶','無','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['ok'],d_hh:['ok'],d_wel:['ok']}],
  ];
  for(const[no,name,dept,grade,fam,par,score,wel,dis,house,prev,docs]of P){
   const id=uid();

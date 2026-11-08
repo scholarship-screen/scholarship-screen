@@ -16,17 +16,18 @@ const FIELDS=[
  {k:'incM',l:'母親年所得',num:1},
  {k:'incG',l:'監護人年所得',num:1,hint:'單親家庭才填'},
  {k:'score',l:'前學期學業成績',num:1},
- {k:'rankPct',l:'班級排名百分比',num:1,hint:'例：前 30% 填 30'},
- {k:'conduct',l:'前學期操行成績',num:1,hint:'甲乙丙也可'},
+ {k:'rankPct',l:'班級或系排名百分比',num:1,hint:'例：前 30% 填 30'},
+ {k:'conduct',l:'前學期操行成績',num:1,hint:'2026 年版辦法已不審查，可免填'},
  {k:'demerit',l:'懲處紀錄',opt:['無','警告','小過','大過以上'],hint:'因故意行為'},
  {k:'gov',l:'公費生',opt:['否','是']},
  {k:'otherAid',l:'其他獎學金每學期金額',num:1},
  {k:'d_id',l:'文件-學生證或在學證明',opt:['已附','未附'],doc:1},
- {k:'d_tr',l:'文件-前學期成績單（含班排）',opt:['已附','未附'],doc:1},
+ {k:'d_tr',l:'文件-前學期成績單（含班排或系排）',opt:['已附','未附'],doc:1},
+ {k:'d_merit',l:'文件-前學期獎懲紀錄',opt:['已附','未附'],doc:1},
  {k:'d_hh',l:'文件-全戶戶籍謄本',opt:['已附','未附'],doc:1},
  {k:'d_prop',l:'文件-財產稅總歸戶清單',opt:['已附','未附'],doc:1},
- {k:'d_inc',l:'文件-綜合所得稅資料清單',opt:['已附','未附'],doc:1,ex:1},
- {k:'d_rec',l:'文件-導師或系主任推薦函',opt:['已附','未附'],doc:1,ex:1},
+ {k:'d_inc',l:'文件-綜合所得稅資料清單',opt:['已附','未附'],doc:1},
+ {k:'d_rec',l:'文件-導師或系主任推薦函',opt:['已附','未附'],doc:1},
  {k:'d_wel',l:'文件-低收中低收或特殊境遇證明',opt:['無須','已附','未附'],doc:2,need:'welfare'},
  {k:'d_dis',l:'文件-身障手冊或重大傷病卡',opt:['無須','已附','未附'],doc:2,need:'disab'},
  {k:'d_unemp',l:'文件-失業家庭證明',opt:['無須','已附','未附'],doc:3},
@@ -43,8 +44,8 @@ const FIELDS=[
  {k:'override',l:'評審決議',opt:['依系統','評審排除','評審追加']},
  {k:'overNote',l:'決議說明'}
 ];
-const DEF={org:'清寒及弱勢助學金',quotaU:29,quotaG:4,incomeLimit:600000,spotPct:10,kwX:'資訊工程,資工',scoreMin:70,rankPct:50,aRatio:'2/3',groups:5,
- conductMin:75,otherMax:50000,penalty:'警告',
+const DEF={org:'清寒及弱勢助學金',quotaU:26,quotaG:4,incomeLimit:1000000,spotPct:10,kwX:'資訊工程,資工',scoreMin:70,rankPct:50,aRatio:'2/3',groups:5,
+ conductMin:'',otherMax:50000,penalty:'大過以上',
  kwA:'電子,電機,光電,物理,通訊,生物,機電,自動化,半導體',kwB:'紡織,材料,機械,工業工程,工業管理',backfill:'是'};
 let S=Object.assign({},DEF), APPS=[], R=[];
 const $=s=>document.querySelector(s);
@@ -79,12 +80,12 @@ function compute(){
   if(/外/.test(a.nation||''))x.reasons.push('非本國籍｜國籍：'+a.nation);
   if(!x.cat)x.reasons.push('科系不符｜'+(a.dept||'未填系所')+' 不在補助科系範圍');
   if(x.house>lim)x.reasons.push(`所得超標｜家戶年所得 ${wan(x.house)}，上限 ${wan(lim)}`);
-  if(x.score<smin&&!(x.rank<=rp))x.reasons.push(`成績未達｜成績 ${x.score} 分（需 ${smin} 分），班排 ${x.rank<100?'前 '+x.rank+'%':'未提供'}（需前 ${rp}%）`);
+  if(x.score<smin&&!(x.rank<=rp))x.reasons.push(`成績未達｜成績 ${x.score} 分（需 ${smin} 分），班排或系排 ${x.rank<100?'前 '+x.rank+'%':'未提供'}（需前 ${rp}%）`);
   const PL=['無','警告','小過','大過以上'],pv=yes(a.demerit)?3:Math.max(0,PL.indexOf(String(a.demerit||'無').replace('大過','大過以上').replace('以上以上','以上'))),pt=Math.max(1,PL.indexOf(S.penalty));
   if(pv>=pt)x.reasons.push(`懲處紀錄｜曾記${PL[pv]}`);
   if(/進修|夜間|推廣|空中/.test(a.div||''))x.reasons.push(`非日間部｜${a.div}不在補助範圍`);
   const cd=String(a.conduct??'').trim(),cn=/甲|優/.test(cd)?85:/乙/.test(cd)?75:/丙|丁/.test(cd)?65:parseFloat(cd);
-  if(cd&&!isNaN(cn)&&cn<+S.conductMin)x.reasons.push(`操行未達｜操行 ${cd}（需 ${S.conductMin} 分以上）`);
+  if(+S.conductMin>0&&cd&&!isNaN(cn)&&cn<+S.conductMin)x.reasons.push(`操行未達｜操行 ${cd}（需 ${S.conductMin} 分以上）`);
   if(yes(a.gov))x.reasons.push('公費生｜已享公費待遇');
   if(num(a.otherAid)>=num(S.otherMax))x.reasons.push(`他項獎學金超額｜每學期已領 ${wan(num(a.otherAid))}（須低於 ${wan(num(S.otherMax))}）`);
   const legacyOK=yes(a.docs)&&FIELDS.filter(f=>f.doc===1).every(f=>!a[f.k]);
@@ -99,7 +100,7 @@ function compute(){
   if(x.disab&&/未附|無須/.test(a.d_dis||'')){x.disab=false;x.notes.push('身障未附證明｜不列入優先條件')}
   if(a.override==='評審排除')x.reasons.push('評審排除｜'+(a.overNote||'評審會議決議'));
   x.hold=x.reasons.length>0&&x.reasons.every(r=>/^文件(不全|退回)/.test(r));
-  if(x.score<smin&&x.rank<=rp&&!x.reasons.length)x.notes.push(`班排補足｜成績未達 ${smin}，以班排前 ${x.rank}% 符合`);
+  if(x.score<smin&&x.rank<=rp&&!x.reasons.length)x.notes.push(`班排補足｜成績未達 ${smin}，以班排或系排前 ${x.rank}% 符合`);
   return x;
  });
  // 同一家庭：都可以通過，只加註標籤
@@ -162,7 +163,7 @@ function render(){
  const tc=tagCounts();
  $('#reasonStat').innerHTML=tc.length?`<h2>不符合原因統計</h2><p class="note">一人可能有多個原因。點標籤直接看名單。</p><div class="tagbar">${tc.map(([t,n])=>`<span class="rtag bad" onclick="TF='';setTF('${t}')">✕ ${esc(t)}　${n} 人</span>`).join('')}</div>`:'';
  $('#reasonStat').classList.toggle('hidden',!tc.length);
- $('#ruleList').innerHTML=`<li>本國籍、日間部學生（不含進修部、夜間部、推廣教育、空大）</li><li>科系：電子、電機相關（至少 ${esc(S.aRatio)} 名額）；紡織材料、機械、工業工程（其餘名額）</li><li>未享公費，其他獎學金每學期未達 ${wan(num(S.otherMax))}</li><li>申請人＋父母年所得合計 ${wan(num(S.incomeLimit))} 以下（單親：申請人＋監護人）</li><li>前學期成績 ${S.scoreMin} 分以上，或班排前 ${S.rankPct}%；操行 ${S.conductMin} 分（乙等）以上</li><li>無因故意行為遭記「${esc(S.penalty)}」以上懲處</li><li>必要文件齊全：學生證、成績單、戶籍謄本、財產清單、所得清單、推薦函（續領者免附後兩項）。不全視為無效</li><li>勾選福利身分或身障者，須附證明才列入優先條件</li><li>同一家庭之兄弟姊妹均可通過，系統加註「同家庭」標籤供委員參考</li><li>資訊工程（資工）系不列入電子電機類</li>`;
+ $('#ruleList').innerHTML=`<li>本國籍、日間部學生（不含進修部、夜間部、推廣教育、空大）</li><li>科系：電子、電機相關（至少 ${esc(S.aRatio)} 名額）；紡織材料、機械、工業工程（其餘名額）</li><li>未享公費，其他獎學金每學期未達 ${wan(num(S.otherMax))}</li><li>申請人＋父母年所得合計 ${wan(num(S.incomeLimit))} 以下（單親：申請人＋監護人）</li><li>前學期成績 ${S.scoreMin} 分以上，或班級／系排名前 ${S.rankPct}%${+S.conductMin>0?`；操行 ${S.conductMin} 分以上`:''}</li><li>未曾因故意行為遭記「${esc(String(S.penalty).replace('以上',''))}」以上懲處</li><li>必要文件齊全：學生證、成績單、獎懲紀錄、戶籍謄本、財產清單、所得清單、推薦函。不全視為無效</li><li>勾選福利身分或身障者，須附證明才列入優先條件</li><li>同一家庭之兄弟姊妹均可通過，系統加註「同家庭」標籤供委員參考</li><li>資訊工程（資工）系不列入電子電機類</li>`;
  renderData();renderResult(O);renderGroups();renderDocs();
 }
 
@@ -215,7 +216,7 @@ function toggleDoc(i,k){const a=APPS[i],f=FIELDS.find(f=>f.k===k),x=R.find(r=>r.
  if(cur==='ok')a[k]=(f.doc===3)?'無須':'未附';else a[k]='已附';
  render()}
 function allDocs(){const show=$('#dShow').value;R.forEach(x=>{if(show==='miss'&&!(x.missing||[]).length)return;DOCF().filter(f=>f.doc===1).forEach(f=>x.a[f.k]='已附')});render()}
-const DSHORT={d_id:'學生證',d_tr:'成績單',d_hh:'戶籍謄本',d_prop:'財產清單',d_inc:'所得清單',d_rec:'推薦函',d_wel:'福利證明',d_dis:'身障證明',d_unemp:'失業證明'};
+const DSHORT={d_id:'學生證',d_tr:'成績單',d_merit:'獎懲紀錄',d_hh:'戶籍謄本',d_prop:'財產清單',d_inc:'所得清單',d_rec:'推薦函',d_wel:'福利證明',d_dis:'身障證明',d_unemp:'失業證明'};
 function cellClick(i,k){if((FIDX[fkey(APPS[i],k)]||[]).length||CLOUD)openFiles(i,k);else toggleDoc(i,k)}
 async function markDoc(v){const{i,k}=FCUR;const a=APPS[i];
  if(CLOUD){const rv={...a._review,docs:{...(a._review.docs||{}),[k]:v}};if(!await wrote(await SBC.from('applicants').update({review:rv}).eq('id',a._cid).select('id'),'儲存'))return;a._review=rv}
@@ -254,7 +255,7 @@ function syncDoc(k){const[who,dk]=k.split('|');const a=APPS.find(a=>String(a.id|
 async function delFile(id){await new Promise(ok=>{const t=DB.transaction('f','readwrite');t.objectStore('f').delete(id);t.oncomplete=ok})}
 async function getFile(id){return new Promise(ok=>{const q=DB.transaction('f').objectStore('f').get(id);q.onsuccess=()=>ok(q.result)})}
 function fileBtn(x,f){const L=FIDX[fkey(x.a,f.k)]||[],n=L.length,w=L.some(r=>(r.flags||[]).length&&r.st!=='ok');return`<button class="fa ${n?'has':''}" onclick="openFiles(${x.i},'${f.k}')">${n?(w?'⚠ ':'📎 ')+n:'＋'}</button>`}
-const DOCKW=[['d_prop',/財產|歸戶|房產/],['d_unemp',/失業/],['d_dis',/身障|身心|手冊|重大傷病|傷病卡/],['d_wel',/低收|中低|特殊境遇|福利/],['d_inc',/所得|綜所|扣繳|稅/],['d_rec',/推薦/],['d_tr',/成績/],['d_hh',/戶籍|謄本|戶口/],['d_id',/學生證|在學|註冊/]];
+const DOCKW=[['d_prop',/財產|歸戶|房產/],['d_unemp',/失業/],['d_dis',/身障|身心|手冊|重大傷病|傷病卡/],['d_wel',/低收|中低|特殊境遇|福利/],['d_inc',/所得|綜所|扣繳|稅/],['d_rec',/推薦/],['d_merit',/獎懲/],['d_tr',/成績/],['d_hh',/戶籍|謄本|戶口/],['d_id',/學生證|在學|註冊/]];
 function matchFile(fn){const n=fn.replace(/\.[^.]+$/,'');let app=null;
  const ids=APPS.map((a,i)=>[i,String(a.id||'').trim()]).filter(([,id])=>id).sort((p,q)=>q[1].length-p[1].length);
  for(const[i,id]of ids){if(n.toUpperCase().includes(id.toUpperCase())){app=i;break}}
@@ -372,7 +373,7 @@ function openEdit(i){
  $('#editForm').innerHTML=FIELDS.map(f=>{const v=a[f.k]??'';
   const inp=f.opt?`<select data-k="${f.k}">${f.opt.map(o=>`<option ${String(v)===o?'selected':''}>${o}</option>`).join('')}</select>`
    :f.area?`<textarea data-k="${f.k}">${esc(v)}</textarea>`:`<input data-k="${f.k}" value="${esc(v)}" ${f.num?'inputmode="decimal"':''}>`;
-  return`${f.k==='d_id'?'<h3 style="grid-column:1/-1;margin:10px 0 0;color:var(--ink)">文件檢核（續領者免附所得清單與推薦函）</h3>':''}<label class="f" ${f.area?'style="grid-column:1/-1"':''}>${f.l.replace('文件-','')}${f.hint?`<span style="font-size:15px">（${f.hint}）</span>`:''}${inp}</label>`}).join('');
+  return`${f.k==='d_id'?'<h3 style="grid-column:1/-1;margin:10px 0 0;color:var(--ink)">文件檢核</h3>':''}<label class="f" ${f.area?'style="grid-column:1/-1"':''}>${f.l.replace('文件-','')}${f.hint?`<span style="font-size:15px">（${f.hint}）</span>`:''}${inp}</label>`}).join('');
  dlg.showModal();
 }
 function saveEdit(){const a={};document.querySelectorAll('#editForm [data-k]').forEach(e=>a[e.dataset.k]=e.value.trim());if(!a.name){alert('請填姓名');return}
@@ -413,10 +414,10 @@ async function sheetOut(name,aoa,fname){await loadXLSX();
 }
 function downloadTemplate(){
  const h=FIELDS.filter(f=>!['override','overNote'].includes(f.k)).map(f=>f.l);
- const E1={id:'U001',name:'王小明',level:'大學部',div:'日間部',dept:'電子工程系',grade:'3',nation:'本國',family:'雙親',incSelf:'120000',incF:'350000',incM:'280000',score:'82',rankPct:'25',conduct:'82',demerit:'無',gov:'否',otherAid:'0',prev:'否',welfare:'中低收入戶',disab:'無',house:'無',fam:'F001',d_id:'已附',d_tr:'已附',d_hh:'已附',d_prop:'已附',d_inc:'已附',d_rec:'未附',d_wel:'已附',d_dis:'無須',d_unemp:'已附',docNote:'推薦函待補',memo:'父親失業，課餘打工負擔家計'};
- const E2={id:'G001',name:'林小華',level:'碩士班',div:'日間部',dept:'電機工程系碩士班',grade:'1',nation:'本國',family:'單親',incSelf:'80000',incG:'300000',score:'88',conduct:'乙',demerit:'無',gov:'否',otherAid:'0',prev:'是',welfare:'低收入戶',disab:'二等親內',house:'無',fam:'F002',d_id:'已附',d_tr:'已附',d_hh:'已附',d_prop:'已附',d_inc:'',d_rec:'',d_wel:'已附',d_dis:'已附',d_unemp:'無須'};
+ const E1={id:'U001',name:'王小明',level:'大學部',div:'日間部',dept:'電子工程系',grade:'3',nation:'本國',family:'雙親',incSelf:'120000',incF:'350000',incM:'280000',score:'82',rankPct:'25',conduct:'82',demerit:'無',gov:'否',otherAid:'0',prev:'否',welfare:'中低收入戶',disab:'無',house:'無',fam:'F001',d_id:'已附',d_tr:'已附',d_merit:'已附',d_hh:'已附',d_prop:'已附',d_inc:'已附',d_rec:'未附',d_wel:'已附',d_dis:'無須',d_unemp:'已附',docNote:'推薦函待補',memo:'父親失業，課餘打工負擔家計'};
+ const E2={id:'G001',name:'林小華',level:'碩士班',div:'日間部',dept:'電機工程系碩士班',grade:'1',nation:'本國',family:'單親',incSelf:'80000',incG:'300000',score:'88',conduct:'乙',demerit:'無',gov:'否',otherAid:'0',prev:'是',welfare:'低收入戶',disab:'二等親內',house:'無',fam:'F002',d_id:'已附',d_tr:'已附',d_merit:'已附',d_hh:'已附',d_prop:'已附',d_inc:'已附',d_rec:'已附',d_wel:'已附',d_dis:'已附',d_unemp:'無須'};
  const ks=FIELDS.filter(f=>!['override','overNote'].includes(f.k)).map(f=>f.k);const ex=ks.map(k=>E1[k]||''),ex2=ks.map(k=>E2[k]||'');
- const note=[['欄位','填寫方式'],['（文件欄）','填「已附」或「未附」；續領者所得清單、推薦函可留空。福利證明、身障證明有該身分才需要附'],...FIELDS.filter(f=>!['override','overNote'].includes(f.k)).map(f=>[f.l,f.opt?'請填：'+f.opt.join(' / '):f.num?'數字（元），可含逗號'+(f.hint?'；'+f.hint:''):(f.hint||'文字')])];
+ const note=[['欄位','填寫方式'],['（文件欄）','填「已附」或「未附」。福利證明、身障證明有該身分才需要附'],...FIELDS.filter(f=>!['override','overNote'].includes(f.k)).map(f=>[f.l,f.opt?'請填：'+f.opt.join(' / '):f.num?'數字（元），可含逗號'+(f.hint?'；'+f.hint:''):(f.hint||'文字')])];
  sheetOut([['申請資料',[h,ex,ex2]],['填寫說明',note]],null,'松樑助學金_申請資料範本');
 }
 function exportResults(){
@@ -434,7 +435,7 @@ function exportResults(){
 async function clearAll(){if(confirm('確定清空全部申請資料與已上傳的文件電子檔？此動作無法復原。')){APPS=[];try{await idb();await new Promise(ok=>{const t=DB.transaction('f','readwrite');t.objectStore('f').clear();t.oncomplete=ok})}catch(e){}FIDX={};render()}}
 
 // ===== 設定 =====
-const SET=[['deadline','本年度申請截止日（逾期不受理新申請）','date'],['supDeadline','本年度補件期限（逾期不受理補件；逾期者集中列出供委員會議決定）','date'],['spotPct','抽查比例 %（系統通過文件之抽查比例，例：10）'],['announce','預計公告結果時間（例：12 月中旬）'],['contact','承辦聯絡方式（顯示於學生申請頁，例：王小姐 02-1234-5678）'],['org','單位名稱（顯示在標題下方）'],['quotaU','大學部名額'],['quotaG','碩博士班名額'],['incomeLimit','家戶年所得上限（元，申請人＋父母合計；單親為申請人＋扶養家長）'],['scoreMin','學業成績門檻（分）'],['rankPct','成績未達時，班排前幾 %'],['aRatio','電子電機類最低比例（如 2/3）'],['groups','評審分組數'],['conductMin','操行成績門檻（分）'],['otherMax','其他獎學金每學期上限（元，達此金額即不符）'],['penalty','懲處排除門檻（達此等級以上即不符資格）',['警告','小過','大過以上']],['kwA','電子電機類 系所關鍵字（逗號分隔）'],['kwB','紡織材料／機械／工工類 關鍵字'],['kwX','不列入的系所關鍵字（例：資訊工程,資工）'],['backfill','電子電機不足時，名額回流其他類',['是','否']]];
+const SET=[['deadline','本年度申請截止日（逾期不受理新申請）','date'],['supDeadline','本年度補件期限（逾期不受理補件；逾期者集中列出供委員會議決定）','date'],['spotPct','抽查比例 %（系統通過文件之抽查比例，例：10）'],['announce','預計公告結果時間（例：12 月中旬）'],['contact','承辦聯絡方式（顯示於學生申請頁，例：王小姐 02-1234-5678）'],['org','單位名稱（顯示在標題下方）'],['quotaU','大學部名額'],['quotaG','碩博士班名額'],['incomeLimit','家戶年所得上限（元，申請人＋父母合計；單親為申請人＋扶養家長）'],['scoreMin','學業成績門檻（分）'],['rankPct','成績未達時，班排前幾 %'],['aRatio','電子電機類最低比例（如 2/3）'],['groups','評審分組數'],['conductMin','操行成績門檻（分；2026 年版辦法已取消，留空即不檢查）'],['otherMax','其他獎學金每學期上限（元，達此金額即不符）'],['penalty','懲處排除門檻（達此等級以上即不符資格）',['警告','小過','大過以上']],['kwA','電子電機類 系所關鍵字（逗號分隔）'],['kwB','紡織材料／機械／工工類 關鍵字'],['kwX','不列入的系所關鍵字（例：資訊工程,資工）'],['backfill','電子電機不足時，名額回流其他類',['是','否']]];
 function renderSettings(){
  const G1=['deadline','supDeadline','announce','contact','spotPct'],G3=['kwA','kwB','kwX','aRatio','backfill'];
  const one=([k,l,t])=>{const m=String(l).match(/^([^（]+)（(.+)）$/);const lab=m?m[1]:l,hint=m?m[2]:'';return`<label class="f" ${k.startsWith('kw')||k==='contact'?'style="grid-column:1/-1"':''}>${esc(lab)}${hint?`<span class="hint">${esc(hint)}</span>`:''}${Array.isArray(t)?`<select data-s="${k}">${t.map(o=>`<option ${String(S[k])===o?'selected':''}>${o}</option>`).join('')}</select>`:`<input data-s="${k}" ${t==='date'?'type="date"':''} value="${esc(S[k]??'')}">`}</label>`};
@@ -456,7 +457,7 @@ function loadDemo(){
  const dG=['電子工程系碩士班','電機工程系碩士班','光電工程系碩士班','機械與電腦輔助工程系碩士班','工業工程與管理系碩士班'];
  const L=[];
  for(let i=0;i<83;i++){const U=i<55;const single=r()<.3;
-  const a={id:(U?'U':'G')+String(U?i+1:i-54).padStart(3,'0'),name:pick(sur)+pick(gn),level:U?'大學部':(r()<.9?'碩士班':'博士班'),div:r()<.03?'進修部':'日間部',conduct:String(Math.round(72+r()*20)),gov:'否',otherAid:r()<.05?'50000':'0',d_id:'已附',d_tr:r()<.03?'未附':'已附',d_hh:'已附',d_prop:r()<.04?'未附':'已附',d_inc:'已附',d_rec:r()<.05?'未附':'已附',d_wel:'已附',d_dis:r()<.25?'未附':'已附',d_unemp:'無須',docNote:'',dept:pick(U?dU:dG),
+  const a={id:(U?'U':'G')+String(U?i+1:i-54).padStart(3,'0'),name:pick(sur)+pick(gn),level:U?'大學部':(r()<.9?'碩士班':'博士班'),div:r()<.03?'進修部':'日間部',conduct:String(Math.round(72+r()*20)),gov:'否',otherAid:r()<.05?'50000':'0',d_id:'已附',d_tr:r()<.03?'未附':'已附',d_merit:r()<.03?'未附':'已附',d_hh:'已附',d_prop:r()<.04?'未附':'已附',d_inc:'已附',d_rec:r()<.05?'未附':'已附',d_wel:'已附',d_dis:r()<.25?'未附':'已附',d_unemp:'無須',docNote:'',dept:pick(U?dU:dG),
    grade:String(U?1+Math.floor(r()*4):1+Math.floor(r()*2)),nation:r()<.04?'外籍':'本國',family:single?'單親':'雙親',
    incSelf:String(Math.round(r()*180)*1000),incF:single?'':String(Math.round(r()*560)*1000),incM:single?'':String(Math.round(r()*420)*1000),
    incG:single?String(Math.round(r()*500)*1000):'',score:String(Math.round(62+r()*33)),rankPct:String(Math.round(5+r()*80)),
@@ -477,7 +478,7 @@ try{if(CFG.key&&!/^__/.test(CFG.key)&&window.supabase)SBC=window.supabase.create
 // 寫入後沒有任何資料被更新，多半是登入過期或已被移出審查名單
 async function wrote(res,what){if(res.error){alert(what+'失敗：'+res.error.message);return false}if(Array.isArray(res.data)&&!res.data.length){await sessionLost();return false}return true}
 async function sessionLost(){alert('登入已逾時，或此帳號已不在審查人員名單內。\n本次變更未儲存，請重新登入後再操作。');try{await SBC.auth.signOut()}catch(e){}scrollTo(0,0);location.reload()}
-const DOCKEYS=['d_id','d_tr','d_hh','d_prop','d_inc','d_rec','d_wel','d_dis','d_unemp'];
+const DOCKEYS=['d_id','d_tr','d_merit','d_hh','d_prop','d_inc','d_rec','d_wel','d_dis','d_unemp'];
 const nid=id=>typeof id==='string'&&/^\d+$/.test(id)?+id:id;
 const _load=load,_save=save,_loadIdx=loadIdx,_getFile=getFile,_setSt=setSt,_delFile=delFile,_putFile=putFile,_syncDoc=syncDoc,_toggleDoc=toggleDoc,_saveEdit=saveEdit,_saveSettings=saveSettings,_clearAll=clearAll,_loadDemo=loadDemo,_allDocs=allDocs;
 save=function(){if(!CLOUD)_save()};
