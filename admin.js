@@ -160,7 +160,7 @@ function compute(){
 
   out[L]={N,aMin,bMax,a:[...ch].filter(x=>x.cat==='A').length,b:[...ch].filter(x=>x.cat==='B').length,bf,el,ch};
  }
- rebalance(out,AT);
+ // 委員會決定（2026/11/09）：大學部 26／碩博 4 各自計算，電子電機名額不跨學制遞補
  for(const L of['U','G']){const o=out[L];if(!o)continue;let w=0;
   o.el.forEach(x=>{x.notes=x.notes.filter(n=>!/^名額已滿/.test(n));if(o.bf)x.notes=x.notes.filter(n=>!n.startsWith('類別'));
    if(o.ch.has(x)){x.st='ok';x.notes=x.notes.filter(n=>!n.startsWith('類別'))}else if(famBlock(x,o.ch)){x.st='no';const sib=[...o.ch].find(y=>y.L==='U'&&famK(y)===famK(x));x.reasons.push('同家庭限一人｜學士以下同一家庭限一人，'+(sib?(sib.a.id?sib.a.id+' ':'')+sib.a.name:'家人')+' 已列正取')}else{x.st='wait';x.wn=++w;if(!x.notes.some(n=>n.startsWith('類別')))x.notes.push(`名額已滿｜排名第 ${x.rk}，名額 ${o.N} 名已滿`)}});
@@ -349,7 +349,7 @@ async function showReview(){
  const id=RQ[RI];const r=await getFile(id);
  if(RURL){URL.revokeObjectURL(RURL);RURL=null}if(!r){RS[id]=RS[id]||'skip';RI+=DIR;return showReview()}
  const[who,dk]=r.k.split('|');const a=APPS.find(a=>String(a.id||a.name).trim()===who)||{};
- const SB=await safeBlob(r.blob);RURL=SB?URL.createObjectURL(SB):null;VZ=1;VR=0;
+ const SB=await safeBlob(r.blob);RURL=SB?URL.createObjectURL(SB):null;VZ=1;VR=0;logAccess('view_doc',id,(a.id||'')+' '+DOCNAME(dk));
  const done=Object.values(RALL).length;
  $('#rTitle').textContent=`${SPOT?'抽查':'核對'}文件　第 ${RI+1} 份，共 ${RQ.length} 份（已完成 ${done}）`;
  $('#rStrip').innerHTML=stripHtml();
@@ -392,7 +392,7 @@ async function revJump(i){if(i===RI||!guard())return;try{DIR=i>RI?1:-1;RI=i;BUSY
 async function sniff(blob){try{const b=new Uint8Array(await blob.slice(0,12).arrayBuffer());const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');if(h.startsWith('25504446'))return'application/pdf';if(h.startsWith('ffd8ff'))return'image/jpeg';if(h.startsWith('89504e47'))return'image/png';if(h.startsWith('52494646')&&h.slice(16,24)==='57454250')return'image/webp';if(h.startsWith('47494638'))return'image/gif'}catch(e){}return null}
 async function safeBlob(blob){const t=await sniff(blob);if(t)return new Blob([blob],{type:t});if(typeof DEMO!=='undefined'&&DEMO){try{if(/^\s*<svg/i.test(await blob.slice(0,300).text()))return new Blob([blob],{type:'image/svg+xml'})}catch(e){}}return null}
 async function viewFile(id){let r;try{r=await getFile(id)}catch(e){alert('檔案下載失敗，請確認網路後再試。');return}if(!r){alert('找不到這個檔案，可能已被刪除。');return}
- const sb=await safeBlob(r.blob);if(!sb){alert('這個檔案不是 PDF 或圖片，為了安全不會直接開啟。請改為下載後以防毒軟體檢查，或退回請申請人重新上傳。');return}
+ logAccess('open_file',id,r.name);const sb=await safeBlob(r.blob);if(!sb){alert('這個檔案不是 PDF 或圖片，為了安全不會直接開啟。請改為下載後以防毒軟體檢查，或退回請申請人重新上傳。');return}
  const u=URL.createObjectURL(sb);setTimeout(()=>URL.revokeObjectURL(u),60000);const w=window.open(u,'_blank');if(!w){const a=document.createElement('a');a.href=u;a.download=r.name;a.click()}}
 let RMING=false;async function rmFile(id){if(RMING)return;RMING=true;try{await _rmFile(id)}finally{RMING=false}}
 async function _rmFile(id){if(!confirm('刪除這個檔案？'))return;let r=null;try{r=await getFile(id)}catch(e){}await delFile(id);await loadIdx();if(r)syncDoc(r.k);listFiles();render()}
@@ -484,7 +484,7 @@ async function readFile(f){await loadXLSX();
 function loadScript(src){return new Promise(ok=>{const t=document.createElement('script');t.src=src;t.onload=ok;t.onerror=ok;document.head.appendChild(t)})}
 async function loadXLSX(){if(window.XLSX)return;await loadScript('vendor/xlsx.full.min.js?v=1')}
 const safeCell=c=>typeof c==='string'&&/^[=@\t\r]/.test(c)?"'"+c:c;
-async function sheetOut(name,aoa,fname){await loadXLSX();
+async function sheetOut(name,aoa,fname){logAccess('export',null,String(fname||(Array.isArray(name)?'名單':name)));await loadXLSX();
  if(typeof XLSX==='undefined'){alert('Excel 元件載入失敗，請確認網路後重新整理頁面再匯出。');return}
  const wb=XLSX.utils.book_new();(Array.isArray(name)?name:[[name,aoa]]).forEach(([n,d])=>{const ws=XLSX.utils.aoa_to_sheet(d.map(r=>r.map(safeCell)));ws['!cols']=d[0].map(()=>({wch:16}));XLSX.utils.book_append_sheet(wb,ws,n)});XLSX.writeFile(wb,fname+'.xlsx')
 }
@@ -832,7 +832,9 @@ async function rvAdd(){const email=$('#rvEmail').value.trim().toLowerCase(),name
  $('#rvEmail').value='';$('#rvName').value='';await loadReviewers();alert(ex?`已更新 ${name||ex.name||email}。`:`已加入 ${name||email}。\n請通知系統管理員開通此 Email 的登入帳號。`)}
 async function rvDel(email){const t=RVL.find(r=>r.email===email);if(t&&t.role==='admin'&&RVL.filter(r=>r.role==='admin').length<=1){alert('系統至少需要保留一位管理者。');return}if(!confirm(`確定移除 ${email}？移除後該帳號將無法查看任何資料。`))return;const{error}=await SBC.from('reviewers').delete().eq('email',email);if(error){alert('移除失敗：'+error.message);return}loadReviewers()}
 const AUDF={name:'姓名',score:'成績',incSelf:'本人所得',incF:'父所得',incM:'母所得',incG:'家長所得',override:'評審決議',overNote:'決議說明',memo:'自述',review_status:'核對結果',review_note:'退回原因',house:'房產',welfare:'福利身分',disab:'身障'};
-function auditDiff(r){
+const ACCN={view_doc:'檢視文件',open_file:'開啟／下載原檔',export:'匯出',print:'列印',view_list:'檢視名單',purge:'過期資料刪除'};
+function logAccess(action,target,detail){try{if(CLOUD&&!DEMO&&SBC)SBC.rpc('log_access',{p_action:action,p_target:target||null,p_detail:detail||null}).then(()=>{},()=>{})}catch(e){}}
+function auditDiff(r){if(r.tbl==='access'||r.tbl==='retention')return esc(ACCN[r.action]||r.action)+(r.after&&r.after.detail?'：'+esc(r.after.detail):'')+(r.tbl==='retention'&&r.after?'：申請人 '+(r.after.applicants||0)+' 位、撤回文件 '+(r.after.withdrawn_docs||0)+' 份、檔案 '+(r.after.files||0)+' 個':'');
  if(r.action==='刪除')return'刪除：'+esc((r.before&&(r.before.app_no||r.before.file_name||r.before.doc_type))||r.row_id);
  if(r.action==='新增')return'新增：'+esc((r.after&&(r.after.app_no+' '+((r.after.form||{}).name||'')))||'');
  const b=r.before||{},a=r.after||{},out=[];
@@ -840,7 +842,7 @@ function auditDiff(r){
  cmp(b,a,'');return out.join('<br>')||'—'}
 async function loadAudit(){const{data,error}=await SBC.from('audit_log').select('*').order('id',{ascending:false}).limit(200);if(error){alert('讀取失敗：'+error.message);return}
  const nameOf=r=>{const id=(r.after||r.before||{}).applicant_id||r.row_id;const a=CAPPS.find(x=>x._cid===id);return a?a.id+' '+a.name:''};
- $('#auditTable').innerHTML='<tr><th>時間</th><th>誰</th><th>對象</th><th>內容</th></tr>'+(data||[]).map(r=>`<tr><td>${new Date(r.at).toLocaleString('zh-TW',{hour12:false})}</td><td>${esc(RVN[(r.who||'').toLowerCase()]||r.who)}</td><td>${esc({applicants:'申請人',documents:'文件',settings:'規則'}[r.tbl]||r.tbl)} ${esc(nameOf(r))}${r.tbl==='documents'?'<br><span class="note">'+esc(DOCNAME(((r.after||r.before)||{}).doc_type||''))+'</span>':''}</td><td>${auditDiff(r)}</td></tr>`).join('')}
+ $('#auditTable').innerHTML='<tr><th>時間</th><th>誰</th><th>對象</th><th>內容</th></tr>'+(data||[]).map(r=>`<tr><td>${new Date(r.at).toLocaleString('zh-TW',{hour12:false})}</td><td>${esc(RVN[(r.who||'').toLowerCase()]||r.who)}</td><td>${esc({applicants:'申請人',documents:'文件',settings:'規則',reviewers:'審查人員',access:'存取',retention:'保存期限'}[r.tbl]||r.tbl)} ${esc(nameOf(r))}${r.tbl==='documents'?'<br><span class="note">'+esc(DOCNAME(((r.after||r.before)||{}).doc_type||''))+'</span>':''}</td><td>${auditDiff(r)}</td></tr>`).join('')}
 
 async function startSpot(){
  await cloudLoad();const auto=FALL.filter(r=>r.st==='ok'&&r.by==='auto');
@@ -905,6 +907,17 @@ let REPLAY=false;try{REPLAY=!!sessionStorage.getItem('sch_replay_demo');sessionS
 idxP.then(async()=>{if(REPLAY){if(wdlg.open)wdlg.close();await startDemo();document.body.classList.remove('gated');return}if(SBC){const ok=await enterCloud();if(ok)document.body.classList.remove('gated');else{let seen=false;try{seen=!!localStorage.getItem('sch_seen_intro')}catch(e){}let after=false;try{after=!!sessionStorage.getItem('sch_after_demo');sessionStorage.removeItem('sch_after_demo')}catch(e){}if(after&&document.body.classList.contains('gated')){cloudBtnClick()}else if(!seen&&document.body.classList.contains('gated')){if(window.MASCOT)$('#wMascot').innerHTML=MASCOT(130,'fly');wdlg.showModal()}}}});
 
 // 列印前：每張表的標題列移入 thead（跨頁自動重複）並加上列印時間
-window.addEventListener('beforeprint',()=>{document.querySelectorAll('table').forEach(t=>{if(!t.tHead&&t.rows[0]&&t.rows[0].querySelector('th')){const h=t.createTHead();h.appendChild(t.rows[0])}});
+window.addEventListener('beforeprint',()=>{logAccess('print',null,(document.querySelector('nav>button.on')||{}).textContent||'');document.querySelectorAll('table').forEach(t=>{if(!t.tHead&&t.rows[0]&&t.rows[0].querySelector('th')){const h=t.createTHead();h.appendChild(t.rows[0])}});
  let p=document.getElementById('printStamp');if(!p){p=document.createElement('div');p.id='printStamp';const m=document.querySelector('main');if(m)m.prepend(p)}
  const d=new Date();p.textContent='社團法人台灣松樑教育公益促進協會 助學金初審｜列印時間：民國 '+(d.getFullYear()-1911)+' 年 '+(d.getMonth()+1)+' 月 '+d.getDate()+' 日 '+d.toTimeString().slice(0,5)});
+
+// ===== 資料保存期限（個資法：結案後保存 5 年，期滿銷毀；學生撤回的檔案 30 天後刪除）=====
+async function retPreview(){const{data,error}=await SBC.rpc('retention_preview',{p_years:5});if(error){alert('讀取失敗：'+error.message);return null}
+ $('#retInfo').innerHTML=`保存期限：申請日早於 <b>${new Date(data.cutoff).toLocaleDateString('zh-TW')}</b>（5 年前）的資料<br>・過期申請人：<b>${data.applicants}</b> 位（文件 ${data.docs_expired} 份）<br>・學生撤回超過 30 天的檔案：<b>${data.docs_withdrawn}</b> 份<br>・過期異動紀錄：<b>${data.audit}</b> 筆`;
+ $('#retBtn').disabled=!(data.applicants||data.docs_withdrawn||data.audit);return data}
+async function retPurge(){const p=await retPreview();if(!p)return;if(!(p.applicants||p.docs_withdrawn||p.audit)){alert('目前沒有需要刪除的資料。');return}
+ const t=prompt(`將永久刪除：過期申請人 ${p.applicants} 位、撤回檔案 ${p.docs_withdrawn} 份、異動紀錄 ${p.audit} 筆，無法復原。\n\n確定要刪除請輸入「確定刪除」四個字：`);if(t!=='確定刪除'){if(t!==null)alert('輸入不符，未刪除。');return}
+ const{data,error}=await SBC.rpc('retention_purge',{p_years:5,p_confirm:t});if(error){alert('刪除失敗：'+error.message);return}
+ const paths=data.paths||[];let fail=0;for(let i=0;i<paths.length;i+=100){const rm=await SBC.storage.from('docs').remove(paths.slice(i,i+100));if(rm&&rm.error)fail+=Math.min(100,paths.length-i)}
+ alert(`已刪除：申請人 ${data.applicants} 位、撤回檔案 ${data.withdrawn_docs} 份、異動紀錄 ${data.audit} 筆、雲端檔案 ${paths.length-fail} 個。`+(fail?`\n另有 ${fail} 個檔案刪除失敗，請稍後再按一次。`:''));
+ await cloudLoad();retPreview()}

@@ -70,11 +70,11 @@ def main():
           A.push(mk('F1','大學部','電機工程系',{fam:'FAM',welfare:'低收入戶',d_wel:'已附'}));A.push(mk('F2','大學部','電機工程系',{fam:'FAM',welfare:'低收入戶',d_wel:'已附'}));
           APPS=A;S=Object.assign({},DEF,{quotaU:26,quotaG:4});const O=compute();const st=id=>R.find(x=>x.a.id===id);
           const ok=R.filter(x=>['ok','add'].includes(x.st));
-          const out={total:ok.length,A:ok.filter(x=>x.cat==='A').length,U:ok.filter(x=>x.L==='U').length,G:ok.filter(x=>x.L==='G').length,
+          const out={total:ok.length,A:ok.filter(x=>x.cat==='A').length,AU:ok.filter(x=>x.cat==='A'&&x.L==='U').length,AG:ok.filter(x=>x.cat==='A'&&x.L==='G').length,U:ok.filter(x=>x.L==='U').length,G:ok.filter(x=>x.L==='G').length,
             X1:st('X1').st,X2:st('X2').st,X3:st('X3').st,X4:st('X4').reasons.length,X5:st('X5').st,X6:st('X6').st,X7:st('X7').st,X8:st('X8').st,
             F:[st('F1').st,st('F2').st].sort().join(',')};APPS=save[0];S=save[1];render();return out})()""")
         check('名額 30（大學部 26／碩博 4）', (r['total'], r['U'], r['G']) == (30, 26, 4), r)
-        check('電子電機至少 2/3（≥20）', r['A'] >= 20, r)
+        check('電子電機 2/3 各學制計算（大學部≥17、碩博≥3，不跨學制遞補）', r['AU'] >= 17 and r['AG'] >= 3, r)
         check('科系不符→不符', r['X1'] == 'no', r)
         check('大過→不符', r['X2'] == 'no', r)
         check('所得超過 100 萬→不符', r['X3'] == 'no', r)

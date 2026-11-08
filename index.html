@@ -214,6 +214,12 @@
   <p class="note">記錄修改人員、時間及內容（原值 → 新值），含刪除及規則變更。</p>
   <div class="tablewrap" style="max-height:60vh"><table id="auditTable" class="audit"></table></div>
  </div>
+ <div class="card cloudonly adminonly">
+  <h2>個人資料保存與刪除</h2>
+  <p class="note">依個資告知：資料於結案後保存 5 年，期滿銷毀；學生自行刪除的檔案保留 30 天後永久刪除。系統另記錄每位人員檢視文件、開啟原檔、匯出及列印的時間（見上方「異動紀錄」）。</p>
+  <p id="retInfo" style="font-size:17px">按「檢查」查看目前有多少資料已超過保存期限。</p>
+  <div class="row"><button class="btn" onclick="retPreview()">檢查</button><button class="btn danger" id="retBtn" onclick="retPurge()" disabled>永久刪除過期資料</button></div>
+ </div>
 </section>
 </main>
 
@@ -256,6 +262,6 @@
  <div class="dlg-f"><button class="btn danger adminonly" id="delBtn">刪除</button><span style="flex:1"></span><button class="btn" onclick="dlg.close()">取消</button><button class="btn pri" onclick="saveEdit()">儲存</button></div>
 </dialog>
 
-<script src="admin.js?v=16"></script>
+<script src="admin.js?v=17"></script>
 </body>
 </html>
