@@ -13,8 +13,8 @@ function seed(){
  const DB={applicants:[],documents:[],files:{},reviewers:[{email:'demo@example.tw',name:'示範承辦',role:'admin'}],settings:[{id:1,data:{deadline:'2026-12-15',supDeadline:'2026-12-31',announce:'2027 年 1 月中旬',contact:'協會承辦 王小姐 02-2345-6789',incomeLimit:'1000000',penalty:'大過以上',kwX:'資訊工程,資工'}}],audit_log:[]};
  const P=[
   ['U001','林怡君','電子工程系','3','單親',{guardianName:'林美華',guardianRel:'母親',incG:'260000'},'86','中低收入戶','無','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['ok',['學期平均：86.0','操行：甲']],d_hh:['bad',[],[],'戶籍謄本','照片右半部缺漏，請重新拍攝完整頁面'],d_prop:['pend',[],[],'財產清單，名下無房屋土地'],d_inc:['pend',[],[],'所得清單，母親 26 萬'],d_wel:['pend',['有效期限：2027-06-30'],[],'中低收入戶證明']}],
-  ['U002','陳冠宇','電機工程系','2','雙親',{fatherName:'陳建國',motherName:'張淑芬',incF:'320000',incM:'180000'},'78','無','無','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['scenery',[],['看起來不是「前學期成績單」，而是「無關的圖片或文件」'],'一張山景照片'],d_hh:['ok'],d_prop:['pend'],d_inc:['pend'],d_rec:['ok']}],
-  ['U003','黃詩涵','光電工程系','4','雙親',{fatherName:'黃志強',motherName:'吳雅婷',incF:'280000',incM:'150000'},'68','低收入戶','二等親內','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['pend',['學期平均：64.2'],['成績單平均 64.2 分，與申請表填的 68 分不同'],'成績單，學期平均 64.2 分'],d_hh:['blur',[],['文字不清楚'],'戶籍謄本，畫面模糊'],d_prop:['pend'],d_inc:['pend'],d_rec:['ok'],d_wel:['pend'],d_dis:['pend']}],
+  ['U002','陳冠宇','電機工程系','2','雙親',{fatherName:'陳建國',motherName:'張淑芬',incF:'320000',incM:'180000'},'78','無','無','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['scenery',[],['文件種類與「前學期成績單」不符'],'一張山景照片'],d_hh:['ok'],d_prop:['pend'],d_inc:['pend'],d_rec:['ok']}],
+  ['U003','黃詩涵','光電工程系','4','雙親',{fatherName:'黃志強',motherName:'吳雅婷',incF:'280000',incM:'150000'},'68','低收入戶','二親等內','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['pend',['學期平均：64.2'],['成績單平均 64.2 分，與申請表填的 68 分不同'],'成績單，學期平均 64.2 分'],d_hh:['blur',[],['文字不清楚'],'戶籍謄本，畫面模糊'],d_prop:['pend'],d_inc:['pend'],d_rec:['ok'],d_wel:['pend'],d_dis:['pend']}],
   ['U004','張宗翰','機械工程系','3','雙親',{fatherName:'張文雄',motherName:'李秀英',incF:'300000',incM:'200000'},'88','無','無','有','否',{d_id:['ok'],d_merit:['ok'],d_tr:['ok'],d_hh:['bad',[],[],'戶籍謄本','列印日期超過三個月。請重新申請三個月內的謄本'],d_prop:['ok'],d_inc:['ok'],d_rec:['ok']}],
   ['U005','吳佳穎','電子工程系','1','雙親',{fatherName:'吳俊傑',motherName:'許美玲',incF:'250000',incM:'120000'},'91','無','本人','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['ok'],d_hh:['ok'],d_prop:['ok'],d_inc:['ok'],d_dis:['ok']}],
   ['U006','劉柏翰','資訊工程系','2','雙親',{fatherName:'劉正雄',motherName:'楊秀英',incF:'260000',incM:'190000'},'84','無','無','無','否',{d_id:['ok'],d_merit:['ok'],d_tr:['ok'],d_hh:['ok'],d_prop:['ok'],d_inc:['ok'],d_rec:['ok']}],
@@ -28,7 +28,7 @@ function seed(){
    const[kind,extra=[],issues=[],summary=NAMES[t]+'，'+name,note=null]=v;const did=uid(),path=`${id}/${t}/${did.slice(0,6)}.svg`;
    DB.files[path]=docSvg(kind==='scenery'?'scenery':t,name,extra,kind==='blur');
    const st=kind==='ok'?'ok':kind==='bad'?'bad':'pend';
-   DB.documents.push({id:did,applicant_id:id,doc_type:t,path,file_name:kind==='scenery'?'IMG_2041.jpg':`${NAMES[t]}.jpg`,mime:'image/svg+xml',size:180000,ai_status:'done',verdict:st==='ok'?'pass':'check',review_status:st,review_note:st==='ok'?'系統自動核對通過':note,reviewed_by:st==='ok'?'auto':st==='bad'?'demo@example.tw':null,ai:{issues,summary},created_at:'2026-11-20T10:05:00Z'});
+   DB.documents.push({id:did,applicant_id:id,doc_type:t,path,file_name:kind==='scenery'?'IMG_2041.jpg':`${NAMES[t]}.jpg`,mime:'image/svg+xml',size:180000,ai_status:'done',verdict:st==='ok'?'pass':'check',review_status:st,review_note:st==='ok'?'初步檢查通過':note,reviewed_by:st==='ok'?'auto':st==='bad'?'demo@example.tw':null,ai:{issues,summary},created_at:'2026-11-20T10:05:00Z'});
   }
  }
  return DB}
@@ -77,7 +77,7 @@ window.DemoClient=function(){
    const nm=String(d.file_name||'');const bad=/風景|scenery|IMG_\d+/i.test(nm)&&!/成績|謄本|證/.test(nm);
    const manual=['d_inc','d_prop','d_wel','d_dis'].includes(d.doc_type);
    const issues=bad?['文件種類疑似不符，請確認是否上傳錯誤']:[];
-   Object.assign(d,{ai_status:'done',verdict:bad||manual?'check':'pass',review_status:bad||manual?'pend':'ok',reviewed_by:bad||manual?null:'auto',review_note:bad||manual?null:'系統自動核對通過',ai:{issues,summary:bad?'看起來是一般照片':'收到的文件'}});
+   Object.assign(d,{ai_status:'done',verdict:bad||manual?'check':'pass',review_status:bad||manual?'pend':'ok',reviewed_by:bad||manual?null:'auto',review_note:bad||manual?null:'初步檢查通過',ai:{issues,summary:bad?'文件種類與申請項目不符':'收到的文件'}});
    return{data:{ok:true,verdict:d.verdict,issues},error:null}}},
   auth:{onAuthStateChange(){return{data:{subscription:{unsubscribe(){}}}}},
    async getSession(){return{data:{session}}},
@@ -125,12 +125,12 @@ function top(){if(cap.dataset.off)return;const ds=[...document.querySelectorAll(
 setInterval(()=>{if(cap&&!cap.dataset.off)top()},400);
 document.addEventListener('close',()=>{if(cap&&!cap.dataset.off)setTimeout(top,0)},true);
 try{new MutationObserver(()=>{if(cap&&!cap.dataset.off)top()}).observe(document.documentElement,{attributes:true,subtree:true,attributeFilter:['open']})}catch(e){}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&cap&&!cap.dataset.off&&!document.querySelector('dialog[open]')){e.preventDefault();const g=cap.querySelector('.go');if(g)g.click()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&cap&&!cap.dataset.off){e.preventDefault();e.stopImmediatePropagation();const g=cap.querySelector('.go');if(g)g.click()}},true);
 function clearHl(){document.querySelectorAll('.dp-hl').forEach(e=>e.classList.remove('dp-hl'))}
 function place(el){if(!cap||!el||!el.isConnected)return;const r=el.getBoundingClientRect();const want=r.top+r.height/2>innerHeight/2&&r.height<innerHeight*0.7;cap.classList.toggle('top',want);const c=cap.getBoundingClientRect();if(c.height&&c.top<r.bottom&&c.bottom>r.top){const other=!want;cap.classList.toggle('top',other);const c2=cap.getBoundingClientRect();if(c2.top<r.bottom&&c2.bottom>r.top)cap.classList.toggle('top',want)}}
 function hl(sel){clearHl();if(!cap||cap.dataset.off)return null;const el=typeof sel==='string'?document.querySelector(sel):sel;if(el){el.classList.add('dp-hl');try{el.scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}place(el);setTimeout(()=>place(el),450)}return el}
 async function tap(sel){const el=typeof sel==='string'?document.querySelector(sel):sel;if(!el)return;hl(el);await sleep(900);if(!cap||cap.dataset.off){clearHl();return}el.classList.add('dp-tap');setTimeout(()=>el.classList.remove('dp-tap'),600);await sleep(250);if(!cap||cap.dataset.off){clearHl();return}el.click();await sleep(400);top()}
-async function type(sel,text){const el=document.querySelector(sel);if(!el)return;hl(el);el.focus();el.value='';for(const ch of text){el.value+=ch;el.dispatchEvent(new Event('input',{bubbles:true}));await sleep(110)}}
+async function type(sel,text){const el=document.querySelector(sel);if(!el)return;hl(el);el.focus();el.value='';for(const ch of text){if(!cap||cap.dataset.off)return;el.value+=ch;el.dispatchEvent(new Event('input',{bubbles:true}));await sleep(110)}}
 function paint(){const s=steps[i];clearTimeout(timer);
  cap.querySelector('.t').textContent=s.t;cap.querySelector('.b').innerHTML=s.b;cap.querySelector('.n').textContent=`${i+1} / ${steps.length}`;
  cap.querySelector('.nx').textContent=i===steps.length-1?'開始操作':'下一步';

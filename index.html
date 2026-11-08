@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="助學金初審系統：匯入申請資料，自動檢查資格、標示不符原因、依優先順序排名並分出正取備取。資料只存在本機電腦，不上傳。">
+<meta name="description" content="社團法人台灣松樑教育公益促進協會 助學金審查系統：文件核對、資格檢查、優先排名與正取備取。">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta property="og:title" content="助學金初審系統">
-<meta property="og:description" content="83 位申請人，一秒完成初篩：資格檢查、原因標籤、優先排名、正取備取、評審分組。">
+<meta property="og:description" content="社團法人台灣松樑教育公益促進協會 助學金審查系統（限審查委員及承辦人員使用）">
 <meta property="og:type" content="website">
-<title>松樑教育公益促進協會助學金 初審系統</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js"></script>
+<title>社團法人台灣松樑教育公益促進協會 助學金初審系統</title>
+<script>if(window.top!==window.self){try{window.top.location=window.self.location}catch(e){document.documentElement.style.display="none"}}</script>
+<script src="vendor/supabase.js?v=2.119.0"></script>
 <script src="config.js"></script>
 <script src="mascot.js?v=5"></script>
-<link rel="stylesheet" href="admin.css?v=6">
+<link rel="stylesheet" href="admin.css?v=7">
 </head>
 <body>
 <header>
@@ -63,7 +65,7 @@
 
 <!-- 總覽 -->
 <section id="t-home">
- <div id="keyWarn" class="prov late hidden noprint" style="background:var(--err-bg);color:var(--err);border-color:var(--err-bd)"><b>文件初步檢查目前無法使用</b>：判讀金鑰未設定、已過期或已停用，上傳文件將不進行自動檢查，須全數人工核對。請洽系統管理員更新金鑰。</div>
+ <div id="keyWarn" class="prov late hidden noprint" style="background:var(--err-bg);color:var(--err);border-color:var(--err-bd)"><b>文件初步檢查目前無法使用</b>：功能未啟用或設定已失效，上傳文件將不進行初步檢查，須全數人工核對。請洽系統管理者。</div>
  <div id="hello" class="cloudonly noprint"></div>
  <div id="provHome"></div>
  <div class="stats" id="stats"></div>
@@ -90,7 +92,7 @@
     <ol class="rule">
      <li>上學期已獲本助學金，且具低收／中低收／特殊境遇身分</li>
      <li>具政府低收入、中低收入資格（含特殊境遇家庭）</li>
-     <li>本人或二等親內領有身心障礙證明或重大傷病卡</li>
+     <li>本人或二親等內領有身心障礙證明或重大傷病證明</li>
      <li>無房產者</li>
      <li>家戶年所得較低者</li>
      <li>年級較高者</li>
@@ -129,9 +131,9 @@
  <div class="card noprint">
   <div class="chead"><h2>文件核對</h2></div>
   <div class="legend" style="margin-bottom:14px"><span><span class="dk ok">✓</span> 已繳</span><span><span class="dk pend">?</span> 待核對</span><span><span class="dk no">✕</span> 缺件或退回</span><span><span class="dk na">—</span> 免附</span><span>數字為上傳檔案數，點選格子可查看</span></div>
-  <div class="row"><select id="dShow" aria-label="顯示範圍" class="btn"><option value="all">顯示全部申請人</option><option value="pend">只看有文件待核對的人</option><option value="miss">只看缺件或被退回的人</option><option value="auto" class="cloudonly">只看有「系統通過」文件的人</option></select>
+  <div class="row"><select id="dShow" aria-label="顯示範圍" class="btn"><option value="all">顯示全部申請人</option><option value="pend">只看有文件待核對的人</option><option value="miss">只看缺件或被退回的人</option><option value="auto" class="cloudonly">只看有「初步檢查通過」文件的人</option></select>
    <button class="btn pri" id="startReviewBtn" onclick="startReview()">開始核對（<span id="pendN">0</span> 份待核對）</button>
-   <button class="btn adminonly cloudonly" onclick="startSpot()">抽查系統通過的文件</button><button class="btn localonly" onclick="allDocs()">把目前顯示的人全部設為已繳</button></div>
+   <button class="btn adminonly cloudonly" onclick="startSpot()">抽查初步檢查通過的文件</button><button class="btn localonly" onclick="allDocs()">把目前顯示的人全部設為已繳</button></div>
  </div>
  <details class="card noprint adminonly" id="upCard">
   <summary style="cursor:pointer;font-size:20px;font-weight:700;color:var(--brand-900)">補上傳文件（紙本掃描檔）</summary>
@@ -139,7 +141,7 @@
   <div class="drop" id="fdrop">把掃描檔（PDF、JPG、PNG）拖到這裡，或<b style="color:var(--pri)">點此選擇檔案</b>，可一次選取多個檔案
    <input type="file" id="ffile" multiple accept=".pdf,.jpg,.jpeg,.png,.heic,.webp" class="hidden"></div>
   <p class="note" style="margin-top:10px">檔名包含「編號＋文件名稱」就會自動歸檔並打勾，例如：<b>U001_成績單.pdf</b>、<b>G003 戶籍謄本.jpg</b>、<b>U012-推薦函.pdf</b>。亦可點選下表格子，個別上傳。</p>
-  <p class="note cloudonly"><b>系統先看過：</b>初步檢查無誤之文件自動標示為「✓ 系統通過」（可由上方選單抽查）；有疑義者標示「?」，待人工核對。</p>
+  <p class="note cloudonly"><b>系統先看過：</b>初步檢查無誤之文件自動標示為「✓ 初步檢查通過」（可由上方選單抽查）；有疑義者標示「?」，待人工核對。</p>
   <p class="note localonly"><b>上傳不等於通過：</b>上傳後只會標成「? 待核對」，要按「開始核對」看過內容、按「符合」才算繳交。系統另外會自動抓：檔案格式不對、檔案太小（可能空白）、同一個檔案重複用在不同文件或不同人身上。</p>
   <p class="note localonly">檔案只存在這台電腦的瀏覽器裡，不會上傳到網路；換電腦或清除瀏覽器資料後會消失，原始檔請另外保存。</p>
   <div id="fmsg"></div></div>
@@ -149,6 +151,15 @@
 
 <!-- 結果 -->
 <section id="t-result" class="hidden">
+ <details class="card noprint" id="meetGuide"><summary style="font-size:19px;font-weight:700">委員會議當天怎麼做（點此展開）</summary>
+  <ol style="font-size:17px;line-height:1.8;margin:10px 0 0">
+   <li>承辦人員登入後台，開啟「初篩結果」，投影給委員看。最終結果以委員會決議為準，系統結果僅供參考。</li>
+   <li>委員逐位確認：要<b>追加</b>或<b>排除</b>某位申請人時，在該列按「複核」（或「編輯」）→ 最上方「評審決議」選「評審追加」或「評審排除」，並在「決議說明」寫下理由（必填，系統會留下紀錄與修改人）。</li>
+   <li>「待補件」「逾期未補件」者由委員會決定是否給予補件機會。</li>
+   <li>名單確認後，按上方「列印與匯出」→「匯出初篩結果」存檔作為<b>最終名單</b>（已含評審追加／排除的結果），並列印一份由委員簽核。</li>
+   <li>評審用名單（去識別版）只在會議中使用，會後請收回銷毀。</li>
+  </ol>
+ </details>
  <div class="card noprint">
   <div class="row">
    <span>顯示：</span>
@@ -211,7 +222,7 @@
  <div class="dlg-b"><div class="flist" id="fdlgList"></div>
   <label class="btn pri adminonly" id="fdlgUp" style="margin-top:16px">＋ 上傳檔案<input type="file" id="fdlgIn" multiple accept=".pdf,.jpg,.jpeg,.png,.heic,.webp" class="hidden"></label></div>
 </dialog>
-<dialog id="rdlg">
+<dialog id="rdlg" aria-labelledby="rTitle">
  <div class="dlg-h"><span id="rTitle">核對文件</span><button class="btn text" onclick="finishReview(true)">稍後繼續</button></div>
  <div id="rStrip" class="rstrip"></div>
  <div class="dlg-b rbody"><div id="rInfo"></div><div><div class="vtool" id="vTool"><button class="btn sm" onclick="vz(-1)">－ 縮小</button><button class="btn sm" onclick="vz(1)">＋ 放大</button><button class="btn sm" onclick="vz(0)">↔ 符合寬度</button><button class="btn sm" onclick="vr()">⟳ 旋轉</button><a class="btn sm" id="vOpen" target="_blank">↗ 新分頁開啟原檔</a></div><div id="rView" class="vbox" tabindex="0" aria-label="文件預覽"></div></div></div>
@@ -245,6 +256,6 @@
  <div class="dlg-f"><button class="btn danger adminonly" id="delBtn">刪除</button><span style="flex:1"></span><button class="btn" onclick="dlg.close()">取消</button><button class="btn pri" onclick="saveEdit()">儲存</button></div>
 </dialog>
 
-<script src="admin.js?v=14"></script>
+<script src="admin.js?v=15"></script>
 </body>
 </html>

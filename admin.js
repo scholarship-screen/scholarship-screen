@@ -30,14 +30,15 @@ const FIELDS=[
  {k:'d_inc',l:'文件-綜合所得稅資料清單',opt:['已附','未附'],doc:1},
  {k:'d_rec',l:'文件-導師或系主任推薦函',opt:['已附','未附'],doc:1},
  {k:'d_wel',l:'文件-低收中低收或特殊境遇證明',opt:['無須','已附','未附'],doc:2,need:'welfare'},
- {k:'d_dis',l:'文件-身心障礙證明或重大傷病卡',opt:['無須','已附','未附'],doc:2,need:'disab'},
+ {k:'d_dis',l:'文件-身心障礙證明或重大傷病證明',opt:['無須','已附','未附'],doc:2,need:'disab'},
  {k:'d_unemp',l:'文件-失業家庭證明',opt:['無須','已附','未附'],doc:3},
  {k:'docNote',l:'文件備註'},
  {k:'prev',l:'上學期已獲本助學金',opt:['否','是']},
  {k:'welfare',l:'福利身分',opt:['無','低收入戶','中低收入戶','特殊境遇家庭']},
- {k:'disab',l:'身心障礙證明或重大傷病卡',opt:['無','本人','二等親內']},
+ {k:'disab',l:'身心障礙證明或重大傷病證明',opt:['無','本人','二親等內']},
  {k:'house',l:'家戶房產',opt:['有','無']},
- {k:'fam',l:'家戶代號',hint:'同一家庭的兄弟姊妹填相同代號'},
+ {k:'addr',l:'戶籍地址',hint:'用來判斷同一家庭'},
+ {k:'fam',l:'家戶代號',hint:'同一家庭的兄弟姊妹填相同代號（未填則依戶籍地址判斷）'},
  {k:'memo',l:'自傳／推薦函重點',area:1},
  {k:'studentNo',l:'學號'},
  {k:'phone',l:'手機'},
@@ -57,12 +58,13 @@ function save(){try{localStorage.setItem('sch_screen',JSON.stringify({apps:APPS,
 
 // ===== 解析 =====
 const half=s=>String(s??'').replace(/[\uff01-\uff5e]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xfee0)).replace(/\u3000/g,' ');
-function parseMoney(v){if(typeof v==='number')return isFinite(v)?v:NaN;let s=half(v).replace(/万/g,'萬').replace(/[,，\s元]/g,'').replace(/^(NT\$|NTD|\$|約|大約)/i,'');if(!s)return 0;
+function parseMoney(v){if(typeof v==='number')return isFinite(v)?v:NaN;if(/^\s*(無|沒有|否|免|—)\s*$/.test(half(v)))return 0;let s=half(v).replace(/万/g,'萬').replace(/[,，\s元]/g,'').replace(/^(NT\$|NTD|\$|約|大約)/i,'');if(!s)return 0;
  if(/^\d+(\.\d+)?$/.test(s))return+s;
  const m=s.match(/^(?:(\d+(?:\.\d+)?)萬)?(?:(\d+(?:\.\d+)?)千)?(\d+(?:\.\d+)?)?$/);if(!m||(!m[1]&&!m[2]))return NaN;
  let n=(+(m[1]||0))*10000+(+(m[2]||0))*1000;const t=m[3];
  if(t){if(m[1]&&!m[2]&&/^\d$/.test(t))n+=+t*1000;else if(m[2]&&/^\d$/.test(t))n+=+t*100;else n+=+t}
  return n}
+function aidNum(v){let s=half(v).replace(/\s/g,'');const yr=/學年|每年|一年|全年/.test(s);s=s.replace(/[\/／]?(每)?(學期|學年|一年|全年|年)/g,'').replace(/^每/,'');const n=parseMoney(s);return yr&&isFinite(n)?n/2:n}
 function num(v){if(v==null||v==='')return 0;return parseMoney(v)}
 const yes=v=>/^(是|有|y|yes|1|v|✓|true|○)$/i.test(String(v??'').trim());
 function gradeNum(v){const s=half(v);if(/延畢|延修/.test(s))return 6;if(/^\d{3,}$/.test(s.trim()))return 0;const m=s.match(/\d+/);if(m)return+m[0];const c='一二三四五六七'.indexOf((s.match(/[一二三四五六七]/)||[''])[0]);return c>=0?c+1:0}
@@ -70,11 +72,12 @@ function ratio(){const s=half(S.aRatio).trim().replace(/%$/,'');let v;if(s.inclu
 function cat(dept){const d=half(dept).replace(/\s/g,'').replace(/^.*學院(?=.)/,'');const ks=k=>String(k||'').split(/[,，、]/).map(x=>x.trim()).filter(Boolean);const X=ks(S.kwX).filter(k=>d.includes(k));
  if(X.length&&!(X.every(k=>/資訊工程|資工/.test(k))&&/電子|電機/.test(d.replace(/電子商務/g,''))))return null;if(S.kwA.split(/[,，、]/).some(k=>k.trim()&&d.includes(k.trim())))return'A';if(S.kwB.split(/[,，、]/).some(k=>k.trim()&&d.includes(k.trim())))return'B';return null}
 const lvl=a=>/碩|博|研究/.test(a.level||'')?'G':'U';
-const wan=n=>(n/10000).toFixed(1)+' 萬';
+const wan=n=>(Math.round(n/1000)/10)+' 萬';
 
 // ===== 核心計算 =====
 // 電子電機 2/3 以總名額計：某學制電子電機人數不足時，由另一學制的電子電機備取者遞補，換下該學制排名最後的其他類正取
-const famK=x=>String(x.a.fam||'').trim();
+const normAddr=v=>half(v||'').replace(/\s|臺/g,m=>m==='臺'?'台':'').replace(/[之\-－]/g,'-').replace(/(\d+)樓.*$/,'$1樓').trim();
+const famK=x=>String(x.a.fam||normAddr(x.a.addr)||'').trim();
 // 內規：學士以下（大學部）同一家庭限一人
 const famBlock=(x,ch)=>x.L==='U'&&famK(x)&&[...ch].some(y=>y!==x&&y.L==='U'&&famK(y)===famK(x));
 function rebalance(out,AT){
@@ -92,28 +95,33 @@ function compute(){
   const x={a,i,L:lvl(a),cat:cat(a.dept),reasons:[],notes:[]};
   x.single=/單/.test(a.family||'');
   // 單親：申請人＋扶養家長（家長所得若填在父或母欄位也算入）；雙親：申請人＋父＋母
-  x.house=x.single?num(a.incSelf)+(num(a.incG)||num(a.incF)+num(a.incM)):num(a.incSelf)+num(a.incF)+num(a.incM);
-  x.score=parseFloat(half(a.score))||0;{const rs=half(a.rankPct).replace(/[^\d.]/g,'');let rv=rs===''?NaN:parseFloat(rs);if(rv>0&&rv<=1&&!/%/.test(String(a.rankPct))&&String(a.rankPct).includes('.'))rv=rv*100;x.rank=isFinite(rv)&&rv>0?rv:100}
+  const gEmpty=a.incG===''||a.incG==null;
+  x.house=x.single?num(a.incSelf)+(gEmpty?Math.max(num(a.incF)||0,num(a.incM)||0):num(a.incG)):num(a.incSelf)+num(a.incF)+num(a.incM);
+  if(x.single&&gEmpty&&a.incF&&a.incM&&num(a.incF)&&num(a.incM))x.notes.push('扶養家長待確認｜單親但父母所得都有填，已以較高者 '+Math.round(Math.max(num(a.incF),num(a.incM))).toLocaleString()+' 元計算，請委員確認');
+  x.score=parseFloat(half(a.score))||0;{const rr=half(a.rankPct).match(/(\d+)\s*[\/／]\s*(\d+)/);const rs=rr&&+rr[2]>0?String(Math.ceil(+rr[1]/+rr[2]*100)):half(a.rankPct).replace(/[^\d.]/g,'');let rv=rs===''?NaN:parseFloat(rs);if(rv>0&&rv<=1&&!/%/.test(String(a.rankPct))&&String(a.rankPct).includes('.'))rv=rv*100;x.rank=isFinite(rv)&&rv>0?rv:100}
   x.grade=gradeNum(a.grade);
   const w=String(a.welfare||'');x.welfare=/低收|特殊/.test(w);
   x.disab=/本人|親/.test(a.disab||'');
   x.noHouse=/無|否/.test(a.house||'');
   x.prev=yes(a.prev);
   x.p1=x.prev&&x.welfare;
-  if(/外|僑|陸生|港|澳/.test(a.nation||''))x.reasons.push('非本國籍｜國籍：'+a.nation);
-  const badMoney=['incSelf','incF','incM','incG','otherAid'].filter(k=>a[k]!==''&&a[k]!=null&&!isFinite(num(a[k])));
+  {const nt=half(a.nation||'').trim();if(/外|僑|陸|港|澳|大陸|中國(?!民國)/.test(nt)||(nt&&!/本國|中華民國|台灣|臺灣|國人/.test(nt)))x.reasons.push('非本國籍｜國籍：'+nt);else if(!nt)x.notes.push('國籍未填｜請委員確認是否為本國籍')}
+  const badMoney=['incSelf','incF','incM','incG','otherAid'].filter(k=>a[k]!==''&&a[k]!=null&&!isFinite(k==='otherAid'?aidNum(a[k]):num(a[k])));
   if(badMoney.length)x.reasons.push('金額格式有誤｜'+badMoney.map(k=>({incSelf:'本人所得',incF:'父親所得',incM:'母親所得',incG:'扶養家長所得',otherAid:'其他獎學金'})[k]+'「'+a[k]+'」').join('、')+'，請改成阿拉伯數字（例：300000 或 30萬）');
   if(!x.cat)x.reasons.push('科系不符｜'+(a.dept||'未填系所')+' 不在補助科系範圍');
   if(isFinite(x.house)&&x.house>lim)x.reasons.push(`所得超標｜家戶年所得 ${Math.round(x.house).toLocaleString()} 元，上限 ${Math.round(lim).toLocaleString()} 元`);
   if(x.score<smin&&!(x.rank<=rp))x.reasons.push(`成績未達｜成績 ${x.score} 分（需 ${smin} 分），班排或系排 ${x.rank<100?'前 '+x.rank+'%':'未提供'}（需前 ${rp}%）`);
-  const PL=['無','警告','小過','大過以上'],dm=half(a.demerit||'無').trim(),neg=/^(無|否|沒有|未曾)/.test(dm)||/(無|未曾|沒有|未)(任何)?(記)?(大過|小過|警告|懲處)/.test(dm),pv=neg?0:(yes(dm)||/大過|留校|退學|開除/.test(dm)?3:/小過/.test(dm)?2:/警告/.test(dm)?1:0),pt=Math.max(1,PL.indexOf(S.penalty));
-  if(!neg&&pv>0&&/銷過|非故意|過失/.test(dm))x.notes.push('懲處待確認｜申請表寫「'+dm+'」，請委員確認是否屬「因故意行為」且未銷過');
-  if(pv>=pt)x.reasons.push(`懲處紀錄｜曾記${PL[pv]}`);
+  const PL=['無','警告','小過','大過以上'],dm=half(a.demerit||'無').trim(),pt=Math.max(1,PL.indexOf(S.penalty));
+  const lv=c=>/大過|留校|退學|開除/.test(c)?3:/小過/.test(c)?2:/警告/.test(c)?1:0;
+  const cls=dm.split(/[，,、；;。\s]+/).filter(Boolean);let pv=0;for(const c of cls){if(/^(無|否|沒有|未曾|未|不曾)/.test(c)&&!/^無故/.test(c))continue;pv=Math.max(pv,lv(c)||(yes(c)?3:0))}
+  if(pv>=pt&&/銷過|非故意|過失|撤銷/.test(dm))x.notes.push('懲處待確認｜申請表寫「'+dm+'」，請委員確認是否屬「因故意行為」且未銷過');
+  else if(pv>=pt)x.reasons.push(`懲處紀錄｜曾記${PL[pv]}`);
+  if(!String(a.div||'').trim())x.notes.push('部別未填｜請委員確認是否為日間部');
   {const dv=[a.div,a.level,a.dept].join(' ');if(/進修|夜間|推廣|空中|在職專班/.test(dv))x.reasons.push(`非日間部｜${(dv.match(/進修[^ ]*|夜間[^ ]*|推廣[^ ]*|空中[^ ]*|[^ ]*在職專班/)||[a.div])[0]}不在補助範圍`)}
   const cd=String(a.conduct??'').trim(),cn=/甲|優/.test(cd)?85:/乙/.test(cd)?75:/丙|丁/.test(cd)?65:parseFloat(cd);
   if(+S.conductMin>0&&cd&&!isNaN(cn)&&cn<+S.conductMin)x.reasons.push(`操行未達｜操行 ${cd}（需 ${S.conductMin} 分以上）`);
-  if(yes(a.gov))x.reasons.push('公費生｜已享公費待遇');
-  if(isFinite(num(a.otherAid))&&num(a.otherAid)>=num(S.otherMax))x.reasons.push(`他項獎學金超額｜每學期已領 ${wan(num(a.otherAid))}（須低於 ${wan(num(S.otherMax))}）`);
+  {const gv=half(a.gov||'').trim();if(yes(gv)||(/公費|是/.test(gv)&&!/^(否|無|非|不是)/.test(gv)))x.reasons.push('公費生｜已享公費待遇')}
+  {const ad=aidNum(a.otherAid??'');if(isFinite(ad)&&ad>=num(S.otherMax))x.reasons.push(`他項獎學金超額｜每學期已領 ${wan(ad)}（須低於 ${wan(num(S.otherMax))}）`)}
   const legacyOK=yes(a.docs)&&FIELDS.filter(f=>f.doc===1).every(f=>!a[f.k]);
   const has=v=>/已附|^是$|^有$|^v$|✓|○/i.test(String(v??'').trim());
   x.missing=legacyOK?[]:FIELDS.filter(f=>f.doc===1&&!(f.ex&&x.prev)&&!has(a[f.k])&&!/待核/.test(a[f.k]||'')).map(f=>f.l.replace('文件-',''));
@@ -122,16 +130,17 @@ function compute(){
   const rej=FIELDS.filter(f=>f.doc===1&&/退回/.test(a[f.k]||'')).map(f=>f.l.replace('文件-',''));
   if(rej.length)x.reasons.push('文件退回｜'+rej.join('、')+' 內容不符，需重新繳交');
   const mm=x.missing.filter(m=>!rej.includes(m));if(mm.length)x.reasons.push('文件不全｜缺：'+mm.join('、')+(a.docNote?'（'+a.docNote+'）':''));
-  if(x.welfare&&/未附|無須|退回/.test(a.d_wel||'')){x.welfare=false;x.p1=false;x.notes.push('福利身分未附證明｜不列入優先條件')}
-  if(x.disab&&/未附|無須|退回/.test(a.d_dis||'')){x.disab=false;x.notes.push('身障未附證明｜不列入優先條件')}
+  if(x.welfare&&/未附|無須|退回/.test(a.d_wel||'')){x.welfare=false;x.p1=false;x.notes.push(/退回/.test(a.d_wel||'')?'福利身分證明退回｜證明經退回，暫不列入優先條件':'福利身分未附證明｜不列入優先條件')}
+  if(x.disab&&/未附|無須|退回/.test(a.d_dis||'')){x.disab=false;x.notes.push(/退回/.test(a.d_dis||'')?'身心障礙證明退回｜證明經退回，暫不列入優先條件':'身心障礙證明未附｜不列入優先條件')}
   if(a.override==='評審排除')x.reasons.push('評審排除｜'+(a.overNote||'評審會議決議'));
   x.hold=x.reasons.length>0&&x.reasons.every(r=>/^文件(不全|退回)/.test(r));
   if(x.score<smin&&x.rank<=rp&&!x.reasons.length)x.notes.push(`班排補足｜成績未達 ${smin}，以班排或系排前 ${x.rank}% 符合`);
   return x;
  });
  // 同一家庭：加註標籤；大學部同一家庭限一人正取（排名較前者優先）
- const fams={};R.forEach(x=>{const f=String(x.a.fam||'').trim();if(f)(fams[f]=fams[f]||[]).push(x)});
+ const fams={};R.forEach(x=>{const f=famK(x);if(f)(fams[f]=fams[f]||[]).push(x)});
  Object.values(fams).filter(g=>g.length>1).forEach(g=>g.forEach(x=>x.notes.push('同家庭｜與 '+g.filter(y=>y!==x).map(y=>(y.a.id?y.a.id+' ':'')+y.a.name).join('、')+' 同一家庭')));
+ {const gs={};R.forEach(x=>{const k=String(x.a.famGuess||'').trim();if(k)(gs[k]=gs[k]||[]).push(x)});Object.values(gs).filter(g=>g.length>1).forEach(g=>g.forEach(x=>{if(g.every(y=>famK(y)&&famK(y)===famK(x)))return;x.notes.push('疑似同家庭｜與 '+g.filter(y=>y!==x).map(y=>(y.a.id?y.a.id+' ':'')+y.a.name).join('、')+' 家長姓名相同，請委員確認；確認為同家庭請在「家戶代號」填相同代號')}))}
  const pastSup=S.supDeadline&&Date.now()>new Date(S.supDeadline+'T23:59:59+08:00').getTime();
  const key=x=>[x.p1?1:0,x.welfare?1:0,x.disab?1:0,x.noHouse?1:0,-x.house,x.grade,x.score];
  const cmp=(p,q)=>{const a=key(p),b=key(q);for(let i=0;i<a.length;i++)if(a[i]!==b[i])return b[i]-a[i];return 0};
@@ -311,7 +320,7 @@ let FCUR=null;const fdlg=$('#fdlg');
 function openFiles(i,k){FCUR={i,k};const f=FIELDS.find(f=>f.k===k);$('#fdlgTitle').textContent=k==='*'?`${APPS[i].id||''} ${APPS[i].name}｜全部文件`:`${APPS[i].name}｜${f.l.replace('文件-','')}`;$('#fdlgUp').classList.toggle('hidden',k==='*');listFiles();fdlg.showModal()}
 function listFiles(){const who=fkey(APPS[FCUR.i],'');const L=FCUR.k==='*'?FALL.filter(r=>r.k.startsWith(who)):FIDX[fkey(APPS[FCUR.i],FCUR.k)]||[];
  $('#fdlgList').innerHTML=L.length?L.map(r=>`<div style="flex-wrap:wrap"><span>${FCUR.k==='*'?`<b>${esc(DOCNAME(r.k.split('|')[1]))}</b><br>`:''}${esc(r.name)} ${stBadge(r)}${r.lockBy?`<span class="rtag wait">${esc(r.lockBy)} 核對中</span>`:''}${(r.flags||[]).map(f=>`<div class="reason" style="border:0;padding:2px 0">⚠ ${esc(f)}</div>`).join('')}${r.summary?`<div class="note" style="border:0;padding:2px 0">初步檢查：${esc(r.summary)}</div>`:''}${r.note&&r.st==='bad'?`<div class="note" style="border:0;padding:2px 0">退回原因：${esc(r.note)}</div>`:''}</span><button class="btn sm" onclick="viewFile('${r.id}')">開啟</button><button class="btn sm" onclick="fAct(this,()=>setSt('${r.id}','ok'))">✓ 符合</button><button class="btn sm danger" onclick="fAct(this,()=>rejectFile('${r.id}'))">✕ 退回</button><button class="btn sm danger adminonly" onclick="rmFile('${r.id}')">刪除</button></div>`).join(''):(FCUR.k==='*'?'<p class="muted">此申請人尚未上傳任何檔案。</p>':`<p class="muted">此項文件無上傳檔案。</p><p class="note">紙本繳交者，可直接標記：</p><div class="row"><button class="btn" onclick="markDoc('已附')">標為已繳（紙本）</button><button class="btn" onclick="markDoc('${(FIELDS.find(f=>f.k===FCUR.k)||{}).doc===3?'無須':'未附'}')">標為${(FIELDS.find(f=>f.k===FCUR.k)||{}).doc===3?'免附':'未繳'}</button></div>`)}
-function stBadge(r){const s=r.st||'pend';return s==='ok'?(r.by==='auto'?'<span class="rtag ok">✓ 系統通過</span>':'<span class="rtag ok">✓ 已核對符合</span>'):s==='bad'?'<span class="rtag bad">✕ 已退回</span>':'<span class="rtag wait">? 待核對</span>'}
+function stBadge(r){const s=r.st||'pend';return s==='ok'?(r.by==='auto'?'<span class="rtag ok">✓ 初步檢查通過</span>':'<span class="rtag ok">✓ 已核對符合</span>'):s==='bad'?'<span class="rtag bad">✕ 已退回</span>':'<span class="rtag wait">? 待核對</span>'}
 const BREASONS=['不是這份文件','看不清楚／模糊','缺頁或拍不完整','姓名不是申請人或家人','日期過舊或證明已過期','與申請表填的資料不符','缺少簽名或印章'];
 const bdlg=$('#bdlg');
 function askReason(hint){return new Promise(ok=>{let done=false;const sel=new Set();
@@ -340,7 +349,7 @@ async function showReview(){
  const id=RQ[RI];const r=await getFile(id);
  if(RURL){URL.revokeObjectURL(RURL);RURL=null}if(!r){RS[id]=RS[id]||'skip';RI+=DIR;return showReview()}
  const[who,dk]=r.k.split('|');const a=APPS.find(a=>String(a.id||a.name).trim()===who)||{};
- RURL=URL.createObjectURL(r.blob);VZ=1;VR=0;
+ const SB=await safeBlob(r.blob);RURL=SB?URL.createObjectURL(SB):null;VZ=1;VR=0;
  const done=Object.values(RALL).length;
  $('#rTitle').textContent=`${SPOT?'抽查':'核對'}文件　第 ${RI+1} 份，共 ${RQ.length} 份（已完成 ${done}）`;
  $('#rStrip').innerHTML=stripHtml();
@@ -351,10 +360,10 @@ async function showReview(){
   ${r.summary?`<div class="alert" style="margin:8px 0;background:#e8f0fa;color:#1d3f8a">初步檢查：${esc(r.summary)}</div>`:''}${(r.flags||[]).map(f=>`<div class="alert" style="margin:6px 0">⚠ ${esc(f)}</div>`).join('')}
   ${(r.summary||(r.flags||[]).length)?'<div class="note">初步檢查僅供參考，以審查人員判斷為準。</div>':''}
   <div class="checklist"><b>請確認：</b><br>① 文件種類是否正確<br>② 姓名是否為申請人或其家屬<br>③ 日期是否在有效期限內<br>④ 姓名、數字、日期是否清晰</div>`;
- const isImg=/image\//.test(r.type),isPdf=/pdf/.test(r.type)||/\.pdf$/i.test(r.name);
- $('#vOpen').href=RURL;$('#vTool').querySelectorAll('button').forEach(b=>b.classList.toggle('hidden',!isImg));
- $('#rView').innerHTML=isImg?`<img src="${RURL}" alt="文件" style="width:100%">`:isPdf?`<iframe src="${RURL}" style="width:100%;height:100%;border:0"></iframe>`:`<p style="padding:40px"><a class="btn" href="${RURL}" download="${esc(r.name)}">下載檔案查看</a></p>`;
- setLoading(false);try{$('#rOk').focus({preventScroll:true})}catch(e){}const rb=rdlg.querySelector('.rbody')||rdlg;rb.scrollTop=0;$('#rInfo').scrollIntoView({block:'start'})}
+ const isImg=!!SB&&/image\//.test(SB.type),isPdf=!!SB&&SB.type==='application/pdf';
+ $('#vOpen').href=RURL||'#';$('#vOpen').classList.toggle('hidden',!RURL);$('#vTool').querySelectorAll('button').forEach(b=>b.classList.toggle('hidden',!isImg));
+ $('#rView').innerHTML=isImg?`<img src="${RURL}" alt="文件" style="width:100%">`:isPdf?(matchMedia('(pointer:coarse)').matches?`<div style="padding:40px 16px;font-size:18px"><p>手機與平板無法在此直接顯示 PDF。</p><a class="btn pri lg" href="${RURL}" target="_blank" rel="noopener">開啟 PDF 查看</a><p class="note">看完請回到這個頁面按「符合」或「退回」。</p></div>`:`<iframe src="${RURL}" title="PDF 文件" style="width:100%;height:100%;border:0"></iframe>`):`<div style="padding:40px 16px;font-size:18px"><p>⚠ 這個檔案不是 PDF 或圖片，為了安全不直接開啟。</p><p>請按「不符，退回」，請申請人改傳 PDF 或照片。</p></div>`;
+ setLoading(false);const t=$('#rTitle');try{t.setAttribute('tabindex','-1');t.focus({preventScroll:true})}catch(e){}const rb=rdlg.querySelector('.rbody');if(rb)rb.scrollTop=0;rdlg.scrollTop=0;const ri=$('#rInfo');if(ri)ri.scrollTop=0}
 function setLoading(on){LOADING=on;if(on){$('#rView').innerHTML='<p style="padding:60px;font-size:19px;color:var(--mute)">文件載入中…</p>';$('#rTitle').textContent='載入中…'}['rOk','rBad','rSkip'].forEach(i=>$('#'+i).disabled=on||BUSY);$('#rPrev').disabled=on||BUSY||RI===0}
 function finishReview(byUser){
  const va=Object.values(RALL),ok=va.filter(x=>x==='ok').length,bad=va.filter(x=>x==='bad').length,v=Object.values(RS),lock=v.filter(x=>x==='lock').length,other=v.filter(x=>x==='other').length;
@@ -380,7 +389,11 @@ async function revAct(t){if(!guard())return;const id=RQ[RI];
 async function revSkip(){if(!guard())return;try{const id=RQ[RI];if(!RS[id])RS[id]='skip';RI++;DIR=1;BUSY=false;await showReview()}finally{unguard()}}
 async function revPrev(){if(RI===0||!guard())return;try{RI--;DIR=-1;BUSY=false;await showReview()}finally{unguard()}}
 async function revJump(i){if(i===RI||!guard())return;try{DIR=i>RI?1:-1;RI=i;BUSY=false;await showReview()}finally{unguard()}}
-async function viewFile(id){let r;try{r=await getFile(id)}catch(e){alert('檔案下載失敗，請確認網路後再試。');return}if(!r){alert('找不到這個檔案，可能已被刪除。');return}if(!r)return;const u=URL.createObjectURL(r.blob);const w=window.open(u,'_blank');if(!w){const a=document.createElement('a');a.href=u;a.download=r.name;a.click()}}
+async function sniff(blob){try{const b=new Uint8Array(await blob.slice(0,12).arrayBuffer());const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');if(h.startsWith('25504446'))return'application/pdf';if(h.startsWith('ffd8ff'))return'image/jpeg';if(h.startsWith('89504e47'))return'image/png';if(h.startsWith('52494646')&&h.slice(16,24)==='57454250')return'image/webp';if(h.startsWith('47494638'))return'image/gif'}catch(e){}return null}
+async function safeBlob(blob){const t=await sniff(blob);if(t)return new Blob([blob],{type:t});if(typeof DEMO!=='undefined'&&DEMO){try{if(/^\s*<svg/i.test(await blob.slice(0,300).text()))return new Blob([blob],{type:'image/svg+xml'})}catch(e){}}return null}
+async function viewFile(id){let r;try{r=await getFile(id)}catch(e){alert('檔案下載失敗，請確認網路後再試。');return}if(!r){alert('找不到這個檔案，可能已被刪除。');return}
+ const sb=await safeBlob(r.blob);if(!sb){alert('這個檔案不是 PDF 或圖片，為了安全不會直接開啟。請改為下載後以防毒軟體檢查，或退回請申請人重新上傳。');return}
+ const u=URL.createObjectURL(sb);setTimeout(()=>URL.revokeObjectURL(u),60000);const w=window.open(u,'_blank');if(!w){const a=document.createElement('a');a.href=u;a.download=r.name;a.click()}}
 let RMING=false;async function rmFile(id){if(RMING)return;RMING=true;try{await _rmFile(id)}finally{RMING=false}}
 async function _rmFile(id){if(!confirm('刪除這個檔案？'))return;let r=null;try{r=await getFile(id)}catch(e){}await delFile(id);await loadIdx();if(r)syncDoc(r.k);listFiles();render()}
 $('#fdlgIn').onchange=async e=>{const fs=[...e.target.files];e.target.value='';const a=APPS[FCUR.i];
@@ -407,7 +420,7 @@ function renderGroups(){
 }
 
 // ===== 編輯 =====
-let editIdx=null;const dlg=$('#dlg');
+let editIdx=null,EDINIT={};const dlg=$('#dlg');
 let EDDIRTY=false;dlg.addEventListener('input',()=>EDDIRTY=true);dlg.addEventListener('change',()=>EDDIRTY=true);dlg.addEventListener('cancel',e=>{if(EDDIRTY&&!confirm('修改尚未儲存，確定要關閉嗎？'))e.preventDefault()});dlg.addEventListener('close',()=>EDDIRTY=false);
 function openEdit(i){
  editIdx=(i===undefined)?null:i;const a=editIdx===null?{}:APPS[editIdx];
@@ -419,10 +432,11 @@ function openEdit(i){
    :f.area?`<textarea data-k="${f.k}">${esc(v)}</textarea>`:`<input data-k="${f.k}" value="${esc(v)}" ${f.num?'inputmode="decimal"':''}>`;
   return`${f.k==='id'&&editIdx!==null?'<h3 style="grid-column:1/-1;margin:10px 0 0;color:var(--ink)">申請資料</h3>':''}${f.k==='d_id'?'<h3 style="grid-column:1/-1;margin:10px 0 0;color:var(--ink)">文件檢核</h3>':''}${CLOUD&&f.k==='docNote'?'<p class="note" style="grid-column:1/-1;margin:10px 0 0">文件狀態請到「文件核對」點選該格修改（紙本補件可在該格標記「已附」）。</p>':''}<label class="f" data-fk="${f.k}" ${f.area?'style="grid-column:1/-1"':''}>${f.l.replace('文件-','')}${f.hint?`<span style="font-size:16px">（${f.hint}）</span>`:''}${inp}</label>`}).join('');
  const famSel=$('#editForm [data-k="family"]');const famUI=()=>{const one=/單/.test(famSel.value);['fatherName','motherName','incF','incM'].forEach(k=>{const l=$(`#editForm [data-fk="${k}"]`);if(l)l.classList.toggle('hidden',one)});['guardianName','guardianRel','incG'].forEach(k=>{const l=$(`#editForm [data-fk="${k}"]`);if(l)l.classList.toggle('hidden',!one)})};if(famSel){famSel.onchange=famUI;famUI()}
- dlg.showModal();
+ EDINIT={};document.querySelectorAll('#editForm [data-k]').forEach(el=>EDINIT[el.dataset.k]=el.value.trim());dlg.showModal();
 }
 function famClean(o){if(/單/.test(o.family||'')){if(!o.incG&&(o.incF||o.incM)){const useF=!!o.incF;o.incG=useF?o.incF:o.incM;if(!o.guardianName)o.guardianName=useF?(o.fatherName||''):(o.motherName||'');if(!o.guardianRel)o.guardianRel=useF?'父親':'母親'}['fatherName','motherName','incF','incM'].forEach(k=>{if(k in o)o[k]=''})}else if(o.family)['guardianName','guardianRel','incG'].forEach(k=>{if(k in o)o[k]=''})}
-function saveEdit(){const a={};document.querySelectorAll('#editForm [data-k]').forEach(e=>a[e.dataset.k]=e.value.trim());if(!a.name){alert('請填姓名');return}famClean(a);
+function needNote(a){if(a.override&&a.override!=='依系統'&&!String(a.overNote||'').trim()){alert('選擇「'+a.override+'」時，請在「決議說明」填寫委員會的決議理由（會留存紀錄）。');const el=document.querySelector('#editForm [data-k=overNote]');if(el)el.focus();return true}return false}
+function saveEdit(){const a={};document.querySelectorAll('#editForm [data-k]').forEach(e=>a[e.dataset.k]=e.value.trim());if(!a.name){alert('請填姓名');return}if(needNote(a))return;famClean(a);
  if(editIdx===null)APPS.push(a);else APPS[editIdx]=a;dlg.close();render();toast('已儲存')}
 $('#delBtn').onclick=()=>{if(confirm('確定刪除這位申請人？')){APPS.splice(editIdx,1);dlg.close();render()}};
 
@@ -447,20 +461,29 @@ async function readFile(f){await loadXLSX();
   if(hi<0){alert('找不到「姓名」欄，請使用範本格式');return}
   const head=rows[hi].map(h=>String(h).trim());
   const alias=h=>h.replace(/^監護人/,'扶養家長');
-  const map=head.map(h0=>{const h=alias(h0);return(FIELDS.find(f=>f.l===h||h.startsWith(f.l)||f.l.startsWith(h)&&h.length>=2)||{}).k});
+  const used=new Set();const map=head.map(h0=>{const h=alias(h0);if(!h||/英文|English/i.test(h))return undefined;
+   let f=FIELDS.find(f=>f.l===h&&!used.has(f.k))||FIELDS.find(f=>!used.has(f.k)&&h.startsWith(f.l)&&/^[（(\s]/.test(h.slice(f.l.length)))||FIELDS.find(f=>!used.has(f.k)&&f.l.startsWith(h)&&h.length>=2);
+   if(f){used.add(f.k);return f.k}return undefined});
+  const unknown=head.filter((h,j)=>h&&!map[j]);
   const raw=rows.slice(hi+1).map(r=>{const a={};map.forEach((k,j)=>{if(k)a[k]=String(r[j]??'').trim()});if(a.phone&&/^9\d{8}$/.test(a.phone))a.phone='0'+a.phone;return a}).filter(a=>Object.values(a).some(v=>v));
-  const list=raw.filter(a=>a.name),noName=raw.length-list.length;
-  if(!list.length){alert('沒有讀到任何申請人（「姓名」欄是空的）');return}
+  let list=raw.filter(a=>a.name),noName=raw.length-list.length;
+  const ex=list.filter(a=>(a.name==='王小明'&&a.id==='U001')||(a.name==='林小華'&&a.id==='G001'));list=list.filter(a=>!ex.includes(a));
+  if(!list.length){alert('沒有讀到任何申請人（「姓名」欄是空的'+(ex.length?'，或只有範本的範例資料':'')+'）');return}
+  const need=[['incSelf','申請人本人年所得'],['score','前學期學業成績'],['dept','系所'],['level','學制']].filter(([k])=>!used.has(k)).map(x=>x[1]);
+  if(!used.has('incF')&&!used.has('incM')&&!used.has('incG'))need.push('父母或扶養家長年所得');
   const seen={},dup=[];list.forEach(a=>{if(!a.id)return;if(seen[a.id])dup.push(a.id);seen[a.id]=1});
-  const warn=(noName?`\n・有 ${noName} 列沒有填姓名，已略過`:'')+(dup.length?`\n・編號重複：${[...new Set(dup)].slice(0,8).join('、')}（同一人可能被匯入兩次，請檢查）`:'');
-  let mode='r';if(APPS.length){const rep=confirm(`讀到 ${list.length} 位申請人。${warn}\n\n目前已有 ${APPS.length} 位。\n\n要「取代」現有資料嗎？\n・確定：刪除現有 ${APPS.length} 位，改用這份檔案\n・取消：保留現有資料，把這 ${list.length} 位加在後面`);mode=rep?'r':'a'}else if(warn)alert(`讀到 ${list.length} 位申請人。${warn}`);
+  const dupOld=list.filter(a=>a.id&&APPS.some(b=>b.id===a.id)).map(a=>a.id);
+  const warn=(need.length?`\n・⚠ 缺少重要欄位：${need.join('、')}。這些欄位會被當成空白或 0，可能造成錯誤的初篩結果`:'')+(noName?`\n・有 ${noName} 列沒有填姓名，已略過`:'')+(ex.length?`\n・已略過範本的範例資料 ${ex.length} 筆（王小明、林小華）`:'')+(dup.length?`\n・檔案內編號重複：${[...new Set(dup)].slice(0,8).join('、')}`:'')+(unknown.length?`\n・無法辨識的欄位（已略過）：${unknown.slice(0,8).join('、')}`:'');
+  if(!confirm(`讀到 ${list.length} 位申請人。${warn||'\n・欄位檢查正常'}\n\n要繼續匯入嗎？（取消＝不匯入）`))return;
+  let mode='r';if(APPS.length){const rep=confirm(`目前已有 ${APPS.length} 位申請人。${dupOld.length?`\n其中 ${dupOld.length} 位編號與這份檔案相同（例：${dupOld.slice(0,5).join('、')}）。`:''}\n\n・確定：「取代」——刪除現有 ${APPS.length} 位，改用這份檔案\n・取消：「附加」——保留現有資料，加入這份檔案${dupOld.length?'（編號相同者以新檔案為準，不會重複）':''}`);mode=rep?'r':'a'}
+  if(mode==='a'){const ids=new Set(list.map(a=>a.id).filter(Boolean));APPS=APPS.filter(b=>!b.id||!ids.has(b.id)).concat(list);render();tab('result');return}
   APPS=mode==='r'?list:APPS.concat(list);render();tab('result');
  };
  rd.readAsArrayBuffer(f);
 }
 function loadScript(src){return new Promise(ok=>{const t=document.createElement('script');t.src=src;t.onload=ok;t.onerror=ok;document.head.appendChild(t)})}
-async function loadXLSX(){if(window.XLSX)return;await loadScript('https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js');if(!window.XLSX)await loadScript('vendor/xlsx.full.min.js?v=1')}
-const safeCell=c=>typeof c==='string'&&(/^[=@\t\r]/.test(c)||/^[+-]/.test(c)&&!/^[+-][\d\s().-]*$/.test(c))?"'"+c:c;
+async function loadXLSX(){if(window.XLSX)return;await loadScript('vendor/xlsx.full.min.js?v=1')}
+const safeCell=c=>typeof c==='string'&&/^[=@\t\r]/.test(c)?"'"+c:c;
 async function sheetOut(name,aoa,fname){await loadXLSX();
  if(typeof XLSX==='undefined'){alert('Excel 元件載入失敗，請確認網路後重新整理頁面再匯出。');return}
  const wb=XLSX.utils.book_new();(Array.isArray(name)?name:[[name,aoa]]).forEach(([n,d])=>{const ws=XLSX.utils.aoa_to_sheet(d.map(r=>r.map(safeCell)));ws['!cols']=d[0].map(()=>({wch:16}));XLSX.utils.book_append_sheet(wb,ws,n)});XLSX.writeFile(wb,fname+'.xlsx')
@@ -468,7 +491,7 @@ async function sheetOut(name,aoa,fname){await loadXLSX();
 function downloadTemplate(){
  const h=FIELDS.filter(f=>!['override','overNote'].includes(f.k)).map(f=>f.l);
  const E1={id:'U001',name:'王小明',level:'大學部',div:'日間部',dept:'電子工程系',grade:'3',nation:'本國',family:'雙親',incSelf:'120000',incF:'350000',incM:'280000',score:'82',rankPct:'25',conduct:'82',demerit:'無',gov:'否',otherAid:'0',prev:'否',welfare:'中低收入戶',disab:'無',house:'無',fam:'F001',d_id:'已附',d_tr:'已附',d_merit:'已附',d_hh:'已附',d_prop:'已附',d_inc:'已附',d_rec:'未附',d_wel:'已附',d_dis:'無須',d_unemp:'已附',docNote:'推薦函待補',memo:'父親失業，課餘打工負擔家計'};
- const E2={id:'G001',name:'林小華',level:'碩士班',div:'日間部',dept:'電機工程系碩士班',grade:'1',nation:'本國',family:'單親',incSelf:'80000',incG:'300000',score:'88',conduct:'乙',demerit:'無',gov:'否',otherAid:'0',prev:'是',welfare:'低收入戶',disab:'二等親內',house:'無',fam:'F002',d_id:'已附',d_tr:'已附',d_merit:'已附',d_hh:'已附',d_prop:'已附',d_inc:'已附',d_rec:'已附',d_wel:'已附',d_dis:'已附',d_unemp:'無須'};
+ const E2={id:'G001',name:'林小華',level:'碩士班',div:'日間部',dept:'電機工程系碩士班',grade:'1',nation:'本國',family:'單親',incSelf:'80000',incG:'300000',score:'88',conduct:'乙',demerit:'無',gov:'否',otherAid:'0',prev:'是',welfare:'低收入戶',disab:'二親等內',house:'無',fam:'F002',d_id:'已附',d_tr:'已附',d_merit:'已附',d_hh:'已附',d_prop:'已附',d_inc:'已附',d_rec:'已附',d_wel:'已附',d_dis:'已附',d_unemp:'無須'};
  const ks=FIELDS.filter(f=>!['override','overNote'].includes(f.k)).map(f=>f.k);const ex=ks.map(k=>E1[k]||''),ex2=ks.map(k=>E2[k]||'');
  const note=[['欄位','填寫方式'],['（文件欄）','填「已附」或「未附」。福利證明、身心障礙證明有該身分才需要附'],...FIELDS.filter(f=>!['override','overNote'].includes(f.k)).map(f=>[f.l,f.opt?'請填：'+f.opt.join(' / '):f.num?'數字（元），可含逗號'+(f.hint?'；'+f.hint:''):(f.hint||'文字')])];
  sheetOut([['申請資料',[h,ex,ex2]],['填寫說明',note]],null,'松樑助學金_申請資料範本');
@@ -501,15 +524,18 @@ function readSettings(){const T={};document.querySelectorAll('[data-s]').forEach
  const bad=[],int=(k,lab,min)=>{const v=T[k];if(v===undefined)return;if(!/^\d+$/.test(v)||+v<min)bad.push(`${lab}：請填 ${min} 以上的整數`)};
  int('quotaU','大學部名額',0);int('quotaG','碩博士班名額',0);int('groups','評審分組數',1);
  if(+T.quotaU>500||+T.quotaG>500)bad.push('名額：每一學制最多 500 名');if(+T.groups>30)bad.push('評審分組數：最多 30 組');
+ ['kwA','kwB'].forEach(k=>{if(T[k]&&!T[k].split(/[,，、]/).some(x=>x.trim().length>=2))bad.push(({kwA:'電子電機類系所關鍵字',kwB:'機械／紡織／工業工程類關鍵字'})[k]+'：至少要有一個 2 字以上的關鍵字，以逗號分隔')});
  ['aRatio','scoreMin','rankPct','kwA','kwB'].forEach(k=>{if(T[k]!==undefined&&T[k]==='')bad.push(({aRatio:'電子電機類最低比例',scoreMin:'學業成績門檻',rankPct:'班排百分比',kwA:'電子電機類系所關鍵字',kwB:'機械／紡織／工業工程類關鍵字'})[k]+'：不可空白')});
  if(T.quotaU!==undefined&&T.quotaG!==undefined&&+T.quotaU+ +T.quotaG<1)bad.push('名額：大學部與碩博士班合計至少 1 名');
  const money=(k,lab)=>{const v=T[k];if(v===undefined)return;const n=parseMoney(v);if(!v||!isFinite(n)||!(n>0))bad.push(`${lab}：請填大於 0 的金額，例如 1000000 或 100萬`)};
  money('incomeLimit','家戶年所得上限');money('otherMax','其他獎學金每學期上限');
  const pct=(k,lab,mn,mx)=>{const v=T[k];if(v===undefined||v==='')return;if(isNaN(+v)||+v<mn||+v>mx)bad.push(`${lab}：請填 ${mn}～${mx} 的數字`)};
  pct('scoreMin','學業成績門檻',0,100);pct('rankPct','班排百分比',1,100);pct('spotPct','抽查比例',0,100);pct('conductMin','操行成績門檻',0,100);
- if(T.aRatio){const r=String(T.aRatio).replace(/%$/,'');const v=r.includes('/')?(([a,b])=>b?a/b:NaN)(r.split('/').map(Number)):(/^\d+(\.\d+)?$/.test(r)?(+r>1?+r/100:+r):NaN);if(!(v>=0&&v<=1))bad.push('電子電機類最低比例：請填 2/3、67% 或 0.67 這類寫法（三種寫法都代表三分之二）')}
+ if(T.aRatio){const raw=String(T.aRatio).trim(),isP=/%$/.test(raw),r=raw.replace(/%$/,'');const v=/^\d+\s*\/\s*\d+$/.test(r)?(([a,b])=>b?a/b:NaN)(r.split('/').map(Number)):(/^\d+(\.\d+)?$/.test(r)?(isP?+r/100:(+r>1?+r/100:+r)):NaN);if(v>0&&v<0.3)bad.push('電子電機類最低比例：'+raw+' 太低，辦法規定為三分之二（2/3）');if(!(v>=0&&v<=1))bad.push('電子電機類最低比例：請填 2/3、67% 或 0.67 這類寫法（三種寫法都代表三分之二）')}
  if(T.deadline&&T.supDeadline&&T.supDeadline<T.deadline)bad.push('補件期限不能早於申請截止日');
  if(bad.length){alert('設定有誤，尚未儲存：\n\n・'+bad.join('\n・'));return null}
+ if(T.deadline!==undefined&&!T.deadline&&!confirm('尚未設定申請截止日，學生將可一直送出申請。確定要儲存嗎？'))return null;
+ if(T.supDeadline&&new Date(T.supDeadline+'T23:59:59+08:00')<new Date()&&!confirm('補件期限 '+T.supDeadline+' 已經過了，儲存後所有待補件者會立即變成「逾期未補件」。確定要儲存嗎？'))return null;
  if(T.quotaU!==undefined&&T.quotaG!==undefined&&+T.quotaU+ +T.quotaG!==30&&!confirm(`名額合計 ${+T.quotaU+ +T.quotaG} 名，辦法規定每學期 30 名為原則。確定要儲存嗎？`))return null;
  return T}
 function saveSettings(){const T=readSettings();if(!T)return;Object.assign(S,T);render();$('#setDirty').classList.add('hidden');alert('已儲存，結果已重新計算')}
@@ -530,7 +556,7 @@ function loadDemo(){
    incSelf:String(Math.round(r()*180)*1000),incF:single?'':String(Math.round(r()*560)*1000),incM:single?'':String(Math.round(r()*420)*1000),
    incG:single?String(Math.round(r()*500)*1000):'',score:String(Math.round(62+r()*33)),rankPct:String(Math.round(5+r()*80)),
    demerit:r()<.04?pick(['警告','小過','大過以上']):'無',prev:r()<.25?'是':'否',welfare:r()<.35?pick(['低收入戶','中低收入戶','中低收入戶','特殊境遇家庭']):'無',
-   disab:r()<.18?pick(['本人','二等親內','二等親內']):'無',house:r()<.6?'無':'有',fam:'F'+String(i+1).padStart(3,'0'),memo:'',override:'依系統',overNote:''};
+   disab:r()<.18?pick(['本人','二親等內','二親等內']):'無',house:r()<.6?'無':'有',fam:'F'+String(i+1).padStart(3,'0'),memo:'',override:'依系統',overNote:''};
   L.push(a)}
  L[12].fam=L[13].fam;L[30].fam=L[31].fam; // 兄弟姊妹示範
  L[5].memo='父親重病無法工作，母親兼兩份工';L[20].memo='導師推薦：課業積極、擔任班代';
@@ -574,7 +600,7 @@ function mapDocs(a){
  }}
 function mapApp(r){const f=r.form||{};
  const rv=r.review||{};const a={...f,id:r.app_no,_cid:r.id,_review:rv,_at:r.created_at,override:rv.override||'依系統',overNote:rv.overNote||''};if(rv.fam)a.fam=rv.fam;
- if(!a.fam){const k=[f.fatherName,f.motherName,f.guardianName].filter(Boolean).join('/');if(k)a.fam=k}
+ if(!a.fam){const ad=normAddr(f.addr);if(ad)a.fam=ad;const k=[f.fatherName,f.motherName,f.guardianName].filter(Boolean).join('/');if(k)a.famGuess=k}
  mapDocs(a);return a}
 syncDoc=function(k){if(!CLOUD)return _syncDoc(k);CAPPS.forEach(mapDocs)};
 setSt=async function(id,st,note){
@@ -612,7 +638,7 @@ delFile=async function(id){
  if(!CLOUD)return _delFile(nid(id));
  const d=CDOCS.find(x=>x.id===id);if(!d)return;
  if(!await wrote(await SBC.from('documents').delete().eq('id',id).select('id'),'刪除'))return;
- await SBC.storage.from('docs').remove([d.path]);
+ {const rm=await SBC.storage.from('docs').remove([d.path]);if(rm&&rm.error)alert('紀錄已刪除，但雲端檔案刪除失敗，請稍後通知系統管理者清除。')}
  CDOCS=CDOCS.filter(x=>x.id!==id)};
 putFile=async function(k,file){
  if(!CLOUD)return _putFile(k,file);
@@ -639,7 +665,7 @@ toggleDoc=async function(i,k){
 const FORMSKIP=new Set(['id',...DOCKEYS]);
 saveEdit=async function(){
  if(!CLOUD)return _saveEdit();
- const e={};document.querySelectorAll('#editForm [data-k]').forEach(el=>e[el.dataset.k]=el.value.trim());if(!e.name){alert('請填姓名');return}famClean(e);
+ const e={};document.querySelectorAll('#editForm [data-k]').forEach(el=>e[el.dataset.k]=el.value.trim());if(!e.name){alert('請填姓名');return}if(needNote(e))return;famClean(e);
  const form={};for(const[k,v]of Object.entries(e))if(!FORMSKIP.has(k))form[k]=v;
  if(editIdx===null){
   form.consent=true;form.source='審查人員建檔';
@@ -648,12 +674,15 @@ saveEdit=async function(){
  const a=APPS[editIdx];
  const cur=await SBC.from('applicants').select('form,review').eq('id',a._cid).single();if(cur.error||!cur.data){await sessionLost();return}
  const rvPart={},fmPart={};for(const[k,v]of Object.entries(form))(REVKEYS.includes(k)?rvPart:fmPart)[k]=v;
- const old=cur.data.form||{},chg={};for(const[k,v]of Object.entries(fmPart))if(String(old[k]??'')!==String(v)&&!(k==='fam'&&!old.fam))chg[k]=v;
- const rvChg={};const oldRv=cur.data.review||{};for(const[k,v]of Object.entries(rvPart))if(String(oldRv[k]??(k==='override'?'依系統':''))!==String(v))rvChg[k]=v;
+ // 只寫入本人在視窗中改過的欄位，避免蓋掉其他委員同時的修改
+ const touched=k=>String(EDINIT[k]??'')!==String(e[k]??'');
+ const old=cur.data.form||{},chg={};for(const[k,v]of Object.entries(fmPart))if(touched(k)&&String(old[k]??'')!==String(v))chg[k]=v;
+ const rvChg={};const oldRv=cur.data.review||{};for(const[k,v]of Object.entries(rvPart))if(touched(k)&&String(oldRv[k]??(k==='override'?'依系統':''))!==String(v))rvChg[k]=v;
+ const both=Object.keys(chg).filter(k=>String(old[k]??'')!==String(EDINIT[k]??''));if(both.length&&!confirm('您編輯期間，其他人也修改了這位申請人的：'+both.map(k=>(FIELDS.find(f=>f.k===k)||{l:k}).l).join('、')+'。\n按「確定」以您的內容為準；按「取消」放棄您的修改。'))return;
  const newForm={...old,...chg};
  if(Object.keys(chg).length&&!await wrote(await SBC.from('applicants').update({form:newForm}).eq('id',a._cid).select('id'),'儲存'))return;
  let newRev=oldRv;if(Object.keys(rvChg).length){const{data:nr,error:ne}=await SBC.rpc('review_patch',{p_id:a._cid,p_patch:rvChg});if(ne){alert('儲存失敗：'+ne.message);return}newRev=nr}
- CAPPS_RAW[a._cid].form=newForm;CAPPS_RAW[a._cid].review=newRev;a._review=newRev;Object.assign(a,chg,rvPart);dlg.close();render();toast('已儲存')};
+ CAPPS_RAW[a._cid].form=newForm;CAPPS_RAW[a._cid].review=newRev;a._review=newRev;Object.assign(a,newForm,{override:newRev.override||'依系統',overNote:newRev.overNote||''});if(newRev.fam)a.fam=newRev.fam;dlg.close();render();toast('已儲存')};
 const REVKEYS=['override','overNote','fam'];
 $('#delBtn').onclick=async()=>{const b=$('#delBtn');if(b.disabled)return;b.disabled=true;try{await delApp()}finally{b.disabled=false}};
 async function delApp(){
@@ -661,7 +690,7 @@ async function delApp(){
  if(!CLOUD){APPS.splice(editIdx,1);dlg.close();render();return}
  const a=APPS[editIdx];const paths=CDOCS.filter(d=>d.applicant_id===a._cid).map(d=>d.path);
  if(!await wrote(await SBC.from('applicants').delete().eq('id',a._cid).select('id'),'刪除'))return;
- if(paths.length)await SBC.storage.from('docs').remove(paths);
+ if(paths.length){const rm=await SBC.storage.from('docs').remove(paths);if(rm&&rm.error)alert('申請人已刪除，但部分雲端檔案刪除失敗，請稍後通知系統管理者清除。')}
  dlg.close();await cloudLoad()}
 saveSettings=async function(){
  if(!CLOUD)return _saveSettings();
@@ -674,7 +703,7 @@ allDocs=function(){if(CLOUD)return alert('雲端模式須逐份核對文件。')
 const _readFile=readFile;readFile=function(f){if(CLOUD)return alert('雲端模式資料來自線上申請，不提供 Excel 匯入。');return _readFile(f)};
 
 let CAPPS_RAW={};
-async function cloudLoad(){
+let CLSEQ=0;async function cloudLoad(){const seq=++CLSEQ;
  const bar=$('#cloudInfo');if(bar)bar.textContent='讀取中…';
  const all=async(mk)=>{let out=[],from=0;for(;;){const r=await mk().range(from,from+999);if(r.error)return r;out=out.concat(r.data||[]);if(!r.data||r.data.length<1000)return{data:out,error:null};from+=1000}};
  let ap,dc,st;
@@ -682,7 +711,8 @@ async function cloudLoad(){
   all(()=>SBC.from('applicants').select('*').order('app_no')),
   all(()=>SBC.from('documents').select('*').is('withdrawn_at',null).order('created_at').order('id')),
   SBC.from('settings').select('*').eq('id',1).maybeSingle()])}catch(e){if(bar)bar.textContent='讀取失敗';alert('網路連線中斷，無法讀取資料。請確認網路後按「重新整理」。');return false}
- const rv=await SBC.from('reviewers').select('email,name');RVN={};(rv.data||[]).forEach(r=>RVN[r.email.toLowerCase()]=r.name||r.email);
+ if(seq!==CLSEQ)return false;
+ const rv=await SBC.from('reviewers').select('email,name');if(seq!==CLSEQ)return false;RVN={};(rv.data||[]).forEach(r=>RVN[r.email.toLowerCase()]=r.name||r.email);
  const err=ap.error||dc.error||st.error;if(err){if(bar)bar.textContent='讀取失敗';alert(/fetch|network|網路|Failed/i.test(err.message||'')?'網路連線中斷，無法讀取資料。請確認網路後按「重新整理」。':'讀取資料失敗，請稍後按「重新整理」再試。（'+String(err.message||'').slice(0,60)+'）');return false}
  CAPPS_RAW={};ap.data.forEach(r=>CAPPS_RAW[r.id]=r);
  CDOCS=dc.data.filter(d=>!d.withdrawn_at);CAPPS=ap.data.map(mapApp);APPS=CAPPS;BLOBS={};BORD=[];
@@ -695,7 +725,8 @@ async function cloudLoad(){
 async function enterCloud(){
  const{data:s}=await SBC.auth.getSession();if(!s.session)return false;
  const{data:ok,error}=await SBC.rpc('is_reviewer');
- if(error||!ok){alert('這個帳號（'+s.session.user.email+'）不在審查人員名單內，請洽管理者。');await SBC.auth.signOut();return false}
+ if(error){alert('網路連線不穩，無法確認審查人員身分。請確認網路後重新整理頁面。');return false}
+ if(!ok){alert('這個帳號（'+s.session.user.email+'）不在審查人員名單內，請洽管理者。');await SBC.auth.signOut();return false}
  if(!CLOUD)LOCAL_BAK={APPS,S};
  CLOUD=true;CUSER=s.session.user.email;document.body.classList.add('cloud');document.body.classList.remove('gated');
  const ra=await SBC.rpc('is_admin');ISADMIN=!!(ra&&ra.data);document.body.classList.toggle('admin',ISADMIN);
@@ -822,17 +853,20 @@ function exportReviewers(){
  if(!R.length){alert('尚無資料');return}
  const st=x=>({ok:'正取',add:'追加正取',wait:'備取'+(x.wn||''),hold:'待補件',late:'逾期未補件',no:'不符合'}[x.st]);
  const pr=x=>[x.p1?'①':'',x.welfare&&!x.p1?'②':'',x.disab?'③':'',x.noHouse?'④':''].filter(Boolean).join('');
- const head=['排名','初篩結果','編號','姓名','學制','系所','年級','成績','優先條件（對照規則第幾項）','不符合原因','備註','自述／推薦重點','審查組','評審意見'];
- const row=x=>[x.rk||'',st(x),x.a.id,mask(x.a.name),x.a.level,x.a.dept,x.grade||'',isFinite(+x.a.score)&&x.a.score!==''?+x.a.score:x.a.score,pr(x),x.reasons.map(r=>tagOf(r)+(detOf(r)?'：'+detOf(r):'')).join('；'),x.notes.filter(n=>!/^同家庭｜/.test(n)).map(r=>tagOf(r)+(detOf(r)?'：'+detOf(r):'')).join('；'),x.a.memo||'',x.grp,''];
+ // 去識別：只帶不含金額、家人姓名、障別等個資的說明
+ const SAFE=/^(名額已滿|類別名額已滿|名額回流|成績未達|班排補足|文件不全|文件退回|待核對|科系不符|非日間部|部別未填|國籍未填|逾期未補件)/;
+ const txt=r=>tagOf(r)+(SAFE.test(r)&&detOf(r)?'：'+detOf(r):'');
+ const head=['排名','初篩結果','編號','姓名','學制','系所','年級','成績','優先條件（對照規則第幾項）','不符合原因','備註','審查組','評審意見'];
+ const row=x=>[x.rk||'',st(x),x.a.id,mask(x.a.name),x.a.level,x.a.dept,x.grade||'',isFinite(+x.a.score)&&x.a.score!==''?+x.a.score:x.a.score,pr(x),x.reasons.map(txt).join('；'),x.notes.filter(n=>!/^(同家庭｜|疑似同家庭｜)/.test(n)).map(txt).join('；'),x.grp,''];
  const order={ok:0,add:1,wait:2,hold:3,late:3.5,no:4};
  const part=L=>[head,...R.filter(x=>x.L===L).sort((p,q)=>order[p.st]-order[q.st]||((p.rk||999)-(q.rk||999))).map(row)];
- const note=[['使用須知'],['本名單僅供本年度助學金評審使用，請勿轉寄、複製或上傳到其他地方。'],['會議結束後請將紙本交回承辦人員統一銷毀，電子檔請刪除（含下載資料夾與資源回收筒）。'],['優先條件：①續領且具福利身分 ②低收／中低收／特殊境遇 ③本人或二等親身心障礙／重大傷病 ④無房產'],['匯出時間：'+new Date().toLocaleString('zh-TW',{hour12:false})]];
+ const note=[['使用須知'],['本名單僅供本年度助學金評審使用，請勿轉寄、複製或上傳到其他地方。'],['會議結束後請將紙本交回承辦人員統一銷毀，電子檔請刪除（含下載資料夾與資源回收筒）。'],['優先條件：①續領且具福利身分 ②低收／中低收／特殊境遇 ③本人或二親等身心障礙／重大傷病 ④無房產'],['匯出時間：'+new Date().toLocaleString('zh-TW',{hour12:false})]];
  sheetOut([['使用須知',note],['大學部',part('U')],['碩博士班',part('G')]],null,'松樑助學金_評審用_機密_'+today()+(provCount().docs||provCount().hold||provCount().late?'_暫定':''))}
 
-async function checkKey(){try{const{data}=await SBC.functions.invoke('analyze',{body:{ping:true}});const bad=!data||data.key===false;
+async function checkKey(){try{const{data,error}=await SBC.functions.invoke('analyze',{body:{ping:true}});if(error||!data)return;const bad=data.key===false;
  const box=$('#keyWarn');box.classList.toggle('hidden',!bad)}catch(e){}}
 let DEMO=false;
-function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=13';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
+function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=14';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
 
 function adminDemoSteps(){
  const pendIdx=(no,k)=>RQ.findIndex(id=>{const r=FALL.find(x=>x.id===id);return r&&r.k===no+'|'+k});
@@ -867,3 +901,8 @@ try{load();renderSettings();render()}catch(e){console.error(e)}
 const idxP=Promise.race([loadIdx(),new Promise(r=>setTimeout(r,3000))]).then(()=>{try{render()}catch(e){}});
 let REPLAY=false;try{REPLAY=!!sessionStorage.getItem('sch_replay_demo');sessionStorage.removeItem('sch_replay_demo')}catch(e){}
 idxP.then(async()=>{if(REPLAY){if(wdlg.open)wdlg.close();await startDemo();document.body.classList.remove('gated');return}if(SBC){const ok=await enterCloud();if(ok)document.body.classList.remove('gated');else{let seen=false;try{seen=!!localStorage.getItem('sch_seen_intro')}catch(e){}let after=false;try{after=!!sessionStorage.getItem('sch_after_demo');sessionStorage.removeItem('sch_after_demo')}catch(e){}if(after&&document.body.classList.contains('gated')){cloudBtnClick()}else if(!seen&&document.body.classList.contains('gated')){if(window.MASCOT)$('#wMascot').innerHTML=MASCOT(130,'fly');wdlg.showModal()}}}});
+
+// 列印前：每張表的標題列移入 thead（跨頁自動重複）並加上列印時間
+window.addEventListener('beforeprint',()=>{document.querySelectorAll('table').forEach(t=>{if(!t.tHead&&t.rows[0]&&t.rows[0].querySelector('th')){const h=t.createTHead();h.appendChild(t.rows[0])}});
+ let p=document.getElementById('printStamp');if(!p){p=document.createElement('div');p.id='printStamp';const m=document.querySelector('main');if(m)m.prepend(p)}
+ const d=new Date();p.textContent='社團法人台灣松樑教育公益促進協會 助學金初審｜列印時間：民國 '+(d.getFullYear()-1911)+' 年 '+(d.getMonth()+1)+' 月 '+d.getDate()+' 日 '+d.toTimeString().slice(0,5)});

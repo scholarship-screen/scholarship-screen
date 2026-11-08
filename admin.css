@@ -205,3 +205,17 @@ table.stickyact th:last-child{z-index:3}
 .onlyprint{display:none}@media print{.onlyprint{display:block!important}}
 
 @media(max-width:360px){html,body{overflow-x:hidden}.navr .pop{max-width:calc(100vw - 16px);right:0;left:auto}#ruleList{padding-left:18px}main input,main select{max-width:100%}}
+
+/* 列印：A4 橫式、字級 12pt 以上、跨頁重複標題列、頁碼 */
+@page{size:A4 landscape;margin:12mm 10mm 14mm;@bottom-right{content:"第 " counter(page) " 頁／共 " counter(pages) " 頁";font-size:10pt}}
+@media print{
+ body{font-size:12pt}
+ table{font-size:12pt!important;width:100%;table-layout:auto}
+ th,td{padding:4px 5px;word-break:break-word;white-space:normal!important}
+ thead{display:table-header-group}
+ tr{break-inside:avoid;page-break-inside:avoid}
+ .stickyact td:last-child,.stickyact th:last-child{position:static!important}
+ .rtag,.chip{border:1px solid #555!important;background:#fff!important;color:#000!important}
+ #printStamp{display:block!important;font-size:11pt;margin-bottom:6px}
+}
+#printStamp{display:none}
