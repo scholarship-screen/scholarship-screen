@@ -611,7 +611,7 @@ async function enterCloud(){
  const{data:ok,error}=await SBC.rpc('is_reviewer');
  if(error||!ok){alert('這個帳號（'+s.session.user.email+'）不在審查人員名單內，請洽管理者。');await SBC.auth.signOut();return false}
  if(!CLOUD)LOCAL_BAK={APPS,S};
- CLOUD=true;CUSER=s.session.user.email;document.body.classList.add('cloud');
+ CLOUD=true;CUSER=s.session.user.email;document.body.classList.add('cloud');document.body.classList.remove('gated');
  const ra=await SBC.rpc('is_admin');ISADMIN=!!(ra&&ra.data);document.body.classList.toggle('admin',ISADMIN);
  
  await cloudLoad();if(ISADMIN)checkKey();$('#userBtn').textContent=(RVN[CUSER.toLowerCase()]||CUSER.split('@')[0])+' ▾';$('#userInfo').innerHTML=`${esc(CUSER)}<br>${ISADMIN?'管理者':'審查委員'}`;maybeTour();return true}
@@ -619,7 +619,7 @@ let LEAVING=false;
 async function leaveCloud(){
  if(DEMO){location.reload();return}
  if(!confirm('確定登出嗎？'))return;
- LEAVING=true;await SBC.auth.signOut();LEAVING=false;CLOUD=false;CUSER='';ISADMIN=false;document.body.classList.remove('cloud','admin');
+ LEAVING=true;await SBC.auth.signOut();location.reload();return;CLOUD=false;CUSER='';ISADMIN=false;document.body.classList.remove('cloud','admin');
  
  if(LOCAL_BAK){APPS=LOCAL_BAK.APPS;S=LOCAL_BAK.S}else{APPS=[];S=Object.assign({},DEF);_load()}
  await _loadIdx();renderSettings();render()}
@@ -747,4 +747,5 @@ async function startDemo(){try{await loadDemoJs()}catch(e){alert(e.message);retu
  SBC=window.DemoClient();SBC.auth._demoLogin();DEMO=true;$('#demoBar').classList.remove('hidden');$('#demoBar').style.display='flex';if(ldlg.open)ldlg.close();
  $('#applyUrl').textContent=new URL('apply.html',location.href).href;await enterCloud()}
 $('#q').oninput=renderData;$('#fLevel').onchange=render;$('#fStatus').onchange=render;$('#fq').oninput=render;$('#dShow').onchange=renderDocs;
-load();renderSettings();render();loadIdx().then(render).then(()=>{if(SBC)enterCloud()});
+if(SBC)document.body.classList.add('gated');
+load();renderSettings();render();loadIdx().then(render).then(async()=>{if(SBC){const ok=await enterCloud();if(ok)document.body.classList.remove('gated')}});
