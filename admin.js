@@ -747,5 +747,5 @@ async function startDemo(){try{await loadDemoJs()}catch(e){alert(e.message);retu
  SBC=window.DemoClient();SBC.auth._demoLogin();DEMO=true;$('#demoBar').classList.remove('hidden');$('#demoBar').style.display='flex';if(ldlg.open)ldlg.close();
  $('#applyUrl').textContent=new URL('apply.html',location.href).href;await enterCloud()}
 $('#q').oninput=renderData;$('#fLevel').onchange=render;$('#fStatus').onchange=render;$('#fq').oninput=render;$('#dShow').onchange=renderDocs;
-if(SBC)document.body.classList.add('gated');
+if(SBC&&!/[?&]offline\b/.test(location.search))document.body.classList.add('gated');
 load();renderSettings();render();loadIdx().then(render).then(async()=>{if(SBC){const ok=await enterCloud();if(ok)document.body.classList.remove('gated')}});
