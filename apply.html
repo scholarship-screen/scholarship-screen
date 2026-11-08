@@ -4,122 +4,153 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>松樑教育公益促進協會 清寒及弱勢助學金 線上申請</title>
-<meta name="description" content="社團法人台灣松樑教育公益促進協會 清寒及弱勢助學金線上申請">
+<meta name="description" content="社團法人台灣松樑教育公益促進協會 清寒及弱勢助學金線上申請與補件">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <style>
-:root{--bg:#f4f6f8;--card:#fff;--ink:#1d2733;--mute:#56626f;--line:#d5dce4;--pri:#3d6b2f;--pri2:#edf4e6;--ok:#1d7a46;--okbg:#e5f5ec;--warn:#8a5700;--warnbg:#fff4dd;--bad:#b3261e;--badbg:#fdecea}
+:root{--bg:#f4f6f8;--card:#fff;--ink:#1d2733;--mute:#56626f;--line:#d5dce4;--pri:#3d6b2f;--pri2:#edf4e6;--ok:#1d7a46;--okbg:#e5f5ec;--warn:#8a5700;--warnbg:#fff4dd;--bad:#b3261e;--badbg:#fdecea;--info:#1d3f8a;--infobg:#e8f0fa}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:19px/1.65 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
-header{background:#fff;padding:16px 20px;border-bottom:5px solid #9bbb45;text-align:center}
+header{background:#fff;padding:16px 20px 12px;border-bottom:5px solid #9bbb45;text-align:center}
 header img{max-width:100%;height:auto;max-height:64px}
-header h1{margin:10px 0 0;font-size:26px;color:#1e3020}
-main{max-width:820px;margin:0 auto;padding:20px 16px 80px}
+header h1{margin:10px 0 0;font-size:25px;color:#1e3020}
+.infobar{max-width:820px;margin:12px auto 0;padding:0 16px;display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;font-size:17px;color:var(--mute)}
+.infobar b{color:var(--ink)}
+main{max-width:820px;margin:0 auto;padding:16px 16px 80px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 20px;margin-bottom:18px}
 .card h2{margin:0 0 12px;font-size:23px;color:#1e3020}
-.card h3{margin:22px 0 8px;font-size:20px}
 .note{color:var(--mute);font-size:17px}
-label.f{display:block;margin:14px 0 0;font-size:18px;font-weight:700}
-label.f small{display:block;font-weight:400;color:var(--mute);font-size:16px}
+label.f{display:block;margin:16px 0 0;font-size:18px;font-weight:700}
+label.f small,.hint{display:block;font-weight:400;color:var(--mute);font-size:16px}
 input,select,textarea{display:block;width:100%;margin-top:6px;font:inherit;font-size:19px;color:var(--ink);padding:12px 14px;border:1px solid #b9c4d0;border-radius:10px;background:#fff}
 textarea{min-height:120px}
 input:focus,select:focus,textarea:focus{outline:3px solid #c8dcb8;border-color:var(--pri)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0 18px}
+.pair{display:flex;gap:10px;align-items:center}.pair input{flex:1}.pair span{flex:none;margin-top:6px}
 .star{color:var(--bad)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:14px 22px;font:inherit;font-size:19px;font-weight:700;cursor:pointer}
+.f.err input,.f.err select{border-color:var(--bad);background:#fffafa;outline:2px solid #f3c3bf}
+.emsg{display:block;color:var(--bad);font-size:16px;font-weight:700;margin-top:4px}
+details.help{margin-top:6px;font-size:16px;font-weight:400;color:var(--mute)}
+details.help summary{color:var(--info);cursor:pointer;font-weight:700;list-style:none}
+details.help summary::-webkit-details-marker{display:none}
+details.help[open]{background:var(--infobg);border-radius:8px;padding:8px 12px;color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:14px 22px;font:inherit;font-size:19px;font-weight:700;cursor:pointer;text-decoration:none}
 .btn.pri{background:var(--pri);color:#fff;border-color:var(--pri)}
 .btn.big{width:100%;font-size:21px;padding:16px}
+.btn.sm{padding:8px 14px;font-size:17px;border-radius:10px}
+.btn.danger{color:var(--bad)}
 .btn:disabled{opacity:.5}
-.consent{background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:17px;max-height:260px;overflow:auto}
-.consent ol{margin:6px 0;padding-left:24px}
-.chk{display:flex;gap:12px;align-items:flex-start;margin-top:14px;font-size:19px;font-weight:700}
-.chk input{width:26px;height:26px;margin:3px 0 0;flex:none}
+.choice{display:grid;gap:14px}
+.consent ul{margin:6px 0;padding-left:24px}
+.chk{display:flex;gap:14px;align-items:flex-start;margin-top:16px;font-size:19px;font-weight:700;cursor:pointer}
+.chk input{width:32px;height:32px;margin:0;flex:none;accent-color:var(--pri)}
 .alert{border-radius:10px;padding:12px 16px;margin:12px 0;font-size:18px}
-.alert.bad{background:var(--badbg);color:var(--bad)}
-.alert.ok{background:var(--okbg);color:var(--ok)}
-.alert.warn{background:var(--warnbg);color:var(--warn)}
-.doc{border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0}
+.alert.bad{background:var(--badbg);color:var(--bad)}.alert.ok{background:var(--okbg);color:var(--ok)}.alert.warn{background:var(--warnbg);color:var(--warn)}.alert.info{background:var(--infobg);color:var(--info)}
+.doc{border:1px solid var(--line);border-radius:14px;padding:18px;margin:0 0 14px;background:#fff}
 .doc .t{font-size:20px;font-weight:700}
-.doc .t .tag{display:inline-block;font-size:16px;border-radius:6px;padding:1px 10px;margin-left:8px;vertical-align:2px}
-.tag.need{background:var(--badbg);color:var(--bad)}.tag.opt{background:#eef1f5;color:var(--mute)}.tag.done{background:var(--okbg);color:var(--ok)}
-.doc .d{color:var(--mute);font-size:17px;margin:2px 0 10px}
-.file{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px dashed var(--line);font-size:17px}
+.tag{display:inline-block;font-size:16px;border-radius:6px;padding:1px 10px;margin-left:8px;vertical-align:2px;font-weight:700}
+.tag.need{background:var(--badbg);color:var(--bad)}.tag.opt{background:#eef1f5;color:var(--mute)}.tag.ok{background:var(--okbg);color:var(--ok)}.tag.warn{background:var(--warnbg);color:var(--warn)}.tag.wait{background:var(--infobg);color:var(--info)}
+.doc .d{color:var(--mute);font-size:17px;margin:4px 0 8px}
+.doc .who{font-size:17px;margin:2px 0 8px}
+.file{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-top:1px dashed var(--line);font-size:17px}
 .file .nm{flex:1;word-break:break-all}
-.file .s{font-size:17px;margin-top:2px}
-.s.ok{color:var(--ok)}.s.warn{color:var(--warn)}.s.run{color:var(--mute)}.s.bad{color:var(--bad)}
-.up{display:inline-flex}
+.s{font-size:17px;margin-top:2px}
+.s.ok{color:var(--ok)}.s.warn{color:var(--warn)}.s.run{color:var(--mute)}.s.bad{color:var(--bad)}.s.wait{color:var(--info)}
 .up input{display:none}
 .hidden{display:none!important}
-.no{font-size:44px;font-weight:800;color:var(--pri);letter-spacing:2px;text-align:center;margin:8px 0}
+.codebox{background:var(--pri2);border:2px solid var(--pri);border-radius:14px;padding:16px;text-align:center;margin:12px 0}
+.codebox .l{font-size:17px;color:var(--mute)}
+.codebox .v{font-size:40px;font-weight:800;color:var(--pri);letter-spacing:3px;line-height:1.3}
 .steps{display:flex;gap:8px;margin-bottom:16px}
 .steps div{flex:1;text-align:center;padding:10px 4px;border-radius:10px;background:#e9edf1;color:var(--mute);font-size:17px;font-weight:700}
 .steps div.on{background:var(--pri);color:#fff}
+.miss li{margin:4px 0}
+footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-size:16px;text-align:center}
 </style>
 </head>
 <body>
 <header>
  <img src="logo.png" alt="社團法人台灣松樑教育公益促進協會">
  <h1>清寒及弱勢助學金　線上申請</h1>
+ <div class="infobar" id="infobar"></div>
 </header>
 <main>
-<div class="steps"><div id="s1" class="on">1 填寫資料</div><div id="s2">2 上傳文件</div><div id="s3">3 完成</div></div>
+<div id="cfgErr" class="alert bad hidden">申請系統暫時無法使用，請稍後再試。</div>
+<div class="steps hidden" id="stepbar"><div id="s1">1 填寫資料</div><div id="s2">2 上傳文件</div><div id="s3">3 完成</div></div>
 
-<div id="cfgErr" class="alert bad hidden">申請系統尚未開放，請稍後再試或洽承辦人員。</div>
-
-<!-- 續傳 -->
-<div id="resume" class="card hidden">
- <h2>你已經送出過申請</h2>
- <p>申請編號 <b id="resumeNo"></b>。送出後 24 小時內可以繼續補傳文件。</p>
- <button class="btn pri big" onclick="goDocs()">繼續上傳文件</button>
- <p style="text-align:center;margin:14px 0 0"><button class="btn" onclick="newApp()">幫另一位同學重新申請</button></p>
-</div>
-
-<!-- 第 1 步 -->
-<form id="step1" class="hidden" onsubmit="submitForm(event)">
+<!-- 首頁 -->
+<section id="v-home" class="hidden">
+ <div class="card" id="resumeCard" style="display:none">
+  <h2>歡迎回來</h2>
+  <p>這支手機記得你的申請：<b id="resumeNo"></b></p>
+  <button class="btn pri big" onclick="resumeSaved()">查看進度、補傳文件</button>
+ </div>
  <div class="card">
   <h2>申請須知</h2>
   <ul style="margin:0;padding-left:24px">
-   <li>限本國籍、日間部學生；補助科系為電子、電機、光電、物理、通訊、生物、機電、紡織材料、機械、工業工程等相關系所。</li>
-   <li>請先備妥文件的 PDF 檔或清楚的照片（手機直接拍照也可以）：學生證或在學證明、前學期成績單（含班級排名）、全戶戶籍謄本（三個月內）、全國財產稅總歸戶財產查詢清單、綜合所得稅各類所得資料清單、導師或系主任推薦函。</li>
-   <li>有低收入戶／中低收入戶／特殊境遇家庭、身心障礙或重大傷病身分者，另附證明。</li>
-   <li>上學期已領過本助學金者（續領），免附所得清單與推薦函。</li>
+   <li>限本國籍、日間部學生；補助電子、電機、光電、物理、通訊、生物、機電、紡織材料、機械、工業工程等相關系所。</li>
+   <li>先填資料、送出後就會拿到<b>申請編號</b>和<b>查詢碼</b>。文件可以之後再補，截止日前用任何手機或電腦都能回來上傳。</li>
+   <li>文件用手機拍照或 PDF 都可以。</li>
   </ul>
  </div>
+ <div class="choice">
+  <button class="btn pri big" id="startBtn" onclick="startNew()">開始申請</button>
+  <button class="btn big" onclick="go('login')">我已經申請過：查進度、補傳文件</button>
+ </div>
+</section>
 
+<!-- 查詢登入 -->
+<section id="v-login" class="hidden">
+ <div class="card">
+  <h2>查進度、補傳文件</h2>
+  <p class="note">請輸入送出申請時拿到的申請編號和 6 位數查詢碼。</p>
+  <label class="f">申請編號<small>例如 U012 或 G003</small><input id="lgNo" autocapitalize="characters" autocomplete="off"></label>
+  <label class="f">查詢碼<small>6 位數字</small><input id="lgCode" inputmode="numeric" maxlength="6" autocomplete="off"></label>
+  <div id="lgErr" class="alert bad hidden"></div>
+  <button class="btn pri big" style="margin-top:18px" onclick="doLogin()">查詢</button>
+  <p class="note" style="margin-top:14px">忘記查詢碼？請聯絡承辦人員<span class="ct"></span>。</p>
+ </div>
+ <button class="btn" onclick="go('home')">← 回首頁</button>
+</section>
+
+<!-- 第 1 步：填表（新申請或修改） -->
+<form id="v-form" class="hidden" novalidate onsubmit="submitForm(event)">
+ <div class="alert info hidden" id="editNote">你正在修改已送出的資料。改完按最下面的「儲存修改」。</div>
  <div class="card">
   <h2>一、基本資料</h2>
   <div class="grid">
-   <label class="f req">姓名<input name="name" required autocomplete="name"></label>
-   <label class="f req">學號<input name="studentNo" required></label>
-   <label class="f req">手機<input name="phone" required inputmode="tel" autocomplete="tel"></label>
-   <label class="f req">Email<input name="email" type="email" required autocomplete="email"></label>
-   <label class="f req">國籍<select name="nation" required><option value="">請選擇</option><option>本國</option><option>外籍</option></select></label>
+   <label class="f req">姓名<input name="name" autocomplete="name"></label>
+   <label class="f req">學號<input name="studentNo"></label>
+   <label class="f req">手機<small>審查結果和補件通知會用到</small><input name="phone" inputmode="tel" autocomplete="tel" placeholder="0912345678"></label>
+   <label class="f req">Email<input name="email" type="email" autocomplete="email"></label>
+   <label class="f req">國籍<select name="nation"><option value="">請選擇</option><option>本國</option><option>外籍</option></select></label>
   </div>
  </div>
 
  <div class="card">
   <h2>二、就學資料</h2>
   <div class="grid">
-   <label class="f req">學制<select name="level" required><option value="">請選擇</option><option>大學部</option><option>碩士班</option><option>博士班</option></select></label>
-   <label class="f req">部別<select name="div" required><option value="">請選擇</option><option>日間部</option><option>進修部</option><option>夜間部</option></select></label>
-   <label class="f req">系所<small>請寫全名，例如：電子工程系</small><input name="dept" required></label>
-   <label class="f req">年級<select name="grade" required><option value="">請選擇</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
-   <label class="f req">前學期學業平均成績<small>照成績單填，例如 82.5</small><input name="score" required inputmode="decimal"></label>
-   <label class="f">班級排名百分比<small>例如全班 50 人排第 10 名，填 20</small><input name="rankPct" inputmode="decimal"></label>
-   <label class="f req">前學期操行成績<small>分數或等第（甲、乙）</small><input name="conduct" required></label>
-   <label class="f req">曾因故意行為受懲處<select name="demerit" required><option>無</option><option>警告</option><option>小過</option><option>大過以上</option></select></label>
-   <label class="f req">是否為公費生<select name="gov" required><option>否</option><option>是</option></select></label>
+   <label class="f req">學制<select name="level"><option value="">請選擇</option><option>大學部</option><option>碩士班</option><option>博士班</option></select></label>
+   <label class="f req">部別<select name="div"><option value="">請選擇</option><option>日間部</option><option>進修部</option><option>夜間部</option></select></label>
+   <label class="f req">系所<small>請寫全名，例如：電機工程系</small><input name="dept"></label>
+   <label class="f req">年級<select name="grade"><option value="">請選擇</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+   <label class="f req">前學期學業平均成績<small>照成績單填，例如 82.5（只填數字）</small><input name="score" inputmode="decimal"></label>
+   <label class="f">前學期班級排名<small>成績單上有就填，沒有可以空白</small>
+    <span class="pair"><span>第</span><input name="rankNo" inputmode="numeric" placeholder="10"><span>名，全班</span><input name="classSize" inputmode="numeric" placeholder="50"><span>人</span></span></label>
+   <label class="f req">前學期操行成績<small>分數或等第，例如 85、甲；成績單上沒有請填「無」</small><input name="conduct"></label>
+   <label class="f req">曾因故意行為受懲處<select name="demerit"><option>無</option><option>警告</option><option>小過</option><option>大過以上</option></select></label>
+   <label class="f req">是否為公費生<select name="gov"><option>否</option><option>是</option></select></label>
    <label class="f">本學期領取其他獎學金金額（元）<small>沒有請填 0</small><input name="otherAid" inputmode="numeric" value="0"></label>
-   <label class="f req">上學期是否領過本助學金<select name="prev" required><option>否</option><option>是</option></select></label>
+   <label class="f req">上學期是否領過本助學金<small>領過的話，免附所得清單和推薦函</small><select name="prev"><option>否</option><option>是</option></select></label>
   </div>
  </div>
 
  <div class="card">
   <h2>三、家庭狀況</h2>
-  <p class="note">年所得請照「綜合所得稅各類所得資料清單」上每個人的合計金額填寫，沒有所得請填 0。</p>
+  <p class="note">年所得照「綜合所得稅各類所得資料清單」上每個人的合計金額填；沒有所得填 0。可以寫「30萬」，系統會自動換算。</p>
   <div class="grid">
-   <label class="f req">家庭型態<select name="family" required onchange="famUI()"><option value="">請選擇</option><option>雙親</option><option>單親</option></select></label>
-   <label class="f req">本人年所得（元）<input name="incSelf" required inputmode="numeric"></label>
+   <label class="f req">家庭型態<select name="family" onchange="famUI()"><option value="">請選擇</option><option>雙親</option><option value="單親">單親（只跟一位家長同住或由一位家長扶養）</option></select></label>
+   <label class="f req">你本人的年所得（元）<input name="incSelf" inputmode="numeric"></label>
   </div>
   <div class="grid" id="famBoth">
    <label class="f req">父親姓名<input name="fatherName"></label>
@@ -128,61 +159,82 @@ input:focus,select:focus,textarea:focus{outline:3px solid #c8dcb8;border-color:v
    <label class="f req">母親年所得（元）<input name="incM" inputmode="numeric"></label>
   </div>
   <div class="grid hidden" id="famSingle">
-   <label class="f req">監護人姓名<small>與你同住、負擔家計的父或母</small><input name="guardianName"></label>
-   <label class="f">監護人關係<input name="guardianRel" placeholder="例如：母親"></label>
-   <label class="f req">監護人年所得（元）<input name="incG" inputmode="numeric"></label>
+   <label class="f req">扶養你的家長姓名<input name="guardianName"></label>
+   <label class="f req">他／她是你的<select name="guardianRel"><option value="">請選擇</option><option>母親</option><option>父親</option><option>其他親屬</option></select></label>
+   <label class="f req">他／她的年所得（元）<input name="incG" inputmode="numeric"></label>
   </div>
   <div class="grid">
-   <label class="f req">家中是否有房屋或土地<select name="house" required><option value="">請選擇</option><option>無</option><option>有</option></select></label>
-   <label class="f req">福利身分<select name="welfare" required><option>無</option><option>低收入戶</option><option>中低收入戶</option><option>特殊境遇家庭</option></select></label>
-   <label class="f req">身心障礙或重大傷病<select name="disab" required><option>無</option><option>本人</option><option>二等親內</option></select></label>
+   <label class="f req">家中是否有房屋或土地<small>以財產清單為準</small><select name="house"><option value="">請選擇</option><option>無</option><option>有</option></select></label>
+   <label class="f req">福利身分<select name="welfare"><option>無</option><option>低收入戶</option><option>中低收入戶</option><option>特殊境遇家庭</option></select></label>
+   <label class="f req">身心障礙或重大傷病<select name="disab"><option>無</option><option>本人</option><option>二等親內</option></select><small>二等親：父母、兄弟姊妹、祖父母、外祖父母</small></label>
    <label class="f">家中是否有人失業<select name="unemp"><option>否</option><option>是</option></select></label>
+   <label class="f">家中其他在學的兄弟姊妹<select name="siblings"><option>0</option><option>1</option><option>2</option><option>3</option><option value="4">4 人以上</option></select></label>
   </div>
-  <label class="f">家庭狀況與申請原因<small>簡單說明家中經濟情形、需要補助的原因（200 字以內即可）</small><textarea name="memo" maxlength="1000"></textarea></label>
+  <label class="f">家庭狀況與申請原因<small>簡單說明家中經濟情形、需要補助的原因（200 字左右即可）</small><textarea name="memo" maxlength="1000"></textarea></label>
  </div>
 
- <div class="card">
-  <h2>四、個人資料蒐集告知</h2>
-  <div class="consent">
-   社團法人台灣松樑教育公益促進協會（以下稱本會）依個人資料保護法第 8 條告知：
-   <ol>
-    <li><b>蒐集目的：</b>辦理助學金申請之資格審查、核發、聯繫及相關統計。</li>
-    <li><b>蒐集類別：</b>你在本表填寫的資料及上傳的文件，包含姓名、聯絡方式、就學與成績資料、家庭成員姓名、所得與財產資料、福利或身心障礙身分證明。</li>
-    <li><b>利用期間、地區、對象及方式：</b>於本年度助學金審查期間及結案後 5 年內，由本會及合作學校之審查人員以電子或書面方式利用。資料存放於本會委託之雲端資料庫（伺服器位於韓國首爾），僅授權審查人員可以讀取。</li>
-    <li><b>你的權利：</b>你可以向本會請求查詢、閱覽、製給複本、補充或更正、停止蒐集處理利用或刪除你的個人資料。</li>
-    <li>你可以自由選擇是否提供資料；未提供或提供不完整，將無法完成審查。</li>
-   </ol>
-   家庭成員資料（父母或監護人姓名、所得）由你代為提供，請先告知家人並取得同意。
-  </div>
-  <label class="chk"><input type="checkbox" name="consent" required>我已閱讀並同意上述個人資料蒐集告知，且所填資料與上傳文件皆屬實。</label>
+ <div class="card consent" id="consentCard">
+  <h2>四、個人資料怎麼使用</h2>
+  <ul>
+   <li><b>誰看得到：</b>只有協會與合作學校的審查人員。</li>
+   <li><b>用來做什麼：</b>審查助學金資格、通知結果與補件。</li>
+   <li><b>存多久：</b>結案後保存 5 年，之後銷毀；你隨時可以要求查詢、更正或刪除。</li>
+  </ul>
+  <details class="help"><summary>▸ 看完整的個人資料蒐集告知</summary>
+   社團法人台灣松樑教育公益促進協會（以下稱本會）依個人資料保護法第 8 條告知：<br>
+   1. 蒐集目的：辦理助學金申請之資格審查、核發、聯繫及相關統計。<br>
+   2. 蒐集類別：你在本表填寫的資料及上傳的文件，包含姓名、聯絡方式、就學與成績資料、家庭成員姓名、所得與財產資料、福利或身心障礙身分證明。<br>
+   3. 利用期間、地區、對象及方式：於本年度助學金審查期間及結案後 5 年內，由本會及合作學校之審查人員以電子或書面方式利用。資料存放於本會委託之雲端資料庫（伺服器位於韓國首爾，傳輸與存放皆有加密），僅授權審查人員可以讀取。<br>
+   4. 你的權利：可以向本會請求查詢、閱覽、製給複本、補充或更正、停止蒐集處理利用或刪除。<br>
+   5. 你可以自由選擇是否提供資料；未提供或提供不完整，將無法完成審查。<br>
+   家庭成員資料（家長姓名、所得）由你代為提供，請先告知家人並取得同意。
+  </details>
+  <label class="chk"><input type="checkbox" name="consent">我已了解並同意，所填資料與上傳文件皆屬實。</label>
  </div>
 
  <div id="err1" class="alert bad hidden"></div>
  <button class="btn pri big" id="sendBtn" type="submit">送出資料，下一步上傳文件</button>
+ <p style="text-align:center"><button type="button" class="btn hidden" id="cancelEdit" onclick="go('docs')">取消修改</button></p>
 </form>
 
-<!-- 第 2 步 -->
-<div id="step2" class="hidden">
+<!-- 送出後：編號與查詢碼 -->
+<section id="v-code" class="hidden">
+ <div class="card" style="text-align:center">
+  <h2>資料已送出 🎉</h2>
+  <p>請<b>截圖</b>保存下面兩組號碼。換手機、用電腦補傳文件、查進度都會用到。</p>
+  <div class="codebox"><div class="l">申請編號</div><div class="v" id="cNo"></div></div>
+  <div class="codebox"><div class="l">查詢碼</div><div class="v" id="cCode"></div></div>
+  <button class="btn pri big" onclick="go('docs')">我截圖了，開始上傳文件</button>
+ </div>
+</section>
+
+<!-- 第 2 步：文件與進度 -->
+<section id="v-docs" class="hidden">
  <div class="card">
-  <h2>上傳文件</h2>
-  <p>你的申請編號：<b id="noTop" style="font-size:22px;color:var(--pri)"></b>（請記下來）</p>
-  <p class="note">每一項都可以上傳 PDF 或照片；一份文件有好幾頁，就每頁各拍一張、全部上傳。照片請拍清楚、四邊完整、不要反光。上傳後系統會自動檢查，有問題會提醒你重新上傳。</p>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+   <div><div class="note">申請編號</div><div style="font-size:26px;font-weight:800;color:var(--pri)" id="dNo"></div><div id="dName"></div></div>
+   <button class="btn sm" id="editBtn" onclick="editForm()">修改申請資料</button>
+  </div>
+  <div id="dState"></div>
+  <p class="note" style="margin:10px 0 0">一份文件有好幾頁，就每頁拍一張、全部上傳。照片請拍清楚、四邊完整、不要反光。上傳後系統會先檢查一次，有問題會提醒你。</p>
  </div>
  <div id="docList"></div>
- <div id="err2" class="alert warn hidden"></div>
- <button class="btn pri big" onclick="finish()">完成申請</button>
-</div>
+ <button class="btn pri big" onclick="finish()">完成</button>
+ <p style="text-align:center"><button class="btn" onclick="refresh()">↻ 重新整理進度</button></p>
+</section>
 
-<!-- 第 3 步 -->
-<div id="step3" class="card hidden" style="text-align:center">
- <h2>申請完成</h2>
- <p>你的申請編號</p>
- <div class="no" id="noDone"></div>
- <p>請截圖保存這個畫面。審查結果將以 Email 或電話通知。</p>
- <p class="note">24 小時內如需補傳文件，用同一支手機再打開本網頁，按「繼續上傳文件」即可。</p>
- <button class="btn" onclick="goDocs()">回去補傳文件</button>
-</div>
+<!-- 第 3 步：完成 -->
+<section id="v-done" class="hidden">
+ <div class="card">
+  <h2 id="doneTitle">申請完成</h2>
+  <div class="codebox"><div class="l">申請編號</div><div class="v" id="fNo"></div></div>
+  <div id="doneMiss"></div>
+  <p>審查結果將以 Email 或電話通知。想查進度或補件，隨時打開本網頁，按「我已經申請過」，輸入申請編號和查詢碼。</p>
+  <button class="btn big" onclick="go('docs')">回去上傳文件／看進度</button>
+ </div>
+</section>
 </main>
+<footer id="foot"></footer>
 
 <script>
 const $=s=>document.querySelector(s);
@@ -190,133 +242,178 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const CFG=window.SB_CONFIG||{};
 let sb=null;
 try{if(CFG.key&&!/^__/.test(CFG.key)&&window.supabase)sb=window.supabase.createClient(CFG.url,CFG.key,{auth:{persistSession:false}})}catch(e){}
-
+const HOWTAX='可以帶身分證到任何一個國稅局分局或稽徵所臨櫃免費申請，當場拿到；家人的資料要由家人本人去，或你帶家人的身分證和委託書代辦。有自然人憑證或已註冊健保卡的話，也可以在財政部的網站線上查詢列印。實際方式以國稅局公告為準。';
 const DOCS=[
  {k:'d_id',l:'學生證或在學證明',d:'學生證正反面，或學校開立的在學證明'},
- {k:'d_tr',l:'前學期成績單',d:'需含學業平均、操行成績與班級排名'},
- {k:'d_hh',l:'全戶戶籍謄本',d:'三個月內申請，需含全戶成員（可用手機拍照）'},
- {k:'d_prop',l:'全國財產稅總歸戶財產查詢清單',d:'國稅局申請，申請人及父母（或監護人）各一份'},
- {k:'d_inc',l:'綜合所得稅各類所得資料清單',d:'國稅局申請，申請人及父母（或監護人）各一份',skipPrev:1},
+ {k:'d_tr',l:'前學期成績單',d:'要看得到學業平均、操行成績；有班級排名更好'},
+ {k:'d_hh',l:'全戶戶籍謄本',d:'三個月內申請，要有全戶所有人',help:'到任何一個戶政事務所帶身分證申請，或用自然人憑證在內政部網站線上申請。'},
+ {k:'d_prop',l:'全國財產稅總歸戶財產查詢清單',d:'證明家裡有沒有房子、土地',who:1,help:HOWTAX},
+ {k:'d_inc',l:'綜合所得稅各類所得資料清單',d:'證明去年的所得',who:1,skipPrev:1,help:HOWTAX},
  {k:'d_rec',l:'導師或系主任推薦函',d:'需有老師簽名',skipPrev:1},
- {k:'d_wel',l:'低收入戶／中低收入戶／特殊境遇家庭證明',d:'區公所開立的有效證明',need:f=>f.welfare&&f.welfare!=='無'},
- {k:'d_dis',l:'身心障礙證明或重大傷病卡',d:'影本或照片，正反面',need:f=>f.disab&&f.disab!=='無'},
- {k:'d_unemp',l:'失業證明',d:'家中有人失業才需要',need:f=>f.unemp==='是',opt:1},
+ {k:'d_wel',l:'低收入戶／中低收入戶／特殊境遇家庭證明',d:'區公所開立、在有效期限內',need:f=>f.welfare&&f.welfare!=='無'},
+ {k:'d_dis',l:'身心障礙證明或重大傷病卡',d:'正反面照片',need:f=>f.disab&&f.disab!=='無'},
+ {k:'d_unemp',l:'失業證明',d:'家中有人失業才需要，可以不附',need:f=>f.unemp==='是',opt:1},
 ];
-const KEY='sch_apply_v1';
-let APP=null;               // {id, app_no, at, form}
-const FILES={};             // k -> [{name, st, msg}]
+const KEY='sch_apply_v2';
+let ME=null,INFO={},LOCAL={};   // ME: {no, code}; STATUS: 伺服器回傳
+let ST=null;const UP={};         // UP[k] = 本次上傳中的檔案
 
-function store(){try{localStorage.setItem(KEY,JSON.stringify({...APP,files:FILES}))}catch(e){}}
-function restore(){try{const d=JSON.parse(localStorage.getItem(KEY)||'null');if(d&&d.id&&Date.now()-d.at<23.5*3600e3){APP={id:d.id,app_no:d.app_no,at:d.at,form:d.form||{}};Object.assign(FILES,d.files||{});return true}}catch(e){}return false}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(ME))}catch(e){}}
+function go(v){
+ ['home','login','form','code','docs','done'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
+ const n={form:1,code:2,docs:2,done:3}[v];$('#stepbar').classList.toggle('hidden',!n||(v==='form'&&EDIT));
+ [1,2,3].forEach(i=>$('#s'+i).classList.toggle('on',i===n));
+ if(v==='docs')renderDocs();window.scrollTo(0,0)}
+function fmtDate(d){if(!d)return'';const t=new Date(d+'T00:00:00');return`${t.getFullYear()-1911} 年 ${t.getMonth()+1} 月 ${t.getDate()} 日`}
+async function loadInfo(){
+ try{const{data}=await sb.rpc('public_info');INFO=data||{}}catch(e){}
+ const bits=[];if(INFO.deadline)bits.push(`申請及補件截止：<b>${fmtDate(INFO.deadline)}</b>`);if(INFO.announce)bits.push(`預計公告：<b>${esc(INFO.announce)}</b>`);if(INFO.contact)bits.push(`聯絡承辦：<b>${esc(INFO.contact)}</b>`);
+ $('#infobar').innerHTML=bits.map(b=>`<span>${b}</span>`).join('');
+ document.querySelectorAll('.ct').forEach(e=>e.textContent=INFO.contact?'（'+INFO.contact+'）':'');
+ $('#foot').innerHTML=INFO.contact?`有問題請聯絡協會承辦人員：${esc(INFO.contact)}`:'';
+ if(INFO.deadline&&new Date()>new Date(INFO.deadline+'T23:59:59+08:00')){$('#startBtn').disabled=true;$('#startBtn').textContent='本次申請已截止'}
+}
 
-function step(n,show){['step1','step2','step3','resume'].forEach(id=>$('#'+id).classList.toggle('hidden',id!==(show||'step'+n)));
- [1,2,3].forEach(i=>$('#s'+i).classList.toggle('on',i===n));window.scrollTo(0,0)}
-function famUI(){const s=$('[name=family]').value==='單親';$('#famBoth').classList.toggle('hidden',s);$('#famSingle').classList.toggle('hidden',!s);
- $('#famBoth').querySelectorAll('input').forEach(i=>i.required=!s);$('[name=guardianName]').required=s;$('[name=incG]').required=s}
-const numOk=v=>/^\d+(\.\d+)?$/.test(String(v).replace(/[,\s]/g,''));
-
-async function submitForm(e){
- e.preventDefault();const err=$('#err1');err.classList.add('hidden');
- if(!sb){err.textContent='申請系統尚未開放，請稍後再試。';err.classList.remove('hidden');return}
- const fd=new FormData($('#step1'));const f={};
- for(const[k,v]of fd.entries())f[k]=typeof v==='string'?v.trim():v;
- f.consent=!!fd.get('consent');
+// ===== 表單 =====
+let EDIT=false;
+function famUI(){const s=$('[name=family]').value==='單親';$('#famBoth').classList.toggle('hidden',s);$('#famSingle').classList.toggle('hidden',!s)}
+function startNew(){EDIT=false;$('#v-form').reset();famUI();$('#editNote').classList.add('hidden');$('#consentCard').classList.remove('hidden');$('#cancelEdit').classList.add('hidden');$('#sendBtn').textContent='送出資料，下一步上傳文件';go('form')}
+function editForm(){if(!ST)return;if(!ST.open){alert('已超過修改期限，如需更正請聯絡承辦人員');return}
+ EDIT=true;const f=ST.form||{};$('#v-form').reset();
+ for(const el of $('#v-form').elements){if(el.name&&f[el.name]!=null&&el.type!=='checkbox')el.value=f[el.name]}
+ famUI();$('#editNote').classList.remove('hidden');$('#consentCard').classList.add('hidden');$('#cancelEdit').classList.remove('hidden');$('#sendBtn').textContent='儲存修改';go('form')}
+// 自動整理數字：去掉 元、分、逗號；「30萬」→ 300000
+function money(v){let s=String(v??'').replace(/[,，\s元]/g,'');if(!s)return'';let m=1;if(/萬/.test(s)){m=10000;s=s.replace(/萬/g,'')}s=s.replace(/^約/,'');const n=parseFloat(s);return isNaN(n)?null:String(Math.round(n*m))}
+function clearErr(){document.querySelectorAll('#v-form .err').forEach(e=>e.classList.remove('err'));document.querySelectorAll('#v-form .emsg').forEach(e=>e.remove())}
+function markErr(name,msg){const el=$(`#v-form [name=${name}]`);const lb=el&&el.closest('label');if(!lb)return;lb.classList.add('err');const m=document.createElement('span');m.className='emsg';m.textContent='⚠ '+msg;lb.appendChild(m)}
+function collect(){
+ const fm=$('#v-form'),f={};for(const el of fm.elements){if(!el.name)continue;f[el.name]=el.type==='checkbox'?el.checked:String(el.value).trim()}
+ const errs=[];const need=(k,msg)=>{if(!f[k]){errs.push([k,msg||'這一欄要填'])}};
+ ['name','studentNo','phone','email','nation','level','div','dept','grade','score','conduct','family','incSelf','house'].forEach(k=>need(k,k==='nation'||k==='level'||k==='div'||k==='grade'||k==='family'||k==='house'?'請選一項':null));
  const single=f.family==='單親';
- if(single){delete f.fatherName;delete f.motherName;delete f.incF;delete f.incM}else{delete f.guardianName;delete f.guardianRel;delete f.incG}
- for(const k of['incSelf','incF','incM','incG','otherAid'])if(f[k]!==undefined){f[k]=String(f[k]).replace(/[,\s元]/g,'');if(f[k]!==''&&!numOk(f[k])){err.textContent='所得、獎學金金額請只填數字';err.classList.remove('hidden');return}}
- if(!numOk(f.score)||+f.score>100){err.textContent='學業平均成績請填 0～100 的數字';err.classList.remove('hidden');return}
- if(f.rankPct&&(!numOk(f.rankPct)||+f.rankPct>100)){err.textContent='班級排名百分比請填 1～100 的數字';err.classList.remove('hidden');return}
- if(!/^09\d{8}$/.test(f.phone.replace(/[-\s]/g,''))){err.textContent='手機號碼格式不對，例如 0912345678';err.classList.remove('hidden');return}
- f.phone=f.phone.replace(/[-\s]/g,'');
- if(!f.consent){err.textContent='請勾選同意個人資料蒐集告知';err.classList.remove('hidden');return}
- const btn=$('#sendBtn');btn.disabled=true;btn.textContent='送出中…';
+ if(single){need('guardianName');need('guardianRel','請選一項');need('incG');delete f.fatherName;delete f.motherName;delete f.incF;delete f.incM}
+ else if(f.family){need('fatherName');need('motherName');need('incF');need('incM');delete f.guardianName;delete f.guardianRel;delete f.incG}
+ for(const k of['incSelf','incF','incM','incG','otherAid']){if(f[k]===undefined||f[k]==='')continue;const v=money(f[k]);if(v===null)errs.push([k,'請填金額數字，例如 300000 或 30萬']);else f[k]=v}
+ if(f.score){const s=parseFloat(String(f.score).replace(/[分\s]/g,''));if(isNaN(s)||s<0||s>100)errs.push(['score','請填 0～100 的數字，例如 82.5']);else f.score=String(s)}
+ f.phone=String(f.phone||'').replace(/[-\s()]/g,'');if(f.phone&&!/^09\d{8}$/.test(f.phone))errs.push(['phone','手機號碼是 09 開頭的 10 碼數字']);
+ if(f.email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email))errs.push(['email','Email 格式不對']);
+ const rn=parseInt(f.rankNo),cs=parseInt(f.classSize);
+ if(f.rankNo||f.classSize){if(!rn||!cs||rn>cs)errs.push(['rankNo','名次和全班人數都要填數字，名次不能大於人數']);else f.rankPct=String(Math.max(1,Math.round(rn/cs*100)))}else f.rankPct='';
+ if(/^(無|沒有)$/.test(f.conduct))f.conduct='';
+ if(!EDIT&&!f.consent)errs.push(['consent','請勾選同意']);
+ return{f,errs}}
+async function submitForm(e){
+ e.preventDefault();clearErr();const err=$('#err1');err.classList.add('hidden');
+ if(!sb){err.textContent='申請系統暫時無法使用，請稍後再試。';err.classList.remove('hidden');return}
+ const{f,errs}=collect();
+ if(errs.length){errs.forEach(([k,m])=>markErr(k,m));err.textContent=`有 ${errs.length} 個地方要修正，已用紅框標出來。`;err.classList.remove('hidden');
+  const first=document.querySelector('#v-form .err');if(first)first.scrollIntoView({block:'center',behavior:'smooth'});return}
+ const btn=$('#sendBtn');btn.disabled=true;const old=btn.textContent;btn.textContent='處理中…';
  try{
-  const{data,error}=await sb.rpc('submit_application',{p_form:f});
-  if(error)throw error;
-  APP={id:data.id,app_no:data.app_no,at:Date.now(),form:f};store();goDocs();
- }catch(ex){err.textContent='送出失敗：'+(ex.message||ex)+'。請檢查網路後再試一次。';err.classList.remove('hidden')}
- finally{btn.disabled=false;btn.textContent='送出資料，下一步上傳文件'}
+  if(EDIT){const{data,error}=await sb.rpc('student_save',{p_no:ME.no,p_code:ME.code,p_form:f});if(error)throw error;if(data)throw new Error(data);await refresh(true);alert('已儲存修改');go('docs')}
+  else{const{data,error}=await sb.rpc('submit_application',{p_form:f});if(error)throw error;
+   ME={no:data.app_no,code:data.code};save();$('#cNo').textContent=data.app_no;$('#cCode').textContent=data.code;await refresh(true);go('code')}
+ }catch(ex){err.textContent=(/截止/.test(ex.message)?'本次申請已截止。':'送出失敗：'+(ex.message||ex)+'。請檢查網路後再試一次。');err.classList.remove('hidden')}
+ finally{btn.disabled=false;btn.textContent=old}
 }
 
-function needed(d){const f=APP.form||{};if(d.skipPrev&&f.prev==='是')return'skip';if(d.need)return d.need(f)?(d.opt?'opt':'need'):'hide';return'need'}
-function goDocs(){if(!APP)return;step(2);$('#noTop').textContent=APP.app_no;renderDocs()}
+// ===== 查詢 =====
+async function doLogin(){const no=$('#lgNo').value.trim().toUpperCase(),code=$('#lgCode').value.trim();const e=$('#lgErr');e.classList.add('hidden');
+ if(!no||!/^\d{6}$/.test(code)){e.textContent='請輸入申請編號和 6 位數查詢碼';e.classList.remove('hidden');return}
+ ME={no,code};const ok=await refresh(true);if(ok){save();go('docs')}else{e.textContent=LASTERR;e.classList.remove('hidden');ME=null}}
+let LASTERR='';
+async function refresh(quiet){
+ try{const{data,error}=await sb.rpc('student_status',{p_no:ME.no,p_code:ME.code});if(error)throw error;
+  if(data&&data.error){LASTERR=data.error;return false}ST=data;if(!quiet)renderDocs();return true}
+ catch(ex){LASTERR='查詢失敗，請檢查網路後再試';return false}}
+async function resumeSaved(){const ok=await refresh(true);if(ok)go('docs');else{alert('找不到這筆申請，請重新輸入申請編號和查詢碼');go('login')}}
+
+// ===== 文件 =====
+function needed(d){const f=ST.form||{};if(d.skipPrev&&f.prev==='是')return'skip';if(d.need)return d.need(f)?(d.opt?'opt':'need'):'hide';return'need'}
+function whoNeeds(){const f=ST.form||{};return f.family==='單親'?['你本人',f.guardianRel||'家長']:['你本人','父親','母親']}
+function docState(d){const L=(ST.docs||[]).filter(x=>x.type===d.k),run=(UP[d.k]||[]).some(x=>x.st==='run');
+ if(L.some(x=>x.status==='ok'))return['ok','已通過'];
+ if(run)return['wait','上傳中'];
+ if(L.some(x=>x.status==='bad')&&!L.some(x=>x.status==='pend'))return['need','需要重傳'];
+ if(L.some(x=>x.check&&x.check.length))return['warn','請確認'];
+ if(L.length)return['wait','已上傳，待審核'];
+ const n=needed(d);return n==='need'?['need','還沒上傳']:n==='skip'?['opt','續領免附']:['opt','選附']}
+function fileLine(x){
+ const s=x.status==='ok'?['ok','✓ 審核通過']:x.status==='bad'?['bad','✕ 退回：'+(x.note||'請重新上傳')]:x.check&&x.check.length?['warn','⚠ 系統提醒：'+x.check.filter(c=>!/其他申請人/.test(c)).join('；')+'。如果傳錯了，請按「刪除」再上傳正確的；確定沒問題就不用理會。']:['wait','已收到，等待審核'];
+ return`<div class="file"><span>📄</span><div class="nm">${esc(x.name)}<div class="s ${s[0]}">${esc(s[1])}</div></div>${x.status!=='ok'&&ST.open?`<button class="btn sm danger" onclick="removeDoc('${x.id}')">刪除</button>`:''}</div>`}
 function renderDocs(){
- $('#docList').innerHTML=DOCS.map(d=>{const n=needed(d);if(n==='hide')return'';const L=FILES[d.k]||[];const done=L.some(x=>x.st==='ok'||x.st==='warn'||x.st==='run');
-  const tag=done?'<span class="tag done">已上傳</span>':n==='need'?'<span class="tag need">必附</span>':n==='skip'?'<span class="tag opt">續領免附</span>':'<span class="tag opt">選附</span>';
-  return`<div class="doc card" style="margin:0 0 14px"><div class="t">${esc(d.l)}${tag}</div><div class="d">${esc(d.d)}</div>
-  ${L.map(x=>`<div class="file"><span>📄</span><div class="nm">${esc(x.name)}<div class="s ${x.st}">${x.st==='run'?'⏳ 上傳、檢查中…':x.st==='ok'?'✓ 已收到':x.st==='warn'?'⚠ '+esc(x.msg):x.st==='bad'?'✕ '+esc(x.msg):''}</div></div></div>`).join('')}
-  <label class="btn up" style="margin-top:8px">＋ ${L.length?'再加一個檔案':'選擇檔案或拍照'}<input type="file" multiple accept="image/*,application/pdf" onchange="pick('${d.k}',this)"></label></div>`}).join('');
+ if(!ST)return;$('#dNo').textContent=ST.app_no;$('#dName').textContent=(ST.form||{}).name||'';
+ $('#editBtn').classList.toggle('hidden',!ST.open);
+ const bad=(ST.docs||[]).filter(x=>x.status==='bad').length;
+ $('#dState').innerHTML=!ST.open?'<div class="alert warn">已超過補件期限，文件只能查看。有問題請聯絡承辦人員'+esc(INFO.contact?'（'+INFO.contact+'）':'')+'。</div>':bad?`<div class="alert bad">有 ${bad} 份文件被退回，請看下面的原因，重新上傳。</div>`:'';
+ $('#docList').innerHTML=DOCS.map(d=>{const n=needed(d);if(n==='hide')return'';const L=(ST.docs||[]).filter(x=>x.type===d.k),U=UP[d.k]||[];const[c,t]=docState(d);
+  return`<div class="doc"><div class="t">${esc(d.l)}<span class="tag ${c}">${t}</span></div><div class="d">${esc(d.d)}</div>
+  ${d.who?`<div class="who">需要：<b>${whoNeeds().join('、')}</b> 各一份（可以分開上傳）</div>`:''}
+  ${d.help?`<details class="help"><summary>▸ 去哪裡申請？</summary>${esc(d.help)}</details>`:''}
+  ${L.map(fileLine).join('')}
+  ${U.filter(x=>x.st!=='done').map(x=>`<div class="file"><span>📄</span><div class="nm">${esc(x.name)}<div class="s ${x.st==='run'?'run':'bad'}">${x.st==='run'?'⏳ 上傳中，請不要關掉頁面…':'✕ '+esc(x.msg)}</div></div></div>`).join('')}
+  ${ST.open?`<label class="btn up" style="margin-top:10px">＋ ${L.length?'再加一個檔案':'拍照或選擇檔案'}<input type="file" multiple accept="image/*,application/pdf" onchange="pick('${d.k}',this)"></label>`:''}</div>`}).join('');
 }
-
 async function sha256(blob){try{const b=await crypto.subtle.digest('SHA-256',await blob.arrayBuffer());return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return null}}
-// 圖片壓縮到長邊 2000px
 async function shrink(file){
  if(!/^image\//.test(file.type)&&!/\.(heic|heif|jpe?g|png|webp)$/i.test(file.name))return file;
- try{
-  const url=URL.createObjectURL(file);
-  const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=url});
+ try{const url=URL.createObjectURL(file);const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=url});
   const s=Math.min(1,2000/Math.max(img.naturalWidth,img.naturalHeight));
   if(s===1&&file.type==='image/jpeg'&&file.size<2.5e6){URL.revokeObjectURL(url);return file}
   const c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*s);c.height=Math.round(img.naturalHeight*s);
   const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
-  const blob=await new Promise(ok=>c.toBlob(ok,'image/jpeg',.85));
-  if(!blob)return file;
-  return new File([blob],file.name.replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'});
- }catch(e){return file}
-}
-function hideInternal(list){return(list||[]).filter(s=>!/其他申請人/.test(s))}
-
+  const blob=await new Promise(ok=>c.toBlob(ok,'image/jpeg',.85));if(!blob)return file;
+  return new File([blob],file.name.replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'})}catch(e){return file}}
 async function pick(k,input){
- const files=[...input.files];input.value='';
- FILES[k]=FILES[k]||[];
+ const files=[...input.files];input.value='';UP[k]=UP[k]||[];const jobs=[];
  for(const raw of files){
-  const rec={name:raw.name,st:'run',msg:''};FILES[k].push(rec);renderDocs();
+  const rec={name:raw.name,st:'run',msg:''};UP[k].push(rec);renderDocs();
   try{
    if(raw.size>25e6)throw new Error('檔案太大（超過 25MB），請改拍照或壓縮後再傳');
    const f=await shrink(raw);
    if(f.size>10*1024*1024)throw new Error('檔案太大（超過 10MB），PDF 請分成幾個檔案上傳');
    const isPdf=f.type==='application/pdf'||/\.pdf$/i.test(f.name);
-   if(!isPdf&&!/^image\/(jpeg|png|webp)$/.test(f.type))throw new Error('這個檔案格式無法讀取，請改用 PDF 或 JPG 照片');
+   if(!isPdf&&!/^image\/(jpeg|png|webp)$/.test(f.type))throw new Error('這個檔案格式讀不到，請改用 PDF 或 JPG 照片');
    const ext=isPdf?'pdf':f.type==='image/png'?'png':f.type==='image/webp'?'webp':'jpg';
-   const path=`${APP.id}/${k}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+   const path=`${ST.id}/${k}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
    const up=await sb.storage.from('docs').upload(path,f,{contentType:isPdf?'application/pdf':f.type,upsert:false});
-   if(up.error)throw new Error(/expired|逾期|row-level|policy/i.test(up.error.message)?'已超過補件時間，請洽承辦人員':'上傳失敗，請再試一次');
+   if(up.error)throw new Error(/row-level|policy|Unauthorized/i.test(up.error.message)?'已超過補件期限，請聯絡承辦人員':'上傳失敗，請再試一次');
    const h=await sha256(f);
-   const{data:docId,error}=await sb.rpc('add_document',{p_app:APP.id,p_type:k,p_path:path,p_name:raw.name,p_mime:isPdf?'application/pdf':f.type,p_size:f.size,p_sha:h});
-   if(error)throw new Error(error.message);
-   rec.st='ok';rec.msg='';store();renderDocs();
-   // 自動檢查（背景進行，不影響上傳成功）
-   check(docId,rec);
-  }catch(ex){rec.st='bad';rec.msg=ex.message||'上傳失敗';store();renderDocs()}
+   const{data:docId,error}=await sb.rpc('add_document',{p_app:ST.id,p_type:k,p_path:path,p_name:raw.name,p_mime:isPdf?'application/pdf':f.type,p_size:f.size,p_sha:h});
+   if(error)throw new Error(/逾期/.test(error.message)?'已超過補件期限，請聯絡承辦人員':error.message);
+   rec.st='done';
+   jobs.push(sb.functions.invoke('analyze',{body:{document_id:docId}}).catch(()=>{}));
+   await refresh();
+  }catch(ex){rec.st='bad';rec.msg=ex.message||'上傳失敗';renderDocs()}
  }
+ await Promise.all(jobs);await refresh();
 }
-async function check(docId,rec){
- rec.st='run';renderDocs();
- try{
-  const{data,error}=await sb.functions.invoke('analyze',{body:{document_id:docId}});
-  if(error||!data||data.error){rec.st='ok';rec.msg=''}
-  else if(data.verdict==='check'){const iss=hideInternal(data.issues);rec.st=iss.length?'warn':'ok';rec.msg=iss.length?'系統提醒：'+iss.join('；')+'。如果確定沒問題可以不用理會；如果傳錯了，請再上傳正確的檔案。':''}
-  else{rec.st='ok';rec.msg=''}
- }catch(e){rec.st='ok';rec.msg=''}
- store();renderDocs();
+async function removeDoc(id){
+ if(!confirm('確定刪除這個檔案嗎？'))return;
+ const{data,error}=await sb.rpc('student_remove',{p_no:ME.no,p_code:ME.code,p_doc:id});
+ if(error||data){alert(data||'刪除失敗，請再試一次');return}
+ await refresh();
 }
-
 function finish(){
- const busy=Object.values(FILES).flat().some(x=>x.st==='run');
- if(busy){$('#err2').textContent='還有檔案正在上傳或檢查，請稍等幾秒再按。';$('#err2').classList.remove('hidden');return}
- const miss=DOCS.filter(d=>needed(d)==='need'&&!(FILES[d.k]||[]).some(x=>x.st!=='bad')).map(d=>d.l);
- if(miss.length&&!confirm('以下文件還沒上傳：\n\n'+miss.join('\n')+'\n\n文件不全會被視為無效申請。\n確定要先完成嗎？（24 小時內可以回來補傳）'))return;
- $('#err2').classList.add('hidden');step(3);$('#noDone').textContent=APP.app_no;
-}
-function newApp(){if(!confirm('要清除這支手機上的申請紀錄，重新填一份新的申請嗎？（已送出的申請不會被刪除）'))return;
- try{localStorage.removeItem(KEY)}catch(e){}APP=null;for(const k in FILES)delete FILES[k];$('#step1').reset();famUI();step(1)}
+ if(Object.values(UP).flat().some(x=>x.st==='run')){alert('還有檔案在上傳，請等幾秒再按');return}
+ const miss=DOCS.filter(d=>needed(d)==='need'&&!(ST.docs||[]).some(x=>x.type===d.k&&x.status!=='bad'));
+ const bad=DOCS.filter(d=>(ST.docs||[]).some(x=>x.type===d.k&&x.status==='bad')&&!(ST.docs||[]).some(x=>x.type===d.k&&x.status!=='bad'));
+ const list=[...new Set([...miss,...bad])];
+ $('#fNo').textContent=ST.app_no;
+ $('#doneTitle').textContent=list.length?'資料已送出，還有文件要補':'申請完成 🎉';
+ $('#doneMiss').innerHTML=list.length?`<div class="alert warn"><b>還需要補上：</b><ul class="miss">${list.map(d=>`<li>${esc(d.l)}</li>`).join('')}</ul>${INFO.deadline?`請在 <b>${fmtDate(INFO.deadline)}</b> 前補齊。`:'請盡快補齊。'}拿到文件後，用申請編號和查詢碼回來上傳就可以了。</div>`:'<div class="alert ok">必要文件都上傳了。審查人員看過後，你可以回來查看每份文件的狀態。</div>';
+ go('done')}
 
-// 啟動
+// ===== 啟動 =====
 document.querySelectorAll('label.req').forEach(l=>l.firstChild.after(Object.assign(document.createElement('span'),{className:'star',textContent:' *'})));
-if(!sb){$('#cfgErr').classList.remove('hidden')}
-if(restore()){step(1,'resume');$('#resumeNo').textContent=APP.app_no}
-else step(1);
 famUI();
+(async()=>{
+ if(!sb){$('#cfgErr').classList.remove('hidden');go('home');return}
+ await loadInfo();
+ try{ME=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
+ if(ME&&ME.no){$('#resumeCard').style.display='';$('#resumeNo').textContent=ME.no}
+ go('home');
+})();
 </script>
 </body>
 </html>
