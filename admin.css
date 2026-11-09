@@ -141,10 +141,11 @@ ol.rule{margin:6px 0 0;padding-left:28px}ol.rule li{margin:4px 0}
 .prov.late{background:var(--pend-bg);color:var(--pend);border-color:var(--pend-bd)}
 /* 逐一核對 */
 #rdlg{width:min(1240px,97vw);max-height:96vh}
+#rdlg .dlg-f{position:sticky;bottom:0;background:#fff;z-index:3}#rdlg .dlg-h{position:sticky;top:0;background:#fff;z-index:3}#rdlg #rInfo{max-height:max(312px,calc(96vh - 305px));overflow:auto}
 #rdlg .rbody>*{min-width:0}#rdlg .rbody{display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px;max-height:none;overflow:visible;padding-top:14px}
 @media(max-width:860px){#rdlg .rbody{grid-template-columns:1fr}#rdlg .vbox{height:55vh;min-height:240px}#rdlg .dlg-f{position:sticky;bottom:0;background:#fff;z-index:3;box-shadow:0 -4px 12px rgba(0,0,0,.08);flex-wrap:wrap;gap:8px}#rdlg .dlg-f .btn{flex:1 1 40%;min-height:48px;padding:8px 10px}#rdlg #rInfo{max-height:32vh;overflow:auto;border-bottom:1px solid var(--line);padding-bottom:8px}#rdlg .dlg-f>span{display:none}}
 .tagbar .rtag,.dk{min-height:44px}.rstrip span{min-width:44px;min-height:44px}details>summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
-.vbox{height:calc(96vh - 300px);min-height:300px;overflow:auto;border:1px solid var(--line);border-radius:var(--r-md);background:#e9ece8;text-align:center}
+.vbox{height:calc(96vh - 357px);min-height:260px;overflow:auto;border:1px solid var(--line);border-radius:var(--r-md);background:#e9ece8;text-align:center}
 .vbox img{display:block;margin:0 auto;transition:transform .2s}
 .vtool{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .rstrip{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:10px 24px;border-bottom:1px solid var(--line);background:var(--surface-2)}

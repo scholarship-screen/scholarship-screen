@@ -193,6 +193,24 @@ def main():
         check('示範核對無程式錯誤', not errs, errs)
         pg.close()
 
+        # 6b. 核對視窗：iPad 橫向／筆電 768 高、手機，「符合」「退回」「稍後繼續」不必捲動就看得到（2026/11/10 巡檢發現 iPad 橫向要往下捲才看得到「符合」）
+        for (w, h, touch) in [(1024, 768, True), (768, 1024, True), (1366, 768, False), (1280, 720, False), (390, 844, True), (360, 640, True)]:
+            ctx = b.new_context(viewport={'width': w, 'height': h}, has_touch=touch, is_mobile=touch)
+            pg = ctx.new_page(); errs = []
+            pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('dialog', lambda d: d.accept())
+            pg.route('**/*', lambda r: r.continue_() if r.request.url.startswith(base) else r.abort())
+            pg.goto(f'{base}/index.html'); pg.wait_for_timeout(1500)
+            pg.evaluate('startDemo()'); pg.wait_for_timeout(800)
+            pg.evaluate("document.querySelector('#dpCap .go').click()"); pg.wait_for_timeout(500)
+            pg.evaluate("tab('docs');startReview()"); pg.wait_for_timeout(2500)
+            bad = []
+            for i in range(4):
+                v = pg.evaluate("""()=>['#rTitle','#rOk','#rBad','#rdlg .dlg-h .btn'].filter(s=>{const r=document.querySelector(s).getBoundingClientRect();return !(r.height>0&&r.top>=0&&r.bottom<=innerHeight+1&&r.right<=innerWidth+1)})""")
+                if v: bad.append((i, v))
+                pg.evaluate('revSkip()'); pg.wait_for_timeout(900)
+            check(f'核對視窗 {w}×{h} 標題與符合／退回按鈕不必捲動即可見', not bad and not errs, f'{bad} {errs}')
+            ctx.close()
+
         # 7. 手機版不橫向溢出
         for path in ['apply.html', 'index.html?offline']:
             pg, errs = new_page(b, base, 390, 844)
