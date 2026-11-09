@@ -5,6 +5,11 @@
 - 程式庫：GitHub `vivianwh03-netizen/scholarship-screen`（main 分支即正式網站）
 - 後端：Supabase 專案 `wrxvsaptmmodowvcwkeo`（資料表、RPC、Edge Function `analyze`）
 
+## 目前階段：開放測試（2026/11/09 起）
+- 未設定申請截止日、補件期限，審查人員只有一位管理者，都是**刻意的**，日報不要列為「需要決定」，也不要自行設定。
+- 資料庫裡的申請與文件是測試者送的測試資料，照常檢查但不可刪除。
+- Vivian 宣布正式上線時，再提醒她設定截止日、補件期限、加入審查委員、升級資料庫方案（備份）。
+
 ## 鐵則
 1. **不碰正式資料**：測試只用本機伺服器＋示範模式或 `?offline`，Playwright 一律攔截非 localhost 請求。資料庫只做 SELECT；唯一允許的寫入是：重新觸發卡住的文件檢查、用 pg_net 讀取正式網站。
 2. **修 A 不能壞 B**：任何修改後必須 `python3 qa/run_all.py` 全數通過，才可推上 GitHub。
