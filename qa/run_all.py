@@ -130,6 +130,7 @@ def main():
         check('學生頁排名輸入框夠寬（≥80px）', w >= 80, w)
         opts = pg.evaluate("[...document.querySelectorAll('[name=nation] option')].map(o=>o.value).join(',')+'|'+[...document.querySelectorAll('[name=div] option')].map(o=>o.value).join(',')")
         check('國籍有僑生／陸生、部別有在職專班', '僑生' in opts and '陸生' in opts and '在職專班' in opts, opts)
+        check('學號、申請編號欄關閉自動校正與拼字檢查', pg.evaluate("['[name=studentNo]','#lgNo'].every(q=>{const e=document.querySelector(q);return e&&e.getAttribute('spellcheck')==='false'&&e.getAttribute('autocorrect')==='off'})"))
         check('申請表有戶籍地址欄', pg.evaluate("!!document.querySelector('[name=addr]')"))
         txt = pg.evaluate("document.body.innerText")
         check('個資告知寫明委託境外文件檢查', '美國' in pg.evaluate("document.getElementById('consentCard').innerText"))
@@ -192,6 +193,25 @@ def main():
         check('連按兩次「符合」只前進一份', pg.evaluate('RI') == ri0 + 1, pg.evaluate('RI'))
         check('示範核對無程式錯誤', not errs, errs)
         pg.close()
+
+        # 6a. 網路較慢時長者按兩下：第二下落在新文件剛出現時要忽略，不可未看就通過下一份（2026/11/11 巡檢發現）
+        ctx = b.new_context(viewport={'width': 1024, 'height': 768}, has_touch=True, is_mobile=True)
+        pg = ctx.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('dialog', lambda d: d.accept())
+        pg.route('**/*', lambda r: r.continue_() if r.request.url.startswith(base) else r.abort())
+        pg.goto(f'{base}/index.html'); pg.wait_for_timeout(1500)
+        pg.evaluate('startDemo()'); pg.wait_for_timeout(800)
+        pg.evaluate("document.querySelector('#dpCap .go').click()"); pg.wait_for_timeout(500)
+        pg.evaluate("tab('docs');startReview()"); pg.wait_for_timeout(2500)
+        pg.evaluate("(()=>{const g=getFile;window.getFile=async(...a)=>{await new Promise(r=>setTimeout(r,700));return g(...a)}})()")
+        ri0 = pg.evaluate('RI')
+        pg.tap('#rOk'); pg.wait_for_timeout(1000)
+        pg.evaluate("document.getElementById('rOk').click()"); pg.wait_for_timeout(2000)
+        ri1 = pg.evaluate('RI')
+        pg.wait_for_timeout(800); pg.tap('#rOk'); pg.wait_for_timeout(2000)
+        ri2 = pg.evaluate('RI')
+        check('慢網路下按兩下「符合」不會未看就通過下一份；看過後再按仍可前進', ri1 == ri0 + 1 and ri2 == ri0 + 2 and not errs, f'{ri0}->{ri1}->{ri2} {errs}')
+        ctx.close()
 
         # 6b. 核對視窗：iPad 橫向／筆電 768 高、手機，「符合」「退回」「稍後繼續」不必捲動就看得到（2026/11/10 巡檢發現 iPad 橫向要往下捲才看得到「符合」）
         for (w, h, touch) in [(1024, 768, True), (768, 1024, True), (1366, 768, False), (1280, 720, False), (390, 844, True), (360, 640, True)]:

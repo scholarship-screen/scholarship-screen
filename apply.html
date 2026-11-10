@@ -149,7 +149,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
  <div class="card">
   <h2>查詢進度及補件</h2>
   <p class="note">請輸入送出申請時取得之申請編號及查詢碼。</p>
-  <label class="f">申請編號<small>例：U012、G003</small><input id="lgNo" autocapitalize="characters" autocomplete="off"></label>
+  <label class="f">申請編號<small>例：U012、G003</small><input id="lgNo" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false"></label>
   <label class="f">查詢碼<small>8 碼英文及數字，不分大小寫（正式查詢碼不會出現 0、1、O、I、L，以免混淆）</small><input id="lgCode" maxlength="10" onkeydown="if(event.key==='Enter')doLogin()" autocapitalize="characters" autocomplete="off" spellcheck="false"></label>
   <label class="chk" style="font-size:18px;font-weight:600"><input type="checkbox" id="lgRemember">這是我自己的手機，記住登入 7 天（借用他人手機或公用電腦請勿勾選）</label>
   <div id="lgErr" class="alert bad hidden" role="alert"></div>
@@ -166,7 +166,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
   <h2>一、基本資料</h2>
   <div class="grid">
    <label class="f req">姓名<input name="name" autocomplete="name"></label>
-   <label class="f req">學號<input name="studentNo"></label>
+   <label class="f req">學號<input name="studentNo" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false"></label>
    <label class="f req">手機<small>供審查結果及補件通知使用</small><input name="phone" inputmode="tel" autocomplete="tel" placeholder="0912345678"></label>
    <label class="f req">Email<input name="email" type="email" autocomplete="email"></label>
    <label class="f req">國籍<select name="nation"><option value="">請選擇</option><option>本國</option><option value="僑生">僑生（含港澳）</option><option value="陸生">陸生</option><option>外籍</option></select></label>

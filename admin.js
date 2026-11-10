@@ -363,7 +363,7 @@ async function showReview(){
  const isImg=!!SB&&/image\//.test(SB.type),isPdf=!!SB&&SB.type==='application/pdf';
  $('#vOpen').href=RURL||'#';$('#vOpen').classList.toggle('hidden',!RURL);$('#vTool').querySelectorAll('button').forEach(b=>b.classList.toggle('hidden',!isImg));
  $('#rView').innerHTML=isImg?`<img src="${RURL}" alt="文件" style="width:100%">`:isPdf?(matchMedia('(pointer:coarse)').matches?`<div style="padding:40px 16px;font-size:18px"><p>手機與平板無法在此直接顯示 PDF。</p><a class="btn pri lg" href="${RURL}" target="_blank" rel="noopener">開啟 PDF 查看</a><p class="note">看完請回到這個頁面按「符合」或「退回」。</p></div>`:`<iframe src="${RURL}" title="PDF 文件" style="width:100%;height:100%;border:0"></iframe>`):`<div style="padding:40px 16px;font-size:18px"><p>⚠ 這個檔案不是 PDF 或圖片，為了安全不直接開啟。</p><p>請按「不符，退回」，請申請人改傳 PDF 或照片。</p></div>`;
- setLoading(false);const t=$('#rTitle');try{t.setAttribute('tabindex','-1');t.focus({preventScroll:true})}catch(e){}const rb=rdlg.querySelector('.rbody');if(rb)rb.scrollTop=0;rdlg.scrollTop=0;const ri=$('#rInfo');if(ri)ri.scrollTop=0}
+ setLoading(false);SHOWNAT=Date.now();const t=$('#rTitle');try{t.setAttribute('tabindex','-1');t.focus({preventScroll:true})}catch(e){}const rb=rdlg.querySelector('.rbody');if(rb)rb.scrollTop=0;rdlg.scrollTop=0;const ri=$('#rInfo');if(ri)ri.scrollTop=0}
 function setLoading(on){LOADING=on;if(on){$('#rView').innerHTML='<p style="padding:60px;font-size:19px;color:var(--mute)">文件載入中…</p>';$('#rTitle').textContent='載入中…'}['rOk','rBad','rSkip'].forEach(i=>$('#'+i).disabled=on||BUSY);$('#rPrev').disabled=on||BUSY||RI===0}
 function finishReview(byUser){
  const va=Object.values(RALL),ok=va.filter(x=>x==='ok').length,bad=va.filter(x=>x==='bad').length,v=Object.values(RS),lock=v.filter(x=>x==='lock').length,other=v.filter(x=>x==='other').length;
@@ -376,9 +376,10 @@ function finishReview(byUser){
  alert((left.length?`本次核對：符合 ${ok} 份、退回 ${bad} 份。\n還有 ${left.length} 份略過，下次開始核對時將再次列出。`:`全部核對完成。\n符合 ${ok} 份、退回 ${bad} 份。\n感謝協助。`)+(lock?`\n\n另有 ${lock} 份由其他委員核對中，已自動略過。`:'')+(other?`\n${other} 份已由其他委員完成核對。`:''));
 }
 let LOADING=false;
-let LASTACT=0;function guard(){if(BUSY||LOADING||Date.now()-LASTACT<700)return false;LASTACT=Date.now();BUSY=true;['rOk','rBad','rSkip','rPrev'].forEach(i=>$('#'+i).disabled=true);return true}
+// 長者手抖或按兩下：新文件出現未滿 0.6 秒的點按一律忽略，避免未看就通過下一份（網路較慢時尤其容易發生）
+let LASTACT=0,SHOWNAT=0;function guard(first){if(BUSY||LOADING||Date.now()-LASTACT<700)return false;if(first&&Date.now()-SHOWNAT<600)return false;LASTACT=Date.now();BUSY=true;['rOk','rBad','rSkip','rPrev'].forEach(i=>$('#'+i).disabled=true);return true}
 function unguard(){BUSY=false;setLoading(LOADING)}
-async function revAct(t){if(!guard())return;const id=RQ[RI];
+async function revAct(t){if(!guard(true))return;const id=RQ[RI];
  try{
   if(t==='ok'){await setSt(id,'ok')}
   else{const r=FALL.find(x=>String(x.id)===String(id));const n=await askReason(r&&r.flags);if(n===null)return;await setSt(id,'bad',n)}
