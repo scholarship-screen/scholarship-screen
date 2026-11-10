@@ -585,7 +585,7 @@ getFile=async function(id){
 };
 function cRec(d){const a=CAPPS.find(x=>x._cid===d.applicant_id);const ai=d.ai||{};
  const stuck=(d.ai_status==='pending'||d.ai_status==='running')&&Date.now()-Date.parse(d.created_at)>5*60e3;
- const flags=stuck?['初步檢查未完成，請人工核對']:d.ai_status==='pending'||d.ai_status==='running'?['系統初步檢查中，請稍後重新整理']:(ai.issues||[]);
+ const flags=stuck?['初步檢查未完成，請人工核對']:d.ai_status==='pending'||d.ai_status==='running'?['系統初步檢查中，請稍後重新整理']:(ai.issues||[]).map(x=>/金鑰/.test(String(x))?'系統初步檢查暫停，請人工核對':x);
  const lk=d.locked_by&&d.locked_by!==CUSER.toLowerCase()&&d.locked_at&&Date.now()-Date.parse(d.locked_at)<6e5?(RVN[d.locked_by]||d.locked_by):'';
  return{lockBy:lk,id:d.id,k:(a?a.id:'?')+'|'+d.doc_type,name:d.file_name||d.path.split('/').pop(),type:d.mime||'',size:d.size,h:d.sha256,flags,summary:ai.summary||'',st:d.review_status||'pend',note:d.review_note||'',by:d.reviewed_by||''}}
 loadIdx=async function(){

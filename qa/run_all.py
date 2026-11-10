@@ -118,6 +118,7 @@ def main():
         rv = pg.evaluate("""(async()=>{let cap=null;const so=sheetOut;window.sheetOut=async(n,a)=>{cap=a};try{const save=[APPS,S];APPS=[{id:'Z1',name:'王小明',level:'大學部',div:'日間部',dept:'電機工程系',grade:'2',nation:'本國',family:'雙親',incSelf:'0',incF:'1800000',incM:'0',score:'80',fam:'F',memo:'父親王大明肢障中度',d_id:'已附',d_tr:'已附',d_merit:'已附',d_hh:'已附',d_prop:'已附',d_inc:'已附',d_rec:'已附'},{id:'Z2',name:'王小華',level:'大學部',div:'日間部',dept:'電機工程系',grade:'3',nation:'本國',family:'雙親',incSelf:'0',incF:'0',incM:'0',score:'80',fam:'F',d_id:'已附',d_tr:'已附',d_merit:'已附',d_hh:'已附',d_prop:'已附',d_inc:'已附',d_rec:'已附'}];S=Object.assign({},DEF);render();await exportReviewers();APPS=save[0];S=save[1];render()}finally{window.sheetOut=so}return JSON.stringify(cap)})()""")
         check('評審用名單不含所得金額', '1,800,000' not in (rv or '') and '1800000' not in (rv or ''), (rv or '')[:200])
         check('評審用名單不含家人姓名／自述', '王大明' not in (rv or '') and '肢障' not in (rv or '') and '王小華' not in (rv or '').replace('王*華', ''), (rv or '')[:200])
+        check('後台不顯示後端「金鑰」訊息（改為請人工核對）', "/金鑰/.test(String(x))?'系統初步檢查暫停" in open(os.path.join(ROOT, 'admin.js'), encoding='utf-8').read())
         check('本機模式無程式錯誤', not errs, errs)
         pg.close()
 
