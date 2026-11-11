@@ -98,7 +98,7 @@ function compute(){
   const gEmpty=a.incG===''||a.incG==null;
   x.house=x.single?num(a.incSelf)+(gEmpty?Math.max(num(a.incF)||0,num(a.incM)||0):num(a.incG)):num(a.incSelf)+num(a.incF)+num(a.incM);
   if(x.single&&gEmpty&&a.incF&&a.incM&&num(a.incF)&&num(a.incM))x.notes.push('扶養家長待確認｜單親但父母所得都有填，已以較高者 '+Math.round(Math.max(num(a.incF),num(a.incM))).toLocaleString()+' 元計算，請委員確認');
-  x.score=parseFloat(half(a.score))||0;{const rr=half(a.rankPct).match(/(\d+)\s*[\/／]\s*(\d+)/);const rs=rr&&+rr[2]>0?String(Math.ceil(+rr[1]/+rr[2]*100)):half(a.rankPct).replace(/[^\d.]/g,'');let rv=rs===''?NaN:parseFloat(rs);if(rv>0&&rv<=1&&!/%/.test(String(a.rankPct))&&String(a.rankPct).includes('.'))rv=rv*100;x.rank=isFinite(rv)&&rv>0?rv:100}
+  x.score=parseFloat(half(a.score))||0;{const rr=half(a.rankPct).match(/(\d+)\s*[\/／]\s*(\d+)/);const rs=rr&&+rr[2]>0?String(Math.ceil(+rr[1]*100/+rr[2])):half(a.rankPct).replace(/[^\d.]/g,'');let rv=rs===''?NaN:parseFloat(rs);if(rv>0&&rv<=1&&!/%/.test(String(a.rankPct))&&String(a.rankPct).includes('.'))rv=rv*100;x.rank=isFinite(rv)&&rv>0?rv:100}
   x.grade=gradeNum(a.grade);
   const w=String(a.welfare||'');x.welfare=/低收|特殊/.test(w);
   x.disab=/本人|親/.test(a.disab||'');

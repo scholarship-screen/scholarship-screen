@@ -119,6 +119,18 @@ def main():
         check('評審用名單不含所得金額', '1,800,000' not in (rv or '') and '1800000' not in (rv or ''), (rv or '')[:200])
         check('評審用名單不含家人姓名／自述', '王大明' not in (rv or '') and '肢障' not in (rv or '') and '王小華' not in (rv or '').replace('王*華', ''), (rv or '')[:200])
         check('後台不顯示後端「金鑰」訊息（改為請人工核對）', "/金鑰/.test(String(x))?'系統初步檢查暫停" in open(os.path.join(ROOT, 'admin.js'), encoding='utf-8').read())
+        # 2c. 規則邊界值（2026/11/12 巡檢）：剛好等於門檻要合格；名次換算百分比不可因小數誤差多 1%
+        r3 = pg.evaluate("""(()=>{const mk=(id,o)=>Object.assign({id,name:id,level:'大學部',div:'日間部',dept:'電機工程系',grade:'2',nation:'本國',family:'雙親',incSelf:'0',incF:'100000',incM:'100000',score:'80',rankPct:'',demerit:'無',gov:'否',otherAid:'0',prev:'否',welfare:'無',disab:'無',house:'有',d_id:'已附',d_tr:'已附',d_merit:'已附',d_hh:'已附',d_prop:'已附',d_inc:'已附',d_rec:'已附',d_unemp:'無須'},o||{});
+          const save=[APPS,S];const tg=x=>[...x.reasons,...x.notes].map(tagOf).join('/');const run=(apps,s)=>{APPS=apps;S=Object.assign({},DEF,{quotaU:26,quotaG:4},s||{});compute();const o={};apps.forEach(a=>{const x=R.find(y=>y.a.id===a.id);o[a.id]=tg(x)+'|'+x.rank});return o};
+          const o=run([mk('I1',{incF:'500000',incM:'500000'}),mk('I2',{incF:'500000',incM:'500001'}),mk('C1',{score:'70'}),mk('C2',{score:'69.99'}),
+            mk('K1',{score:'60',rankPct:'20/40'}),mk('K2',{score:'60',rankPct:'21/40'}),mk('K3',{score:'60',rankPct:'50'}),mk('W1',{otherAid:'49999'}),mk('W2',{otherAid:'50000'})]);
+          Object.assign(o,run([mk('P1',{score:'60',rankPct:'11/20'}),mk('P2',{score:'60',rankPct:'7/100'})],{rankPct:55}));APPS=save[0];S=save[1];render();return o})()""")
+        has = lambda k, t: t in r3[k].split('|')[0]
+        check('邊界：家戶所得剛好 100 萬→合格；多 1 元→超標', not has('I1', '所得超標') and has('I2', '所得超標'), (r3['I1'], r3['I2']))
+        check('邊界：成績剛好 70→合格；69.99→未達', not has('C1', '成績未達') and has('C2', '成績未達'), (r3['C1'], r3['C2']))
+        check('邊界：班排 20/40、50%→合格；21/40→未達', not has('K1', '成績未達') and not has('K3', '成績未達') and has('K2', '成績未達'), (r3['K1'], r3['K2'], r3['K3']))
+        check('邊界：他項獎學金 49999→合格；50000→超額', not has('W1', '他項獎學金超額') and has('W2', '他項獎學金超額'), (r3['W1'], r3['W2']))
+        check('名次換算不多算 1%（門檻 55% 時 11/20→55% 合格；7/100→7%）', not has('P1', '成績未達') and r3['P1'].endswith('|55') and r3['P2'].endswith('|7'), (r3['P1'], r3['P2']))
         check('本機模式無程式錯誤', not errs, errs)
         pg.close()
 
@@ -133,6 +145,13 @@ def main():
         check('國籍有僑生／陸生、部別有在職專班', '僑生' in opts and '陸生' in opts and '在職專班' in opts, opts)
         check('學號、申請編號欄關閉自動校正與拼字檢查', pg.evaluate("['[name=studentNo]','#lgNo'].every(q=>{const e=document.querySelector(q);return e&&e.getAttribute('spellcheck')==='false'&&e.getAttribute('autocorrect')==='off'})"))
         check('申請表有戶籍地址欄', pg.evaluate("!!document.querySelector('[name=addr]')"))
+        rp = pg.evaluate("""(()=>{const out=[];for(const [n,c] of [[11,20],[7,100],[20,40],[1,3]]){document.querySelector('[name=rankNo]').value=n;document.querySelector('[name=classSize]').value=c;out.push(collect().f.rankPct)}document.querySelector('[name=rankNo]').value='';document.querySelector('[name=classSize]').value='';return out})()""")
+        check('學生頁名次換算百分比無小數誤差（11/20=55、7/100=7）', rp == ['55', '7', '50', '34'], rp)
+        pg.evaluate("window.wdlg&&wdlg.open&&wdlg.close()")
+        pg.fill('[name=rankNo]', '１１'); pg.fill('[name=classSize]', '20'); pg.wait_for_timeout(100)
+        lv = pg.evaluate("(()=>{const e=document.getElementById('rankLive');return e?[e.textContent,parseFloat(getComputedStyle(e).fontSize)]:null})()")
+        pg.fill('[name=rankNo]', ''); pg.fill('[name=classSize]', '')
+        check('學生頁填名次與人數即時顯示「換算為前 N%」（字級 ≥16px）', lv and lv[0] == '換算為前 55%' and lv[1] >= 16, lv)
         txt = pg.evaluate("document.body.innerText")
         check('個資告知寫明委託境外文件檢查', '美國' in pg.evaluate("document.getElementById('consentCard').innerText"))
         import re as _re
