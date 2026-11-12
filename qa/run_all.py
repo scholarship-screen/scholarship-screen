@@ -152,6 +152,13 @@ def main():
         lv = pg.evaluate("(()=>{const e=document.getElementById('rankLive');return e?[e.textContent,parseFloat(getComputedStyle(e).fontSize)]:null})()")
         pg.fill('[name=rankNo]', ''); pg.fill('[name=classSize]', '')
         check('學生頁填名次與人數即時顯示「換算為前 N%」（字級 ≥16px）', lv and lv[0] == '換算為前 55%' and lv[1] >= 16, lv)
+        # 2026/11/13 優化：金額欄即時顯示「＝ N 萬元」，避免多打或少打一個 0
+        ml = []
+        for v in ['300000', '30萬500', '１００萬', '8000', 'abc', '']:
+            pg.fill('[name=incF]', v); pg.wait_for_timeout(50)
+            ml.append(pg.evaluate("(()=>{const e=document.getElementById('ml-incF');return e?e.textContent:null})()"))
+        mfs = pg.evaluate("(()=>{const e=document.getElementById('ml-incF');return e?parseFloat(getComputedStyle(e).fontSize):0})()")
+        check('學生頁所得欄即時顯示換算金額（＝ 30 萬元、看不懂要提示，字級 ≥16px）', ml == ['＝ 30 萬元（300,000 元）', '＝ 30 萬 500 元（300,500 元）', '＝ 100 萬元（1,000,000 元）', '＝ 8,000 元', '看不懂這個金額，請只填數字，例：300000', ''] and mfs >= 16, (ml, mfs))
         txt = pg.evaluate("document.body.innerText")
         check('個資告知寫明委託境外文件檢查', '美國' in pg.evaluate("document.getElementById('consentCard').innerText"))
         import re as _re
@@ -250,6 +257,18 @@ def main():
                 pg.evaluate('revSkip()'); pg.wait_for_timeout(900)
             check(f'核對視窗 {w}×{h} 標題與符合／退回按鈕不必捲動即可見', not bad and not errs, f'{bad} {errs}')
             ctx.close()
+
+        # 6c. 150% 字級（畫面寬 260）學生頁各畫面不可橫向溢出（2026/11/13 巡檢發現申請表與步驟列超出 40px）
+        pg, errs = new_page(b, base, 260, 700)
+        pg.goto(f'{base}/apply.html'); pg.wait_for_timeout(1500)
+        pg.evaluate("startDemo()"); pg.wait_for_timeout(500)
+        pg.evaluate("(()=>{const g=document.querySelector('#dpCap .go');if(g)g.click()})()"); pg.wait_for_timeout(800)
+        ov = {}
+        for v in ['home', 'login', 'form', 'code', 'docs', 'done']:
+            pg.evaluate(f"(()=>{{try{{if('{v}'==='form')startNew();else go('{v}')}}catch(e){{}}}})()"); pg.wait_for_timeout(300)
+            ov[v] = pg.evaluate('document.documentElement.scrollWidth')
+        check('學生頁寬 260（150% 字級）各畫面無橫向溢出', all(x <= 261 for x in ov.values()) and not errs, f'{ov} {errs}')
+        pg.close()
 
         # 7. 手機版不橫向溢出
         for path in ['apply.html', 'index.html?offline']:
