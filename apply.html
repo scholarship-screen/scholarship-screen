@@ -66,7 +66,7 @@ details.doc.st-ok{padding:12px 16px;border-left:5px solid var(--ok)}details.doc.
 ul.files{list-style:none;margin:10px 0 0;padding:0;border-top:1px solid var(--line)}
 .frow{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .fn{flex:1;min-width:0}.fname{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fn .s{display:block;font-size:16px;line-height:1.5}
-.del{flex:none;font:inherit;font-size:16px;color:var(--bad);background:none;border:1px solid #f3c3bf;border-radius:8px;padding:6px 12px;cursor:pointer}
+.del{flex:none;font:inherit;font-size:16px;color:var(--bad);background:none;border:1px solid #f3c3bf;border-radius:8px;padding:6px 14px;min-height:44px;min-width:64px;cursor:pointer}
 .addbtn{display:flex;align-items:center;justify-content:center;margin-top:12px;min-height:50px;border:2px dashed #b9c4d0;border-radius:12px;font-size:18px;font-weight:700;color:var(--pri);background:#fafbf9;cursor:pointer}
 .doc.st-need .addbtn,.doc.st-todo .addbtn{border-color:var(--pri);background:var(--pri2)}
 .doc details.help{margin-top:10px}
@@ -476,6 +476,9 @@ async function shrink(file){
   const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
   const blob=await new Promise(ok=>c.toBlob(ok,'image/jpeg',.85));if(!blob)return file;
   return new File([blob],file.name.replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'})}catch(e){return file}}
+// 以檔案開頭內容判斷真實格式（避免把 Word、網頁改副檔名成 .pdf 上傳）；回傳 MIME、null（不是 PDF／圖片）或 undefined（無法讀取，沿用原判斷）
+async function realType(f){try{const b=new Uint8Array(await f.slice(0,1024).arrayBuffer());const h=[...b.slice(0,12)].map(x=>x.toString(16).padStart(2,'0')).join('');if(h.startsWith('ffd8ff'))return'image/jpeg';if(h.startsWith('89504e47'))return'image/png';if(h.startsWith('52494646')&&h.slice(16,24)==='57454250')return'image/webp';let t='';for(const x of b)t+=String.fromCharCode(x);return t.indexOf('%PDF-')>=0?'application/pdf':null}catch(e){return undefined}}
+async function isHeic(f){try{let t='';for(const x of new Uint8Array(await f.slice(4,12).arrayBuffer()))t+=String.fromCharCode(x);return/^ftyp(hei|hev|mif1|msf1)/.test(t)}catch(e){return false}}
 async function pick(k,input){
  const files=[...input.files];input.value='';if(!ST)return;const appId=ST.id,mine=ME&&ME.no;UP[k]=(UP[k]||[]).filter(x=>x.st==='run');const jobs=[];
  for(const raw of files){
@@ -484,9 +487,12 @@ async function pick(k,input){
   try{
    if(raw.size<2048)throw new Error('檔案是空的或太小，請重新拍照或選擇正確的檔案');
    if(raw.size>25e6)throw new Error('檔案超過 25MB，請改以拍照或壓縮後上傳');
-   const f=await shrink(raw);
+   let f=await shrink(raw);
    if(f.size>10*1024*1024)throw new Error('檔案超過 10MB，PDF 請分割後上傳');
-   const isPdf=f.type==='application/pdf'||/\.pdf$/i.test(f.name);
+   const rt=await realType(f);
+   if(rt===null)throw new Error(await isHeic(f)?'iPhone 的 HEIC 照片無法讀取。請到「設定 › 相機 › 格式」改選「最相容」後重拍，或改用截圖上傳':'這個檔案的內容不是 PDF 或照片（可能是改過副檔名的 Word、網頁或其他檔案）。請用「列印 › 另存為 PDF」重新存檔，或直接拍照上傳');
+   const isPdf=rt?rt==='application/pdf':(f.type==='application/pdf'||/\.pdf$/i.test(f.name));
+   if(rt&&rt!=='application/pdf'&&f.type!==rt)f=new File([f],f.name.replace(/\.[^.]+$/,'')+'.'+(rt==='image/png'?'png':rt==='image/webp'?'webp':'jpg'),{type:rt});
    if(!isPdf&&!/^image\/(jpeg|png|webp)$/.test(f.type))throw new Error(/\.(heic|heif)$/i.test(raw.name)||/heic|heif/i.test(raw.type)?'iPhone 的 HEIC 照片無法讀取。請到「設定 › 相機 › 格式」改選「最相容」後重拍，或改用截圖上傳':'檔案格式無法讀取，請改用 PDF 或 JPG');
    const ext=isPdf?'pdf':f.type==='image/png'?'png':f.type==='image/webp'?'webp':'jpg';
    const path=`${appId}/${k}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;

@@ -270,6 +270,50 @@ def main():
         check('學生頁寬 260（150% 字級）各畫面無橫向溢出', all(x <= 261 for x in ov.values()) and not errs, f'{ov} {errs}')
         pg.close()
 
+        # 6d. 學生上傳：改副檔名的假 PDF／HEIC 要在上傳前擋下並說明；真 PDF 照常上傳（2026/11/13 巡檢發現只看副檔名）
+        pg, errs = new_page(b, base, 390, 844)
+        pg.goto(f'{base}/apply.html'); pg.wait_for_timeout(1500)
+        pg.evaluate("startDemo()"); pg.wait_for_timeout(500)
+        pg.evaluate("(()=>{const g=document.querySelector('#dpCap .go');if(g)g.click()})()"); pg.wait_for_timeout(1000)
+        up = pg.evaluate("""(async()=>{const pad='x'.repeat(4000);
+          const fs=[['d_rec',new File(['<!doctype html><html><body>'+pad+'</body></html>'],'成績單.pdf',{type:'application/pdf'})],
+            ['d_merit',new File([new Uint8Array([0x50,0x4b,3,4,...new Array(4000).fill(65)])],'推薦函.pdf',{type:'application/pdf'})],
+            ['d_unemp',new File([new Uint8Array([0,0,0,24,...[...'ftypheic'].map(c=>c.charCodeAt(0)),...new Array(4000).fill(0)])],'IMG.jpg',{type:'image/jpeg'})],
+            ['d_hh',new File(['%PDF-1.4\\n'+pad],'謄本.pdf',{type:'application/pdf'})]];
+          const out=[];for(const[k,f]of fs){await pick(k,{files:[f],set value(v){}});await new Promise(r=>setTimeout(r,600));const u=(UP[k]||[]).slice(-1)[0]||{};out.push(u.st+'|'+u.msg)}return out})()""")
+        check('學生上傳：網頁／Word 改成 .pdf 會被擋並說明', all(x.startswith('bad|') and '內容不是 PDF' in x for x in up[:2]), up)
+        check('學生上傳：HEIC 改成 .jpg 會提示 iPhone 設定', up[2].startswith('bad|') and 'HEIC' in up[2], up)
+        check('學生上傳：真正的 PDF 照常上傳', up[3].startswith('done|') and not errs, f'{up} {errs}')
+        pg.evaluate("go('docs')"); pg.wait_for_timeout(400)
+        small = pg.evaluate("[...document.querySelectorAll('#v-docs button,#v-docs label.up')].filter(e=>e.offsetParent&&e.getBoundingClientRect().height<44).map(e=>e.textContent.trim().slice(0,10))")
+        check('學生文件頁按鈕（含「刪除」）高度至少 44px', not small, small)
+        pg.close()
+
+        # 6e. 安全：申請資料含惡意字串時，後台各分頁與核對視窗、學生申請表都不可執行（XSS）
+        pg, errs = new_page(b, base)
+        pg.goto(f'{base}/index.html'); pg.wait_for_timeout(1500)
+        pg.evaluate('startDemo()'); pg.wait_for_timeout(800)
+        pg.evaluate("document.querySelector('#dpCap .go').click()"); pg.wait_for_timeout(800)
+        XP = '"><img src=x onerror="window.__x=1"><svg onload="window.__x=1">\'`<script>window.__x=1</script>'
+        pg.evaluate("""P=>{for(const a of APPS){for(const k of Object.keys(a)){if(typeof a[k]==='string'&&!/^(level|div|nation|family|demerit|gov|welfare|disab|house|prev)$/.test(k)&&!/^d_/.test(k))a[k]+=P}a.memo=P;a.overNote=P}render()}""", XP)
+        for t in ['data', 'result', 'docs', 'groups', 'settings', 'home']:
+            try: pg.evaluate(f"tab('{t}')"); pg.wait_for_timeout(300)
+            except Exception: pass
+        pg.evaluate("tab('docs');startReview()"); pg.wait_for_timeout(2500)
+        xs = pg.evaluate("[window.__x||0, document.querySelectorAll('img[src=x],svg[onload]').length]")
+        check('後台：惡意字串不會被執行（XSS）', xs == [0, 0] and not errs, f'{xs} {errs}')
+        pg.close()
+        pg, errs = new_page(b, base, 390, 844)
+        pg.goto(f'{base}/apply.html'); pg.wait_for_timeout(1500)
+        pg.evaluate("startDemo()"); pg.wait_for_timeout(400)
+        pg.evaluate("(()=>{const g=document.querySelector('#dpCap .go');if(g)g.click()})()"); pg.wait_for_timeout(600)
+        pg.evaluate("go('home');startNew()"); pg.wait_for_timeout(300)
+        pg.evaluate("P=>{for(const e of document.querySelectorAll('#v-form input:not([type=checkbox]):not([type=radio]),#v-form textarea')){e.value=P;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))}}", XP)
+        pg.wait_for_timeout(500)
+        xs = pg.evaluate("[window.__x||0, document.querySelectorAll('img[src=x],svg[onload]').length]")
+        check('學生頁：惡意字串不會被執行（XSS）', xs == [0, 0] and not errs, f'{xs} {errs}')
+        pg.close()
+
         # 7. 手機版不橫向溢出
         for path in ['apply.html', 'index.html?offline']:
             pg, errs = new_page(b, base, 390, 844)
