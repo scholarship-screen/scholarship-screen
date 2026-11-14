@@ -311,6 +311,7 @@ const DOCS=[
 const KEY='sch_apply_v2';
 let ME=null,INFO={},LOCAL={};   // ME: {no, code}; STATUS: 伺服器回傳
 let ST=null;const UP={};         // UP[k] = 本次上傳中的檔案
+const SEEN={};                    // 本次已上傳成功的檔案內容（申請 id|sha256 → 文件種類），重複上傳時提醒
 
 function save(){if(DEMO)return;try{localStorage.setItem(KEY,JSON.stringify({...ME,exp:Date.now()+7*864e5}))}catch(e){}}
 function dropMine(no){try{const o=JSON.parse(localStorage.getItem(KEY)||'null');if(!o||!no||o.no===no)localStorage.removeItem(KEY)}catch(e){}}
@@ -487,6 +488,8 @@ async function pick(k,input){
   try{
    if(raw.size<2048)throw new Error('檔案是空的或太小，請重新拍照或選擇正確的檔案');
    if(raw.size>25e6)throw new Error('檔案超過 25MB，請改以拍照或壓縮後上傳');
+   const rh=await sha256(raw),dk=rh?appId+'|'+rh:'';
+   if(dk&&SEEN[dk]){const dd=DOCS.find(d=>d.k===SEEN[dk]);if(!confirm(`「${raw.name}」剛才已經上傳到「${dd?dd.l:'其他文件'}」，內容完全相同。\n\n確定要再上傳一次嗎？（如果是要上傳另一頁或背面，請按「取消」後重新選擇正確的檔案）`)){UP[k]=UP[k].filter(x=>x!==rec);renderDocs();continue}}
    let f=await shrink(raw);
    if(f.size>10*1024*1024)throw new Error('檔案超過 10MB，PDF 請分割後上傳');
    const rt=await realType(f);
@@ -502,6 +505,7 @@ async function pick(k,input){
    const{data:docId,error}=await sb.rpc('add_document',{p_app:appId,p_type:k,p_path:path,p_name:raw.name,p_mime:isPdf?'application/pdf':f.type,p_size:f.size,p_sha:h});
    if(error)throw new Error(/逾期/.test(error.message)?'已逾補件期限，請洽本會承辦人員':String(error.message||'').replace(/^Error:\s*/,''));
    rec.st='done';
+   if(dk)SEEN[dk]=k;
    jobs.push(sb.functions.invoke('analyze',{body:{document_id:docId}}).catch(()=>{}));
    if(!(await refresh())){rec.st='bad';rec.msg='已上傳，但畫面未更新，請按「重新整理」確認';renderDocs()}
   }catch(ex){rec.st='bad';rec.msg=String(ex.message||'上傳失敗').replace(/^Error:\s*/,'');renderDocs()}
@@ -525,7 +529,7 @@ function finish(){
  go('done')}
 
 let DEMO=false;
-function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=14';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請確認網路'));document.head.appendChild(s)})}
+function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=15';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請確認網路'));document.head.appendChild(s)})}
 
 function studentDemoSteps(){
  const card=txt=>[...document.querySelectorAll('#docList .doc')].find(d=>d.querySelector('.tag')&&d.querySelector('.tag').textContent.includes(txt));

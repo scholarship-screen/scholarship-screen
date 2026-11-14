@@ -92,6 +92,7 @@ window.DemoClient=function(){
 const css=`#dpCap{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(640px,calc(100vw - 24px));margin:0;background:#1d2733;color:#fff;border:0;border-radius:16px;padding:18px 20px 14px;box-shadow:0 16px 48px rgba(0,0,0,.35);font:18px/1.65 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;z-index:2147483647}
 #dpCap b.t{display:block;font-size:21px;margin-bottom:4px;color:#cfe8b8}
 @media(max-width:500px){#dpCap .m svg{width:56px;height:56px}}
+@media(max-width:400px),(max-height:660px){#dpCap{padding:12px 14px 10px;font-size:17px;line-height:1.55}#dpCap .m{display:none}#dpCap b.t{font-size:19px;margin-bottom:2px}#dpCap .ctl{margin-top:8px;gap:6px}#dpCap .ctl button{padding:8px 10px}#dpCap .bar{margin-top:8px}}
 #dpCap .ctl{display:flex;gap:8px;align-items:center;margin-top:12px}
 #dpCap .ctl span{flex:1;font-size:16px;color:#b9c4d0}
 #dpCap.top{top:16px;bottom:auto}
@@ -127,8 +128,15 @@ document.addEventListener('close',()=>{if(cap&&!cap.dataset.off)setTimeout(top,0
 try{new MutationObserver(()=>{if(cap&&!cap.dataset.off)top()}).observe(document.documentElement,{attributes:true,subtree:true,attributeFilter:['open']})}catch(e){}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&cap&&!cap.dataset.off){e.preventDefault();e.stopImmediatePropagation();const g=cap.querySelector('.go');if(g)g.click()}},true);
 function clearHl(){document.querySelectorAll('.dp-hl').forEach(e=>e.classList.remove('dp-hl'))}
-function place(el){if(!cap||!el||!el.isConnected)return;const r=el.getBoundingClientRect();const want=r.top+r.height/2>innerHeight/2&&r.height<innerHeight*0.7;cap.classList.toggle('top',want);const c=cap.getBoundingClientRect();if(c.height&&c.top<r.bottom&&c.bottom>r.top){const other=!want;cap.classList.toggle('top',other);const c2=cap.getBoundingClientRect();if(c2.top<r.bottom&&c2.bottom>r.top)cap.classList.toggle('top',want)}}
-function hl(sel){clearHl();if(!cap||cap.dataset.off)return null;const el=typeof sel==='string'?document.querySelector(sel):sel;if(el){el.classList.add('dp-hl');try{el.scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}place(el);setTimeout(()=>place(el),450)}return el}
+function scroller(el){let p=el.parentElement;while(p&&p!==document.body&&p!==document.documentElement){const o=getComputedStyle(p).overflowY;if(/(auto|scroll)/.test(o)&&p.scrollHeight>p.clientHeight+2)return p;p=p.parentElement}return document.scrollingElement||document.documentElement}
+const hit=(c,r)=>c.height&&c.top<r.bottom&&c.bottom>r.top;
+// 說明框放在不擋住標示物的一側；小螢幕兩側都會擋到時，把標示物捲到說明框以外的空白區
+function place(el,adjust){if(!cap||!el||!el.isConnected)return;let r=el.getBoundingClientRect();const want=r.top+r.height/2>innerHeight/2&&r.height<innerHeight*0.7;cap.classList.toggle('top',want);const c=cap.getBoundingClientRect();if(hit(c,r)){const other=!want;cap.classList.toggle('top',other);const c2=cap.getBoundingClientRect();if(hit(c2,r))cap.classList.toggle('top',want)}
+ if(!adjust)return;const c3=cap.getBoundingClientRect();if(!hit(c3,r))return;const fx=n=>{for(let q=n;q&&q!==document.body&&q.tagName!=='DIALOG';q=q.parentElement){const ps=getComputedStyle(q).position;if(ps==='fixed'||ps==='sticky')return true}return false};
+ const tryAt=isTop=>{cap.classList.toggle('top',isTop);const c=cap.getBoundingClientRect(),f0=isTop?c.bottom+10:10,f1=isTop?innerHeight-10:c.top-10,room=f1-f0;return{isTop,f0,room}};
+ if(!fx(el)){const sc=scroller(el);for(const isTop of [cap.classList.contains('top'),!cap.classList.contains('top')]){const z=tryAt(isTop);if(z.room<60)continue;const target=r.height<=z.room?z.f0+(z.room-r.height)/2:z.f0;const before=sc.scrollTop;sc.scrollTop=before+(r.top-target);r=el.getBoundingClientRect();if(!hit(cap.getBoundingClientRect(),r))return;sc.scrollTop=before;r=el.getBoundingClientRect()}}
+ let best=null;for(const isTop of [false,true]){tryAt(isTop);const c=cap.getBoundingClientRect(),ov=Math.max(0,Math.min(c.bottom,r.bottom)-Math.max(c.top,r.top));if(!best||ov<best[1])best=[isTop,ov]}cap.classList.toggle('top',best[0])}
+function hl(sel){clearHl();if(!cap||cap.dataset.off)return null;const el=typeof sel==='string'?document.querySelector(sel):sel;if(el){el.classList.add('dp-hl');try{el.scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}place(el);setTimeout(()=>place(el,true),450);setTimeout(()=>place(el,true),1000)}return el}
 async function tap(sel){const el=typeof sel==='string'?document.querySelector(sel):sel;if(!el)return;hl(el);await sleep(900);if(!cap||cap.dataset.off){clearHl();return}el.classList.add('dp-tap');setTimeout(()=>el.classList.remove('dp-tap'),600);await sleep(250);if(!cap||cap.dataset.off){clearHl();return}el.click();await sleep(400);top()}
 async function type(sel,text){const el=document.querySelector(sel);if(!el)return;hl(el);el.focus();el.value='';for(const ch of text){if(!cap||cap.dataset.off)return;el.value+=ch;el.dispatchEvent(new Event('input',{bubbles:true}));await sleep(110)}}
 function paint(){const s=steps[i];clearTimeout(timer);

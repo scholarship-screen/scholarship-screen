@@ -289,6 +289,26 @@ def main():
         check('學生文件頁按鈕（含「刪除」）高度至少 44px', not small, small)
         pg.close()
 
+        # 6d2. 同一個檔案重複上傳要提醒（按取消不上傳；不同檔案不提醒）（2026/11/14 優化）
+        pg = b.new_page(viewport={'width': 390, 'height': 844}); errs = []; dl = []; ans = {'v': False}
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.on('dialog', lambda d: (dl.append(d.message), d.accept() if (ans['v'] or d.type != 'confirm') else d.dismiss()))
+        pg.route('**/*', lambda r: r.continue_() if r.request.url.startswith(base) else r.abort())
+        pg.goto(f'{base}/apply.html'); pg.wait_for_timeout(1500)
+        pg.evaluate("window.wdlg&&wdlg.open&&wdlg.close()")
+        pg.evaluate("startDemo()"); pg.wait_for_timeout(500)
+        pg.evaluate("(()=>{const g=document.querySelector('#dpCap .go');if(g)g.click()})()"); pg.wait_for_timeout(1000)
+        JS_UP = """async([k,body])=>{const f=new File(['%PDF-1.4\\n'+body+'x'.repeat(4000)],'scan.pdf',{type:'application/pdf'});const n0=(ST.docs||[]).length;await pick(k,{files:[f],set value(v){}});await new Promise(r=>setTimeout(r,600));return (ST.docs||[]).length-n0}"""
+        a1 = pg.evaluate(JS_UP, ['d_hh', 'A']); n_d1 = len(dl)
+        a2 = pg.evaluate(JS_UP, ['d_prop', 'A']); n_d2 = len(dl)
+        a3 = pg.evaluate(JS_UP, ['d_prop', 'B']); n_d3 = len(dl)
+        ans['v'] = True
+        a4 = pg.evaluate(JS_UP, ['d_prop', 'A'])
+        check('學生上傳：同一檔案重複上傳會提醒，按取消不上傳；不同檔案不提醒；確定仍可上傳',
+              a1 == 1 and n_d1 == 0 and a2 == 0 and n_d2 == 1 and '剛才已經上傳' in dl[0] and a3 == 1 and n_d3 == 1 and a4 == 1 and not errs,
+              f'{[a1, a2, a3, a4]} {dl} {errs}')
+        pg.close()
+
         # 6e. 安全：申請資料含惡意字串時，後台各分頁與核對視窗、學生申請表都不可執行（XSS）
         pg, errs = new_page(b, base)
         pg.goto(f'{base}/index.html'); pg.wait_for_timeout(1500)
@@ -313,6 +333,34 @@ def main():
         xs = pg.evaluate("[window.__x||0, document.querySelectorAll('img[src=x],svg[onload]').length]")
         check('學生頁：惡意字串不會被執行（XSS）', xs == [0, 0] and not errs, f'{xs} {errs}')
         pg.close()
+
+        # 6f. 小手機（320×568、360×640）導覽：說明框不可蓋住標示物、標示物要在畫面內、開始示範後 0 個對外請求（2026/11/14 巡檢發現 320 寬時說明框蓋住標示物 43–100%）
+        STEP = """()=>{const c=document.getElementById('dpCap');if(!c||c.dataset.off)return null;const cr=c.getBoundingClientRect();const h=document.querySelector('.dp-hl');let ov=0,vis=true,top=null;
+          if(h){const r=h.getBoundingClientRect();top=Math.round(r.top);const x=Math.max(0,Math.min(cr.right,r.right)-Math.max(cr.left,r.left)),y=Math.max(0,Math.min(cr.bottom,r.bottom)-Math.max(cr.top,r.top));ov=r.width*r.height?Math.round(100*x*y/(r.width*r.height)):0;vis=r.bottom>0&&r.top<innerHeight}
+          return [c.querySelector('.n').textContent,ov,vis,top,cr.top>=-1&&cr.bottom<=innerHeight+1]}"""
+        for path, total in [('index.html', 15), ('apply.html', 9)]:
+            for (w, h) in [(320, 568), (360, 640)]:
+                ctx = b.new_context(viewport={'width': w, 'height': h}, has_touch=True, is_mobile=True)
+                pg = ctx.new_page(); errs = []; ext = []
+                pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('dialog', lambda d: d.accept())
+                pg.route('**/*', lambda r: r.continue_() if r.request.url.startswith(base) else (ext.append(r.request.url[:60]), r.abort()))
+                pg.goto(f'{base}/{path}'); pg.wait_for_timeout(1500)
+                pg.evaluate("window.wdlg&&wdlg.open&&wdlg.close()"); ext.clear()
+                pg.evaluate('startDemo()'); pg.wait_for_timeout(800)
+                bad = []
+                for k in range(total):
+                    t0 = time.time(); s = pg.evaluate(STEP)
+                    while s and time.time() - t0 < 12:
+                        time.sleep(0.8); s2 = pg.evaluate(STEP)
+                        if s2 and s2[0] == s[0] and s2[1] == s[1] and s2[3] == s[3]: s = s2; break
+                        s = s2
+                    if not s: bad.append(f'{k}: 說明框消失'); break
+                    if s[1] > 40 or not s[2] or not s[4]: bad.append(s)
+                    if s[0].startswith(f'{total} / {total}'): break
+                    pg.evaluate("document.querySelector('#dpCap .nx').click()"); pg.wait_for_timeout(300)
+                check(f'{path} 導覽 {w}×{h}：說明框不蓋住標示物、標示物在畫面內', not bad and not errs, f'{bad} {errs}')
+                check(f'{path} 導覽 {w}×{h}：開始示範後對正式資料庫 0 請求', not ext, ext[:3])
+                ctx.close()
 
         # 7. 手機版不橫向溢出
         for path in ['apply.html', 'index.html?offline']:
