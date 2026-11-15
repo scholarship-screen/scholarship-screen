@@ -39,7 +39,7 @@ input:focus,select:focus,textarea:focus{outline:3px solid #c8dcb8;border-color:v
 .f.err input,.f.err select{border-color:var(--bad);background:#fffafa;outline:2px solid #f3c3bf}
 .emsg{display:block;color:var(--bad);font-size:16px;font-weight:700;margin-top:4px}
 details.help{margin-top:6px;font-size:16px;font-weight:400;color:var(--mute)}
-details.help summary{color:var(--info);cursor:pointer;font-weight:700;list-style:none}
+details.help summary{color:var(--info);cursor:pointer;font-weight:700;list-style:none;min-height:44px;display:flex;align-items:center}
 details.help summary::-webkit-details-marker{display:none}
 details.help[open]{background:var(--infobg);border-radius:8px;padding:8px 12px;color:var(--ink)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:14px 22px;font:inherit;font-size:19px;font-weight:700;cursor:pointer;text-decoration:none}
@@ -152,7 +152,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
   <h2>查詢進度及補件</h2>
   <p class="note">請輸入送出申請時取得之申請編號及查詢碼。</p>
   <label class="f">申請編號<small>例：U012、G003</small><input id="lgNo" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false"></label>
-  <label class="f">查詢碼<small>8 碼英文及數字，不分大小寫（正式查詢碼不會出現 0、1、O、I、L，以免混淆）</small><input id="lgCode" maxlength="10" onkeydown="if(event.key==='Enter')doLogin()" autocapitalize="characters" autocomplete="off" spellcheck="false"></label>
+  <label class="f">查詢碼<small>8 碼英文及數字，不分大小寫（正式查詢碼不會出現 0、1、O、I、L，以免混淆）</small><input id="lgCode" maxlength="10" onkeydown="if(event.key==='Enter')doLogin()" autocapitalize="characters" autocomplete="off" spellcheck="false" autocorrect="off"></label>
   <label class="chk" style="font-size:18px;font-weight:600"><input type="checkbox" id="lgRemember">這是我自己的手機，記住登入 7 天（借用他人手機或公用電腦請勿勾選）</label>
   <div id="lgErr" class="alert bad hidden" role="alert"></div>
   <button class="btn pri big" style="margin-top:18px" id="lgBtn" onclick="doLogin()">查詢</button>
@@ -318,7 +318,7 @@ function dropMine(no){try{const o=JSON.parse(localStorage.getItem(KEY)||'null');
 function forget(){if(!confirm('確定清除此裝置的申請紀錄？（申請資料不會刪除，日後可憑申請編號及查詢碼登入）'))return;dropMine(ME&&ME.no);ME=null;ST=null;$('#resumeCard').style.display='none';go('home')}
 let CURV='home',FDIRTY=false,POP=false;
 function go(v){
- if(!POP&&v!==CURV){try{history.pushState({v},'')}catch(e){}}if(v==='form'&&CURV!=='form')FDIRTY=false;CURV=v;
+ if(!POP&&v!==CURV){try{history.pushState({v},'')}catch(e){}}if(v==='form'&&CURV!=='form')FDIRTY=false;if(v==='login'&&CURV!=='login'){const le=$('#lgErr');if(le)le.classList.add('hidden')}CURV=v;
  ['home','login','form','code','docs','done'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
  const n={form:1,code:2,docs:3,done:4}[v];$('#stepbar').classList.toggle('hidden',!n||(v==='form'&&EDIT));
  [1,2,3,4].forEach(i=>$('#s'+i).classList.toggle('on',i===n));
@@ -343,9 +343,10 @@ async function loadInfo(){
 // ===== 表單 =====
 let EDIT=false,TOKEN='';
 function famUI(){const s=$('[name=family]').value==='單親';$('#famBoth').classList.toggle('hidden',s);$('#famSingle').classList.toggle('hidden',!s)}
-function startNew(){EDIT=false;TOKEN=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random());$('#v-form').reset();famUI();try{updRank()}catch(e){};$('#editNote').classList.add('hidden');$('#consentCard').classList.remove('hidden');$('#cancelEdit').classList.add('hidden');$('#sendBtn').textContent='送出資料，下一步上傳文件';go('form')}
+function resetErr(){try{clearErr()}catch(e){}const x=$('#err1');if(x){x.classList.add('hidden');x.innerHTML=''}}
+function startNew(){resetErr();EDIT=false;TOKEN=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random());$('#v-form').reset();famUI();try{updRank()}catch(e){};$('#editNote').classList.add('hidden');$('#consentCard').classList.remove('hidden');$('#cancelEdit').classList.add('hidden');$('#sendBtn').textContent='送出資料，下一步上傳文件';go('form')}
 function editForm(){if(!ST)return;if(!ST.open){alert('已逾修改期限，如需更正請洽本會承辦人員');return}
- EDIT=true;const f=ST.form||{};$('#v-form').reset();
+ resetErr();EDIT=true;const f=ST.form||{};$('#v-form').reset();
  for(const el of $('#v-form').elements){if(el.name&&f[el.name]!=null&&el.type!=='checkbox')el.value=f[el.name]}
  try{updRank()}catch(e){}
  famUI();$('#editNote').classList.remove('hidden');$('#consentCard').classList.add('hidden');$('#cancelEdit').classList.remove('hidden');$('#sendBtn').textContent='儲存修改';go('form')}

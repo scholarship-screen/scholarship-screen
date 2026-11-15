@@ -362,6 +362,32 @@ def main():
                 check(f'{path} 導覽 {w}×{h}：開始示範後對正式資料庫 0 請求', not ext, ext[:3])
                 ctx.close()
 
+        # 3c. 學生手機：錯誤提示不可殘留（2026/11/16 學生手機深測發現）
+        pg, errs = new_page(b, base, 375, 667)
+        pg.goto(f'{base}/apply.html'); pg.wait_for_timeout(1200)
+        pg.evaluate("window.wdlg&&wdlg.open&&wdlg.close()")
+        pg.evaluate("startDemo()"); pg.wait_for_timeout(500)
+        pg.evaluate("(()=>{const g=document.querySelector('#dpCap .go');if(g)g.click()})()"); pg.wait_for_timeout(800)
+        pg.evaluate("ME=null;go('home')"); pg.click('#startBtn'); pg.click('#sendBtn'); pg.wait_for_timeout(300)
+        shown = pg.evaluate("[!err1.classList.contains('hidden'),document.querySelectorAll('#v-form .emsg').length]")
+        pg.evaluate("go('home')"); pg.click('#startBtn'); pg.wait_for_timeout(300)
+        a = pg.evaluate("[!err1.classList.contains('hidden'),document.querySelectorAll('#v-form .emsg,#v-form .err').length]")
+        pg.click('#sendBtn'); pg.wait_for_timeout(300)
+        pg.evaluate("(async()=>{ME={no:'U001',code:'DEMO2026'};await refresh(true);go('docs');editForm()})()"); pg.wait_for_timeout(600)
+        e = pg.evaluate("[CURV,!err1.classList.contains('hidden'),document.querySelectorAll('#v-form .emsg,#v-form .err').length]")
+        check('學生頁：重新開始申請或修改申請時，不可殘留上次的「有 N 處需修正」與紅框', shown[0] and shown[1] > 0 and a == [False, 0] and e == ['form', False, 0], (shown, a, e))
+        pg.evaluate("ME=null;go('login')"); pg.fill('#lgNo', 'U001'); pg.fill('#lgCode', 'ABC'); pg.press('#lgCode', 'Enter'); pg.wait_for_timeout(300)
+        s1 = pg.evaluate("!lgErr.classList.contains('hidden')")
+        pg.evaluate("go('home');go('login')")
+        check('學生頁：離開查詢畫面再回來，不殘留上次的登入錯誤訊息', s1 and pg.evaluate("lgErr.classList.contains('hidden')"), s1)
+        pg.evaluate("go('form')")
+        hs = pg.evaluate("[...document.querySelectorAll('details.help summary')].filter(x=>x.offsetParent).map(x=>Math.round(x.getBoundingClientRect().height))")
+        pg.evaluate("go('docs')"); pg.wait_for_timeout(300)
+        hs += pg.evaluate("[...document.querySelectorAll('details.help summary')].filter(x=>x.offsetParent).map(x=>Math.round(x.getBoundingClientRect().height))")
+        check('學生頁「個資告知全文」「申請方式」展開鈕高度至少 44px', hs and min(hs) >= 44, hs)
+        check('學生手機錯誤提示測試無程式錯誤', not errs, errs)
+        pg.close()
+
         # 7. 手機版不橫向溢出
         for path in ['apply.html', 'index.html?offline']:
             pg, errs = new_page(b, base, 390, 844)
