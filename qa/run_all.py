@@ -258,6 +258,33 @@ def main():
             check(f'核對視窗 {w}×{h} 標題與符合／退回按鈕不必捲動即可見', not bad and not errs, f'{bad} {errs}')
             ctx.close()
 
+        # 6b2. 平板橫直切換：旋轉過的文件要依新寬度重新排版，不可撐破預覽框（2026/11/17 委員核對深測發現 iPad 直轉橫後超出 104px）
+        #      長者按「退回」手抖多按一下：退回原因視窗剛出現 0.45 秒內的點按不算（2026/11/17 優化）
+        for (w, h) in [(768, 1024), (390, 844)]:
+            ctx = b.new_context(viewport={'width': w, 'height': h}, has_touch=True, is_mobile=True)
+            pg = ctx.new_page(); errs = []
+            pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('dialog', lambda d: d.accept())
+            pg.route('**/*', lambda r: r.continue_() if r.request.url.startswith(base) else r.abort())
+            pg.goto(f'{base}/index.html'); pg.wait_for_timeout(1500)
+            pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d=>d.close())")
+            pg.evaluate('startDemo()'); pg.wait_for_timeout(800)
+            pg.evaluate("document.querySelector('#dpCap .go').click()"); pg.wait_for_timeout(500)
+            pg.evaluate("tab('docs');startReview()"); pg.wait_for_timeout(2500)
+            bb = pg.evaluate("(r=>[r.x+r.width/2,r.y+r.height/2])(rBad.getBoundingClientRect())")
+            pg.touchscreen.tap(*bb); pg.wait_for_timeout(250); pg.touchscreen.tap(*bb); pg.wait_for_timeout(400)
+            pg.evaluate("document.querySelector('#bChips [data-i]').click()"); pg.wait_for_timeout(100)
+            dbl = pg.evaluate("[bdlg.open,document.querySelectorAll('#bChips .on').length,document.activeElement&&document.activeElement.id]")
+            check(f'退回原因視窗 {w}×{h}：手抖多按一下不會誤選原因或叫出鍵盤，之後可正常點選', dbl[0] and dbl[1] == 1 and dbl[2] != 'bNote', dbl)
+            pg.evaluate("bdlg.close()"); pg.wait_for_timeout(1000)
+            for i in range(10):
+                if pg.evaluate("!!document.querySelector('#rView img')"): break
+                pg.wait_for_timeout(750); pg.evaluate('revSkip()'); pg.wait_for_timeout(1200)
+            pg.evaluate('vr()'); pg.wait_for_timeout(300)
+            pg.set_viewport_size({'width': h, 'height': w}); pg.wait_for_timeout(800)
+            o = pg.evaluate("(()=>{const im=rView.querySelector('img');if(!im)return null;const r=im.getBoundingClientRect(),b=rView.getBoundingClientRect();return [Math.round(r.width),Math.round(b.width),rView.scrollWidth-rView.clientWidth]})()")
+            check(f'核對視窗 {w}×{h} 旋轉文件後橫直切換，圖片依新寬度排版不撐破', o and o[2] <= 1 and o[0] >= o[1] * 0.85 - 40 and not errs, f'{o} {errs}')
+            ctx.close()
+
         # 6c. 150% 字級（畫面寬 260）學生頁各畫面不可橫向溢出（2026/11/13 巡檢發現申請表與步驟列超出 40px）
         pg, errs = new_page(b, base, 260, 700)
         pg.goto(f'{base}/apply.html'); pg.wait_for_timeout(1500)

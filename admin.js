@@ -331,7 +331,9 @@ function askReason(hint){return new Promise(ok=>{let done=false;const sel=new Se
  $('#bNote').value='';const be=$('#bErr');if(be)be.textContent='';draw();
  $('#bOk').onclick=()=>{const txt=[...sel].join('、')+($('#bNote').value.trim()?(sel.size?'。':'')+$('#bNote').value.trim():'');if(!txt){const be=$('#bErr');if(be){be.textContent='請至少點選一個退回原因，或填寫補充說明。';be.scrollIntoView({block:'nearest'})}else alert('請至少選一個原因，或寫補充說明');return}done=true;bdlg.close();ok(txt)};
  bdlg.onclose=()=>{if(!done)ok(null)};
- bdlg.showModal()})}
+ bdlg.showModal();
+ // 長者按「退回」時手抖多按一下：視窗剛出現 0.45 秒內的點按不算，避免誤點到原因或叫出鍵盤（2026/11/17 優化）
+ const parts=bdlg.querySelectorAll(':scope>div');parts.forEach(x=>x.inert=true);setTimeout(()=>parts.forEach(x=>x.inert=false),450)})}
 async function rejectFile(id){const r=FALL.find(x=>String(x.id)===String(id));const n=await askReason(r&&r.flags);if(n===null)return;await setSt(id,'bad',n)}
 // 逐一核對
 let SPOT=false,RQ=[],RI=0,RURL=null,RS={},RALL={},DIR=1,VZ=1,VR=0,BUSY=false;const rdlg=$('#rdlg');
@@ -799,6 +801,8 @@ function showTour(){
 function tourNext(){if(TI<TS.length-1){TI++;showTour()}else endTour()}
 function tourPrev(){if(TI>0){TI--;showTour()}}
 window.addEventListener('resize',()=>{if(!$('#tour').classList.contains('hidden'))showTour()});
+// 平板橫直切換或視窗縮放後，旋轉過的文件要依新寬度重新排版，不可撐破預覽框（2026/11/17 巡檢發現）
+let VRT=0;window.addEventListener('resize',()=>{clearTimeout(VRT);VRT=setTimeout(()=>{if(rdlg.open)vApply()},120)});
 document.addEventListener('keydown',e=>{if($('#tour').classList.contains('hidden'))return;if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault();tourNext()}else if(e.key==='ArrowLeft')tourPrev();else if(e.key==='Escape')endTour()});
 function maybeTour(){let done=false;try{done=!!localStorage.getItem(tourKey())}catch(e){}if(!done)startTour()}
 
@@ -884,7 +888,7 @@ function adminDemoSteps(){
  {t:'原始檔案',b:(innerWidth<860?'下方':'右側')+'顯示申請人上傳之原檔，可放大、旋轉，或以新分頁開啟。',do:async h=>{h.hl('#rView');await h.sleep(700);await h.tap('#vTool button:nth-child(2)')}},
  {t:'符合',b:'文件無誤者點選「符合」，系統自動進入下一份。',ms:3500,do:async h=>{vz(0);await h.tap('#rOk');await h.until(()=>!LOADING&&!BUSY)}},
  {t:'疑義提醒',b:'初步檢查發現疑義時顯示提醒，例如此份「成績單」實為風景照片。',ms:5000,do:async h=>{const j=pendIdx('U002','d_tr');if(j>=0){await revJump(j);await h.until(()=>!LOADING&&!BUSY)}h.hl(document.querySelector('#rInfo .alert:not([style*="e8f0fa"])')||'#rInfo')}},
- {t:'退回',b:'系統依初步檢查結果預先勾選退件原因，亦可填寫補充說明；申請人登入後可查閱退件原因。',ms:5000,do:async h=>{if(!rdlg.open)return;const j=pendIdx('U002','d_tr');if(j>=0&&j!==RI){await revJump(j);await h.until(()=>!LOADING&&!BUSY)}if(!bdlg.open){await h.tap('#rBad');await h.until(()=>bdlg.open)}await h.sleep(300);if(!document.querySelector('#bChips .on'))await h.tap('#bChips [data-i]');h.hl('#bChips')}},
+ {t:'退回',b:'系統依初步檢查結果預先勾選退件原因，亦可填寫補充說明；申請人登入後可查閱退件原因。',ms:5000,do:async h=>{if(!rdlg.open)return;const j=pendIdx('U002','d_tr');if(j>=0&&j!==RI){await revJump(j);await h.until(()=>!LOADING&&!BUSY)}if(!bdlg.open){await h.tap('#rBad');await h.until(()=>bdlg.open)}await h.sleep(600);if(!document.querySelector('#bChips .on'))await h.tap('#bChips [data-i]');h.hl('#bChips')}},
  {t:'確定退回',b:'該申請人列為「待補件」，非資格不符。',ms:3500,do:async h=>{if(!bdlg.open)return;if(!document.querySelector('#bChips .on')&&!$('#bNote').value.trim())await h.tap('#bChips [data-i]');await h.tap('#bOk');await h.until(()=>!bdlg.open&&!LOADING&&!BUSY)}},
  {t:'核對進度',b:'上方進度格：✓ 為符合、✕ 為退回，點選可返回修改。<br>開啟中之文件自動鎖定，其他委員將略過，避免重複核對。',ms:6000,do:async h=>{h.hl('#rStrip')}},
  {t:'初篩結果',b:'資格、優先順序、正取及備取依協會規則自動計算，並列出不符資格原因。',ms:5500,do:async h=>{rdlg.close();await h.sleep(300);tab('result');render();await h.sleep(300);document.querySelectorAll('.tablewrap,.tbl-wrap').forEach(e=>e.scrollLeft=0);h.hl('#resultBox .card')}},
