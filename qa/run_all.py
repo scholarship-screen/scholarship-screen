@@ -415,6 +415,46 @@ def main():
         check('學生手機錯誤提示測試無程式錯誤', not errs, errs)
         pg.close()
 
+        # 3d. 承辦設定、匯出、列印（2026/11/18 承辦深測發現）
+        pg, errs = new_page(b, base)
+        pg.goto(f'{base}/index.html?offline'); pg.wait_for_timeout(1000)
+        pg.evaluate("loadDemo()"); pg.click('nav button[data-t=settings]'); pg.wait_for_timeout(300)
+        pg.evaluate("window.__d=[];window.__ans=[];window.alert=m=>__d.push('A:'+m);window.confirm=m=>{__d.push('C:'+m);return __ans.length?__ans.shift():true}")
+        def try_set(k, v, ans=None):
+            return pg.evaluate("([k,v,ans])=>{renderSettings();Object.assign(S,DEF);const e=document.querySelector('[data-s='+k+']');e.value=v;e.dispatchEvent(new Event('input'));__d=[];__ans=ans||[];saveSettings();const r=__d.slice();Object.assign(S,DEF);return r}", [k, v, ans])
+        d0 = try_set('aRatio', '0'); d1 = try_set('aRatio', '1', [False])
+        check('設定：電子電機比例填 0 要擋下；填 1（＝100%）要確認，取消就不存', not any('已儲存' in m for m in d0) and any(m.startswith('C:') and '100%' in m for m in d1) and not any('已儲存' in m for m in d1), (d0, d1))
+        d2 = try_set('incomeLimit', '10000', [False]); d3 = try_set('incomeLimit', '100萬')
+        pg.evaluate("renderSettings()"); pg.fill('[data-s=incomeLimit]', '1000000')
+        live = pg.evaluate("(document.getElementById('sm-incomeLimit')||{}).textContent")
+        check('設定：所得上限填 1 萬要確認是否少打 0，填 100萬 照常儲存；輸入時顯示「＝ 100 萬元」', any(m.startswith('C:') and '1 萬元' in m for m in d2) and not any('已儲存' in m for m in d2) and any('已儲存' in m for m in d3) and live and '100 萬元' in live, (d2, d3, live))
+        pg.evaluate("Object.assign(S,DEF);render();APPS[1].score='85.5';render()")
+        cell = pg.evaluate("(async()=>{await loadXLSX();let wb;const w=XLSX.writeFile;XLSX.writeFile=x=>{wb=x};exportResults();await new Promise(r=>setTimeout(r,300));XLSX.writeFile=w;const ws=wb.Sheets['大學部'];const hd=XLSX.utils.sheet_to_json(ws,{header:1})[0];const c=hd.indexOf('成績');const r=XLSX.utils.decode_range(ws['!ref']);const t=[];for(let i=1;i<=r.e.r;i++){const x=ws[XLSX.utils.encode_cell({r:i,c})];if(x)t.push(x.t)}return [c,[...new Set(t)]]})()")
+        check('匯出初篩結果：成績欄存成數字（不是文字）', cell[0] >= 0 and cell[1] == ['n'], cell)
+        try:
+            import pdfplumber, logging
+            logging.getLogger('pdfminer').setLevel(logging.ERROR)
+            small, broken = {}, {}
+            for t in ['result', 'data', 'groups', 'docs']:
+                pg.click(f'nav button[data-t={t}]'); pg.wait_for_timeout(300)
+                pg.evaluate("window.dispatchEvent(new Event('beforeprint'))")
+                pg.emulate_media(media='print'); pg.set_viewport_size({'width': 1047, 'height': 700})
+                br = pg.evaluate("""[...document.querySelectorAll('main table tr')].filter(r=>r.offsetParent).flatMap(r=>[...r.cells].slice(0,4)).filter(td=>{const b=td.querySelector(':scope>b')||(/^[A-Z]\\d{2,}$/.test(td.textContent.trim())?td:null);if(!b)return false;const n=b.firstChild&&b.firstChild.nodeType==3?b.firstChild:b;const rg=document.createRange();rg.selectNodeContents(n);return new Set([...rg.getClientRects()].map(x=>Math.round(x.top))).size>1}).map(td=>td.textContent.trim().slice(0,8)).slice(0,5)""")
+                fn = os.path.join(tempfile.gettempdir(), f'qa_print_{t}.pdf'); pg.pdf(path=fn, prefer_css_page_size=True)
+                pg.emulate_media(media='screen'); pg.set_viewport_size({'width': 1400, 'height': 900})
+                with pdfplumber.open(fn) as d:
+                    land = d.pages[0].width > d.pages[0].height
+                    sz = sorted({round(c['size'], 1) for pp in d.pages for c in pp.chars if c['text'].strip() and c['size'] < 11.9})
+                if sz or not land: small[t] = (sz, land)
+                if br: broken[t] = br
+                os.remove(fn)
+            check('列印：初篩結果、申請人、審查分組、文件核對都是 A4 橫式且全部文字 ≥12pt（文件核對表不可超出頁寬被縮小）', not small, small)
+            check('列印：編號與姓名不可被擠成一字一行', not broken, broken)
+        except ImportError:
+            check('列印檢查需要 pdfplumber（pip install pdfplumber）', False)
+        check('承辦設定／匯出／列印測試無程式錯誤', not errs, errs)
+        pg.close()
+
         # 7. 手機版不橫向溢出
         for path in ['apply.html', 'index.html?offline']:
             pg, errs = new_page(b, base, 390, 844)

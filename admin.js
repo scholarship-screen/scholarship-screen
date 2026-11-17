@@ -504,7 +504,7 @@ function exportResults(){
  const st=x=>({ok:'正取',add:'追加正取',wait:'備取'+(x.wn||''),hold:'待補件',late:'逾期未補件',no:'不符合'}[x.st]);
  const pr=x=>[x.p1?'續領＋福利身分':x.welfare?x.a.welfare:'',x.disab?'身心障礙／重大傷病':'',x.noHouse?'無房產':''].filter(Boolean).join('、');
  const head=['排名','結果','編號','姓名','學制','系所','年級','家戶年所得(元)','成績','班排%','優先條件','不符合標籤','不符合說明','備註','審查組'];
- const row=x=>[x.rk||'',st(x),x.a.id,x.a.name,x.a.level,x.a.dept,x.grade||'',x.house,x.a.score,x.rank<100?x.rank:'',pr(x),x.reasons.map(tagOf).join('、'),x.reasons.map(r=>tagOf(r)+'：'+detOf(r)).join('；'),x.notes.map(r=>tagOf(r)+(detOf(r)?'：'+detOf(r):'')).join('；'),x.grp];
+ const row=x=>[x.rk||'',st(x),x.a.id,x.a.name,x.a.level,x.a.dept,x.grade||'',x.house,isFinite(+x.a.score)&&String(x.a.score).trim()!==''?+x.a.score:x.a.score,x.rank<100?x.rank:'',pr(x),x.reasons.map(tagOf).join('、'),x.reasons.map(r=>tagOf(r)+'：'+detOf(r)).join('；'),x.notes.map(r=>tagOf(r)+(detOf(r)?'：'+detOf(r):'')).join('；'),x.grp];
  const order={ok:0,add:1,wait:2,hold:3,late:3.5,no:4};
  const part=L=>[head,...R.filter(x=>x.L===L).sort((p,q)=>order[p.st]-order[q.st]||((p.rk||999)-(q.rk||999))).map(row)];
  const sheets=[['大學部',part('U')],['碩博士班',part('G')],['不符合資格',[head,...R.filter(x=>x.st==='no').map(row)]]];
@@ -522,7 +522,10 @@ function renderSettings(){
  $('#setForm3').innerHTML=SET.filter(r=>G3.includes(r[0])).map(one).join('');
  $('#setForm').innerHTML=SET.filter(r=>!G1.includes(r[0])&&!G3.includes(r[0])).map(one).join('');
  $('#setDirty').classList.add('hidden');
- document.querySelectorAll('[data-s]').forEach(e=>e.oninput=e.onchange=()=>$('#setDirty').classList.remove('hidden'))}
+ document.querySelectorAll('[data-s]').forEach(e=>e.oninput=e.onchange=()=>{$('#setDirty').classList.remove('hidden');setMoneyLive()});setMoneyLive()}
+// 設定頁金額即時換算（2026/11/18 優化）：所得上限、其他獎學金上限輸入時顯示「＝ 100 萬元」，避免多打或少打一個 0
+function setMoneyTxt(n){n=+n;if(!(n>0))return'';const w=Math.floor(n/10000),r=n%10000,c=n.toLocaleString('en-US');return n<10000?'＝ '+c+' 元':'＝ '+w+' 萬'+(r?' '+r+' 元':'元')+'（'+c+' 元）'}
+function setMoneyLive(){['incomeLimit','otherMax'].forEach(k=>{const el=document.querySelector('[data-s='+k+']');if(!el)return;let o=document.getElementById('sm-'+k);if(!o){o=document.createElement('small');o.id='sm-'+k;o.className='setmoney';o.setAttribute('aria-live','polite');el.after(o)}const v=half(el.value).trim(),n=v?parseMoney(v):NaN;o.textContent=!v?'':isFinite(n)&&n>0?setMoneyTxt(n):'看不懂這個金額，請只填數字，例：1000000 或 100萬'})}
 function readSettings(){const T={};document.querySelectorAll('[data-s]').forEach(e=>T[e.dataset.s]=half(e.value).trim());
  const bad=[],int=(k,lab,min)=>{const v=T[k];if(v===undefined)return;if(!/^\d+$/.test(v)||+v<min)bad.push(`${lab}：請填 ${min} 以上的整數`)};
  int('quotaU','大學部名額',0);int('quotaG','碩博士班名額',0);int('groups','評審分組數',1);
@@ -534,9 +537,11 @@ function readSettings(){const T={};document.querySelectorAll('[data-s]').forEach
  money('incomeLimit','家戶年所得上限');money('otherMax','其他獎學金每學期上限');
  const pct=(k,lab,mn,mx)=>{const v=T[k];if(v===undefined||v==='')return;if(isNaN(+v)||+v<mn||+v>mx)bad.push(`${lab}：請填 ${mn}～${mx} 的數字`)};
  pct('scoreMin','學業成績門檻',0,100);pct('rankPct','班排百分比',1,100);pct('spotPct','抽查比例',0,100);pct('conductMin','操行成績門檻',0,100);
- if(T.aRatio){const raw=String(T.aRatio).trim(),isP=/%$/.test(raw),r=raw.replace(/%$/,'');const v=/^\d+\s*\/\s*\d+$/.test(r)?(([a,b])=>b?a/b:NaN)(r.split('/').map(Number)):(/^\d+(\.\d+)?$/.test(r)?(isP?+r/100:(+r>1?+r/100:+r)):NaN);if(v>0&&v<0.3)bad.push('電子電機類最低比例：'+raw+' 太低，辦法規定為三分之二（2/3）');if(!(v>=0&&v<=1))bad.push('電子電機類最低比例：請填 2/3、67% 或 0.67 這類寫法（三種寫法都代表三分之二）')}
+ if(T.aRatio){const raw=String(T.aRatio).trim(),isP=/%$/.test(raw),r=raw.replace(/%$/,'');const v=/^\d+\s*\/\s*\d+$/.test(r)?(([a,b])=>b?a/b:NaN)(r.split('/').map(Number)):(/^\d+(\.\d+)?$/.test(r)?(isP?+r/100:(+r>1?+r/100:+r)):NaN);if(v>=0&&v<0.3)bad.push('電子電機類最低比例：'+raw+' 太低，辦法規定為三分之二（2/3）');if(!(v>=0&&v<=1))bad.push('電子電機類最低比例：請填 2/3、67% 或 0.67 這類寫法（三種寫法都代表三分之二）')}
  if(T.deadline&&T.supDeadline&&T.supDeadline<T.deadline)bad.push('補件期限不能早於申請截止日');
  if(bad.length){alert('設定有誤，尚未儲存：\n\n・'+bad.join('\n・'));return null}
+ if(T.aRatio){const raw=String(T.aRatio).trim(),isP=/%$/.test(raw),r=raw.replace(/%$/,'');const v=/^\d+\s*\/\s*\d+$/.test(r)?(([a,b])=>a/b)(r.split('/').map(Number)):(isP?+r/100:(+r>1?+r/100:+r));if(v>0.9&&!confirm('電子電機類最低比例「'+raw+'」代表 '+Math.round(v*100)+'%（幾乎全部名額只給電子電機類），辦法規定為三分之二（2/3）。確定要儲存嗎？'))return null}
+ for(const[k,lab,lo,hi]of[['incomeLimit','家戶年所得上限',300000,5000000],['otherMax','其他獎學金每學期上限',5000,500000]]){if(T[k]===undefined)continue;const n=parseMoney(T[k]);if(isFinite(n)&&n>0&&(n<lo||n>hi)&&!confirm(lab+'填的是「'+T[k]+'」'+setMoneyTxt(n)+'，和一般金額差很多，是不是多打或少打了 0？\n\n辦法規定：家戶年所得上限 100 萬元、其他獎學金每學期未達 5 萬元。\n確定要儲存嗎？'))return null}
  if(T.deadline!==undefined&&!T.deadline&&!confirm('尚未設定申請截止日，學生將可一直送出申請。確定要儲存嗎？'))return null;
  if(T.supDeadline&&new Date(T.supDeadline+'T23:59:59+08:00')<new Date()&&!confirm('補件期限 '+T.supDeadline+' 已經過了，儲存後所有待補件者會立即變成「逾期未補件」。確定要儲存嗎？'))return null;
  if(T.quotaU!==undefined&&T.quotaG!==undefined&&+T.quotaU+ +T.quotaG!==30&&!confirm(`名額合計 ${+T.quotaU+ +T.quotaG} 名，辦法規定每學期 30 名為原則。確定要儲存嗎？`))return null;
