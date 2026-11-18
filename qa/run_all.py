@@ -113,7 +113,7 @@ def main():
         check('家長同名→只標疑似同家庭，不自動排除', '疑似同家庭' in r2['P1'] and st('P1') != 'no' and st('P2') != 'no', (r2['P1'], r2['P2']))
         check('戶籍地址相同（台／臺）→同家庭限一人', sorted([st('H1'), st('H2')]) == ['no', 'ok'], (r2['H1'], r2['H2']))
         cats2 = pg.evaluate("['電控工程系','電機工程系（工程學院）'].map(cat)")
-        check('系所分類（電控、系名後附學院）', cats2[0] == 'A', cats2)
+        check('系所分類（電控、系名後附學院）', cats2 == ['A', 'A'], cats2)
         # 評審用名單去識別：不可出現金額、家人姓名
         rv = pg.evaluate("""(async()=>{let cap=null;const so=sheetOut;window.sheetOut=async(n,a)=>{cap=a};try{const save=[APPS,S];APPS=[{id:'Z1',name:'王小明',level:'大學部',div:'日間部',dept:'電機工程系',grade:'2',nation:'本國',family:'雙親',incSelf:'0',incF:'1800000',incM:'0',score:'80',fam:'F',memo:'父親王大明肢障中度',d_id:'已附',d_tr:'已附',d_merit:'已附',d_hh:'已附',d_prop:'已附',d_inc:'已附',d_rec:'已附'},{id:'Z2',name:'王小華',level:'大學部',div:'日間部',dept:'電機工程系',grade:'3',nation:'本國',family:'雙親',incSelf:'0',incF:'0',incM:'0',score:'80',fam:'F',d_id:'已附',d_tr:'已附',d_merit:'已附',d_hh:'已附',d_prop:'已附',d_inc:'已附',d_rec:'已附'}];S=Object.assign({},DEF);render();await exportReviewers();APPS=save[0];S=save[1];render()}finally{window.sheetOut=so}return JSON.stringify(cap)})()""")
         check('評審用名單不含所得金額', '1,800,000' not in (rv or '') and '1800000' not in (rv or ''), (rv or '')[:200])
@@ -131,6 +131,18 @@ def main():
         check('邊界：班排 20/40、50%→合格；21/40→未達', not has('K1', '成績未達') and not has('K3', '成績未達') and has('K2', '成績未達'), (r3['K1'], r3['K2'], r3['K3']))
         check('邊界：他項獎學金 49999→合格；50000→超額', not has('W1', '他項獎學金超額') and has('W2', '他項獎學金超額'), (r3['W1'], r3['W2']))
         check('名次換算不多算 1%（門檻 55% 時 11/20→55% 合格；7/100→7%）', not has('P1', '成績未達') and r3['P1'].endswith('|55') and r3['P2'].endswith('|7'), (r3['P1'], r3['P2']))
+        # 2d. 規則邊界值（2026/11/19 規則深測發現）：系名後附「（工程學院）」被整段當學院刪掉而判科系不符；
+        #     承辦匯入或修改時班排寫「第5名/共40人」被讀成 540%、成績寫「平均 75」被讀成 0 分，都會誤判不符；「新台幣30萬元整」看不懂
+        cats3 = pg.evaluate("['電機工程系（工程學院）','電機工程系(工程學院)','工程學院（電機工程系）','電機資訊學院資訊工程系','資訊工程系（電機資訊學院）'].map(cat)")
+        check('系所：系名後附（工程學院）要算電子電機；資工不論括號都不含', cats3 == ['A', 'A', 'A', None, None], cats3)
+        r4 = pg.evaluate("""(()=>{const save=[APPS,S];const mk=(id,o)=>Object.assign({id,name:id,level:'大學部',div:'日間部',dept:'電機工程系',grade:'2',nation:'本國',family:'雙親',incSelf:'0',incF:'100000',incM:'100000',score:'60',rankPct:'',demerit:'無',gov:'否',otherAid:'0'},o);
+          APPS=[mk('Q1',{rankPct:'第5名/共40人'}),mk('Q2',{rankPct:'5名/40人'}),mk('Q3',{rankPct:'21名/40人'}),mk('Q4',{rankPct:'5-40'}),mk('Q5',{score:'平均 75'}),mk('Q6',{otherAid:'一學年9萬9千'}),mk('Q7',{otherAid:'4萬（學期）'}),mk('Q8',{incF:'新台幣30萬元整'})];S=Object.assign({},DEF);compute();
+          const o={};APPS.forEach(a=>{const x=R.find(y=>y.a.id===a.id);o[a.id]=[x.reasons.map(tagOf).join('/'),x.notes.map(tagOf).join('/'),x.rank,x.score]});APPS=save[0];S=save[1];render();return o})()""")
+        nr = lambda k, t: t not in r4[k][0]
+        check('班排「第5名/共40人」「5名/40人」→前 13% 合格；「21名/40人」→未達', nr('Q1', '成績未達') and nr('Q2', '成績未達') and r4['Q1'][2] == 13 and not nr('Q3', '成績未達'), (r4['Q1'], r4['Q2'], r4['Q3']))
+        check('班排看不懂（5-40）不可把數字黏成 540%，要標「班排待確認」', '班排待確認' in r4['Q4'][1] and r4['Q4'][2] == 100, r4['Q4'])
+        check('成績「平均 75」→75 分合格', r4['Q5'][3] == 75 and nr('Q5', '成績未達'), r4['Q5'])
+        check('他項獎學金「一學年9萬9千」「4萬（學期）」可讀且合格；「新台幣30萬元整」可讀', all(nr(k, '金額格式') and nr(k, '他項獎學金') for k in ('Q6', 'Q7', 'Q8')), (r4['Q6'], r4['Q7'], r4['Q8']))
         check('本機模式無程式錯誤', not errs, errs)
         pg.close()
 
@@ -139,6 +151,8 @@ def main():
         pg.goto(f'{base}/apply.html'); pg.wait_for_timeout(1200)
         m = pg.evaluate("['30萬','３萬','100万','NT$30萬','-5','30萬500','3萬5','無'].map(money)")
         check('學生頁金額換算', m == ['300000', '30000', '1000000', '300000', None, '300500', '35000', '0'], m)
+        m2 = pg.evaluate("['新台幣30萬元整','新臺幣 1,000,000 元','30萬元整','30萬元左右'].map(money)")
+        check('學生頁金額「新台幣30萬元整」可讀（2026/11/19 優化）', m2 == ['300000', '1000000', '300000', None], m2)
         w = pg.evaluate("(()=>{try{startNew()}catch(e){}return document.querySelector('[name=rankNo]').getBoundingClientRect().width})()")
         check('學生頁排名輸入框夠寬（≥80px）', w >= 80, w)
         opts = pg.evaluate("[...document.querySelectorAll('[name=nation] option')].map(o=>o.value).join(',')+'|'+[...document.querySelectorAll('[name=div] option')].map(o=>o.value).join(',')")

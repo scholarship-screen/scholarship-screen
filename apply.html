@@ -351,7 +351,7 @@ function editForm(){if(!ST)return;if(!ST.open){alert('已逾修改期限，如�
  try{updRank()}catch(e){}
  famUI();$('#editNote').classList.remove('hidden');$('#consentCard').classList.add('hidden');$('#cancelEdit').classList.remove('hidden');$('#sendBtn').textContent='儲存修改';go('form')}
 // 自動整理數字：去掉 元、分、逗號；「30萬」→ 300000
-function money(v){if(/^\s*(無|沒有|否|免)\s*$/.test(half(v)))return'0';let s=half(v).replace(/万/g,'萬').replace(/^(NT\$|NTD|\$)/i,'').replace(/[,，\s元]/g,'').replace(/^約/,'');if(!s)return'';
+function money(v){if(/^\s*(無|沒有|否|免)\s*$/.test(half(v)))return'0';let s=half(v).replace(/万/g,'萬').replace(/^(NT\$|NTD|\$)/i,'').replace(/[,，\s元]/g,'').replace(/^(約|新台幣|新臺幣)/,'').replace(/整$/,'');if(!s)return'';
  if(/^\d+(\.\d+)?$/.test(s))return String(Math.round(+s));
  const m=s.match(/^(?:(\d+(?:\.\d+)?)萬)?(?:(\d+(?:\.\d+)?)千)?(\d+(?:\.\d+)?)?$/);
  if(!m||(!m[1]&&!m[2]))return null;

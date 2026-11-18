@@ -58,18 +58,18 @@ function save(){try{localStorage.setItem('sch_screen',JSON.stringify({apps:APPS,
 
 // ===== 解析 =====
 const half=s=>String(s??'').replace(/[\uff01-\uff5e]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xfee0)).replace(/\u3000/g,' ');
-function parseMoney(v){if(typeof v==='number')return isFinite(v)?v:NaN;if(/^\s*(無|沒有|否|免|—)\s*$/.test(half(v)))return 0;let s=half(v).replace(/万/g,'萬').replace(/[,，\s元]/g,'').replace(/^(NT\$|NTD|\$|約|大約)/i,'');if(!s)return 0;
+function parseMoney(v){if(typeof v==='number')return isFinite(v)?v:NaN;if(/^\s*(無|沒有|否|免|—)\s*$/.test(half(v)))return 0;let s=half(v).replace(/万/g,'萬').replace(/[,，\s元]/g,'').replace(/^(NT\$|NTD|\$|約|大約|新台幣|新臺幣)/i,'').replace(/整$/,'');if(!s)return 0;
  if(/^\d+(\.\d+)?$/.test(s))return+s;
  const m=s.match(/^(?:(\d+(?:\.\d+)?)萬)?(?:(\d+(?:\.\d+)?)千)?(\d+(?:\.\d+)?)?$/);if(!m||(!m[1]&&!m[2]))return NaN;
  let n=(+(m[1]||0))*10000+(+(m[2]||0))*1000;const t=m[3];
  if(t){if(m[1]&&!m[2]&&/^\d$/.test(t))n+=+t*1000;else if(m[2]&&/^\d$/.test(t))n+=+t*100;else n+=+t}
  return n}
-function aidNum(v){let s=half(v).replace(/\s/g,'');const yr=/學年|每年|一年|全年/.test(s);s=s.replace(/[\/／]?(每)?(學期|學年|一年|全年|年)/g,'').replace(/^每/,'');const n=parseMoney(s);return yr&&isFinite(n)?n/2:n}
+function aidNum(v){let s=half(v).replace(/\s/g,'');const yr=/學年|每年|一年|全年/.test(s);s=s.replace(/[(（][^)）]*(學期|學年)[^)）]*[)）]/g,m=>m.replace(/[(（)）]/g,'')).replace(/[\/／]?(每|一)?(學期|學年|一年|全年|年)/g,'').replace(/^每/,'');const n=parseMoney(s);return yr&&isFinite(n)?n/2:n}
 function num(v){if(v==null||v==='')return 0;return parseMoney(v)}
 const yes=v=>/^(是|有|y|yes|1|v|✓|true|○)$/i.test(String(v??'').trim());
 function gradeNum(v){const s=half(v);if(/延畢|延修/.test(s))return 6;if(/^\d{3,}$/.test(s.trim()))return 0;const m=s.match(/\d+/);if(m)return+m[0];const c='一二三四五六七'.indexOf((s.match(/[一二三四五六七]/)||[''])[0]);return c>=0?c+1:0}
 function ratio(){const s=half(S.aRatio).trim().replace(/%$/,'');let v;if(s.includes('/')){const[a,b]=s.split('/').map(Number);v=a/b}else{const n=parseFloat(s);v=n>1?n/100:n}if(!isFinite(v))return 2/3;if(Math.abs(v-2/3)<0.01)return 2/3;return Math.max(0,Math.min(1,v))}
-function cat(dept){const d=half(dept).replace(/\s/g,'').replace(/^.*學院(?=.)/,'');const ks=k=>String(k||'').split(/[,，、]/).map(x=>x.trim()).filter(Boolean);const X=ks(S.kwX).filter(k=>d.includes(k));
+function cat(dept){const d=half(dept).replace(/\s/g,'').replace(/\([^()]*學院[^()]*\)/g,'').replace(/^.*學院(?=.)/,'');const ks=k=>String(k||'').split(/[,，、]/).map(x=>x.trim()).filter(Boolean);const X=ks(S.kwX).filter(k=>d.includes(k));
  if(X.length&&!(X.every(k=>/資訊工程|資工/.test(k))&&/電子|電機/.test(d.replace(/電子商務/g,''))))return null;if(S.kwA.split(/[,，、]/).some(k=>k.trim()&&d.includes(k.trim())))return'A';if(S.kwB.split(/[,，、]/).some(k=>k.trim()&&d.includes(k.trim())))return'B';return null}
 const lvl=a=>/碩|博|研究/.test(a.level||'')?'G':'U';
 const wan=n=>(Math.round(n/1000)/10)+' 萬';
@@ -98,7 +98,7 @@ function compute(){
   const gEmpty=a.incG===''||a.incG==null;
   x.house=x.single?num(a.incSelf)+(gEmpty?Math.max(num(a.incF)||0,num(a.incM)||0):num(a.incG)):num(a.incSelf)+num(a.incF)+num(a.incM);
   if(x.single&&gEmpty&&a.incF&&a.incM&&num(a.incF)&&num(a.incM))x.notes.push('扶養家長待確認｜單親但父母所得都有填，已以較高者 '+Math.round(Math.max(num(a.incF),num(a.incM))).toLocaleString()+' 元計算，請委員確認');
-  x.score=parseFloat(half(a.score))||0;{const rr=half(a.rankPct).match(/(\d+)\s*[\/／]\s*(\d+)/);const rs=rr&&+rr[2]>0?String(Math.ceil(+rr[1]*100/+rr[2])):half(a.rankPct).replace(/[^\d.]/g,'');let rv=rs===''?NaN:parseFloat(rs);if(rv>0&&rv<=1&&!/%/.test(String(a.rankPct))&&String(a.rankPct).includes('.'))rv=rv*100;x.rank=isFinite(rv)&&rv>0?rv:100}
+  x.score=parseFloat(half(a.score).replace(/^[^\d.\-]+/,''))||0;{const hr=half(a.rankPct);const rr=hr.match(/(\d+)\s*名?\s*[\/:]\s*共?\s*(\d+)/)||hr.match(/(\d+)\s*名\D*?(\d+)\s*人/);const multi=!rr&&(hr.match(/\d+(\.\d+)?/g)||[]).length>1;if(multi)x.notes.push('班排待確認｜看不懂「'+String(a.rankPct)+'」，請委員確認名次與人數');const rs=rr&&+rr[2]>0?String(Math.ceil(+rr[1]*100/+rr[2])):multi?'':hr.replace(/[^\d.]/g,'');let rv=rs===''?NaN:parseFloat(rs);if(rv>0&&rv<=1&&!/%/.test(String(a.rankPct))&&String(a.rankPct).includes('.'))rv=rv*100;x.rank=isFinite(rv)&&rv>0?rv:100}
   x.grade=gradeNum(a.grade);
   const w=String(a.welfare||'');x.welfare=/低收|特殊/.test(w);
   x.disab=/本人|親/.test(a.disab||'');
