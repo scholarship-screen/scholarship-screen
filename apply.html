@@ -327,7 +327,7 @@ window.addEventListener('popstate',e=>{let t=(e.state&&e.state.v)||'home';
  if(CURV==='form'&&FDIRTY&&!confirm('填寫的資料尚未送出，離開後會遺失。確定要離開嗎？')){try{history.pushState({v:'form'},'')}catch(_){}return}
  if(t==='form'&&CURV!=='form')t=ME?'docs':'home';if((t==='docs'||t==='done')&&!ME)t='home';if(t==='code'&&!ME)t='home';
  POP=true;try{go(t)}finally{POP=false}});
-window.addEventListener('beforeunload',e=>{if(CURV==='form'&&FDIRTY){e.preventDefault();e.returnValue=''}});
+window.addEventListener('beforeunload',e=>{if((CURV==='form'&&FDIRTY)||upRunning()){e.preventDefault();e.returnValue=''}});
 document.addEventListener('input',e=>{if(e.target.closest&&e.target.closest('#v-form'))FDIRTY=true},true);
 try{history.replaceState({v:'home'},'')}catch(e){}
 function fmtDate(d){if(!d)return'';const t=new Date(d+'T00:00:00');return`${t.getFullYear()-1911} 年 ${t.getMonth()+1} 月 ${t.getDate()} 日`}
@@ -425,7 +425,8 @@ async function refresh(quiet){
 async function resumeSaved(){const ok=await refresh(true);if(ok){go('docs');return}
  if(/網路/.test(LASTERR)){alert('網路連線失敗，請確認網路後再試。');return}
  try{localStorage.removeItem(KEY)}catch(e){}alert('查無此申請，請重新輸入申請編號及查詢碼');go('login')}
-function logout(){if(!confirm('確定登出？下次查詢需重新輸入申請編號及查詢碼。'))return;if(!DEMO)dropMine(ME&&ME.no);ME=null;['#lgNo','#lgCode'].forEach(q=>{const e=$(q);if(e)e.value=''});const rm=$('#lgRemember');if(rm)rm.checked=false;if(typeof UP!=='undefined')for(const k in UP)delete UP[k];ST=null;const rc=$('#resumeCard');if(rc)rc.style.display='none';scrollTo(0,0);go('home')}
+function upRunning(){let n=0;for(const k in UP)n+=(UP[k]||[]).filter(x=>x.st==='run').length;return n}
+function logout(){const nRun=upRunning();if(!confirm((nRun?`還有 ${nRun} 個檔案正在上傳，現在登出會中斷上傳，這些檔案需要重新上傳。\n\n`:'')+'確定登出？下次查詢需重新輸入申請編號及查詢碼。'))return;if(!DEMO)dropMine(ME&&ME.no);ME=null;['#lgNo','#lgCode'].forEach(q=>{const e=$(q);if(e)e.value=''});const rm=$('#lgRemember');if(rm)rm.checked=false;if(typeof UP!=='undefined')for(const k in UP)delete UP[k];ST=null;const rc=$('#resumeCard');if(rc)rc.style.display='none';scrollTo(0,0);go('home')}
 
 // ===== 文件 =====
 function needed(d){const f=ST.form||{};if(d.skipPrev&&f.prev==='是')return'skip';if(d.need)return d.need(f)?(d.opt?'opt':'need'):'hide';return'need'}

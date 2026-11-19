@@ -350,6 +350,25 @@ def main():
               f'{[a1, a2, a3, a4]} {dl} {errs}')
         pg.close()
 
+        # 6d3. 上傳中按登出要提醒「還有 N 個檔案正在上傳」，按取消不登出；上傳中關閉／重新整理頁面要攔下（2026/11/20 優化）
+        pg = b.new_page(viewport={'width': 390, 'height': 844}); errs = []; dl = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.on('dialog', lambda d: (dl.append(d.message), d.dismiss()))
+        pg.route('**/*', lambda r: r.continue_() if r.request.url.startswith(base) else r.abort())
+        pg.goto(f'{base}/apply.html'); pg.wait_for_timeout(1500)
+        pg.evaluate("window.wdlg&&wdlg.open&&wdlg.close()")
+        pg.evaluate("startDemo()"); pg.wait_for_timeout(500)
+        pg.evaluate("(()=>{const g=document.querySelector('#dpCap .go');if(g)g.click()})()"); pg.wait_for_timeout(1000)
+        BU = "(()=>{const e=new Event('beforeunload',{cancelable:true});window.dispatchEvent(e);return e.defaultPrevented})()"
+        r0 = pg.evaluate("(()=>{UP.d_hh=[{name:'a.jpg',st:'run',msg:''},{name:'b.jpg',st:'run',msg:''}];logout();return !!ME})()")
+        bu1 = pg.evaluate(BU)
+        r1 = pg.evaluate("(()=>{for(const k in UP)delete UP[k];logout();return !!ME})()")
+        bu0 = pg.evaluate("CURV='docs',FDIRTY=false," + BU)
+        check('學生頁：上傳中按登出會提醒「正在上傳」，按取消仍保持登入；沒在上傳時不多提醒',
+              r0 and r1 and len(dl) == 2 and '還有 2 個檔案正在上傳' in dl[0] and '正在上傳' not in dl[1] and not errs, f'{r0} {r1} {dl} {errs}')
+        check('學生頁：上傳中關閉或重新整理頁面會被攔下確認，沒在上傳時不攔', bu1 and not bu0, f'{bu1} {bu0}')
+        pg.close()
+
         # 6e. 安全：申請資料含惡意字串時，後台各分頁與核對視窗、學生申請表都不可執行（XSS）
         pg, errs = new_page(b, base)
         pg.goto(f'{base}/index.html'); pg.wait_for_timeout(1500)
@@ -363,6 +382,26 @@ def main():
         pg.evaluate("tab('docs');startReview()"); pg.wait_for_timeout(2500)
         xs = pg.evaluate("[window.__x||0, document.querySelectorAll('img[src=x],svg[onload]').length]")
         check('後台：惡意字串不會被執行（XSS）', xs == [0, 0] and not errs, f'{xs} {errs}')
+        pg.close()
+        # 45c. 文件檔名、檢查說明、退回原因、審查人員、異動紀錄、設定含惡意字串（2026/11/20 安全深測）
+        pg, errs = new_page(b, base)
+        pg.goto(f'{base}/index.html'); pg.wait_for_timeout(1500)
+        pg.evaluate('startDemo()'); pg.wait_for_timeout(800)
+        pg.evaluate("document.querySelector('#dpCap .go').click()"); pg.wait_for_timeout(800)
+        pg.evaluate("""async P=>{const c=SBC;
+          await c.from('documents').update({file_name:P+'.jpg',review_note:P,ai:{summary:P,issues:[P],fields:{name:P},error:P}});
+          await c.from('reviewers').update({name:P});
+          await c.from('audit_log').insert({at:new Date().toISOString(),who:P,action:P,tbl:'applicants',row_id:P,before:{name:P},after:{name:P+'2',memo:P}});
+          const s=await c.from('settings').select('*').eq('id',1).single();const d=s.data.data;for(const k in d)d[k]=String(d[k])+P;await c.from('settings').update({data:d}).eq('id',1)}""", XP)
+        for f in ['cloudLoad()', 'loadReviewers()', 'loadAudit()']:
+            try: pg.evaluate(f); pg.wait_for_timeout(1000)
+            except Exception as e: errs.append(f'{f}: {e}')
+        for t in ['home', 'data', 'result', 'docs', 'groups', 'settings']:
+            try: pg.evaluate(f"tab('{t}')"); pg.wait_for_timeout(300)
+            except Exception: pass
+        pg.evaluate("tab('docs');startReview()"); pg.wait_for_timeout(2500)
+        xs = pg.evaluate("[window.__x||0, document.querySelectorAll('img[src=x],svg[onload]').length, document.body.innerText.includes('onerror=')]")
+        check('後台：文件檔名、檢查說明、審查人員、異動紀錄、設定含惡意字串不會被執行（XSS）', xs == [0, 0, True] and not errs, f'{xs} {errs}')
         pg.close()
         pg, errs = new_page(b, base, 390, 844)
         pg.goto(f'{base}/apply.html'); pg.wait_for_timeout(1500)
