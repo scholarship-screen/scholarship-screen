@@ -96,6 +96,7 @@ const css=`#dpCap{position:fixed;left:50%;bottom:16px;transform:translateX(-50%)
 #dpCap .ctl{display:flex;gap:8px;align-items:center;margin-top:12px}
 #dpCap .ctl span{flex:1;font-size:16px;color:#b9c4d0}
 #dpCap.top{top:16px;bottom:auto}
+#dpCap.last .go{display:none}#dpCap.last .nx{background:#3d6b2f;border-color:#3d6b2f}
 #dpCap.mini{padding:10px 14px;width:max-content;max-width:calc(100vw - 24px)}#dpCap.mini .m,#dpCap.mini b.t,#dpCap.mini .b,#dpCap.mini .bar{display:none}#dpCap.mini .ctl{margin-top:0}
 @media print{#dpCap{display:none!important}}
 #dpCap .ctl button{min-height:44px;white-space:nowrap}
@@ -141,7 +142,7 @@ async function tap(sel){const el=typeof sel==='string'?document.querySelector(se
 async function type(sel,text){const el=document.querySelector(sel);if(!el)return;hl(el);el.focus();el.value='';for(const ch of text){if(!cap||cap.dataset.off)return;el.value+=ch;el.dispatchEvent(new Event('input',{bubbles:true}));await sleep(110)}}
 function paint(){const s=steps[i];clearTimeout(timer);
  cap.querySelector('.t').textContent=s.t;cap.querySelector('.b').innerHTML=s.b;cap.querySelector('.n').textContent=`${i+1} / ${steps.length}`;
- cap.querySelector('.nx').textContent=i===steps.length-1?'開始操作':'下一步';
+ cap.querySelector('.nx').textContent=i===steps.length-1?'開始操作':'下一步';cap.classList.toggle('last',i===steps.length-1);
  const bar=cap.querySelector('.bar i');bar.style.transition='none';bar.style.width='0';top();if(i>0&&(i===steps.length-1||i%4===0)&&window.MASCOT_HOP)MASCOT_HOP(cap)}
 const H={hl,tap,type,sleep,until:(...a)=>until(...a)};
 async function pump(){if(working)return;working=true;const g=gen;

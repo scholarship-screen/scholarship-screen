@@ -442,6 +442,34 @@ def main():
                 check(f'{path} 導覽 {w}×{h}：開始示範後對正式資料庫 0 請求', not ext, ext[:3])
                 ctx.close()
 
+        # 6g. 導覽最後一步（2026/11/21 示範導覽深測發現）：後台最後一步原本標示整條藍色示範列，綠框超出畫面左右、上下被遮，幾乎看不到；
+        #     改為標示「離開示範」按鈕，綠框要完整在畫面內。最後一步只留「開始操作」（綠色主按鈕），不再並列功能相同的「結束介紹」。
+        LAST = """()=>{const c=document.getElementById('dpCap');if(!c||c.dataset.off)return null;const e=document.querySelector('.dp-hl');const vis=x=>!!x.offsetParent&&getComputedStyle(x).display!='none';
+          const nx=c.querySelector('.nx'),go=c.querySelector('.go');let box=null;if(e){const r=e.getBoundingClientRect();box=r.left-7>=0&&r.right+7<=innerWidth&&r.top-7>=0&&r.bottom+7<=innerHeight}
+          return [c.querySelector('.n').textContent,e?(e.id||e.tagName):'',box,nx.textContent,vis(go),getComputedStyle(nx).backgroundColor]}"""
+        for path, total, want in [('index.html', 15, 'demoExit'), ('apply.html', 9, None)]:
+            for (w, h) in [(390, 844), (768, 1024), (1400, 900)]:
+                pg, errs = new_page(b, base, w, h)
+                pg.goto(f'{base}/{path}'); pg.wait_for_timeout(1500)
+                pg.evaluate("window.wdlg&&wdlg.open&&wdlg.close()")
+                pg.evaluate('startDemo()'); pg.wait_for_timeout(600)
+                first = pg.evaluate(LAST)
+                for _ in range(total - 1):
+                    pg.wait_for_timeout(250); pg.evaluate("document.querySelector('#dpCap .nx').click()")
+                t0 = time.time(); s = None
+                while time.time() - t0 < 20:
+                    s = pg.evaluate(LAST)
+                    if s and s[0].startswith(f'{total} / {total}') and (want is None or s[1] == want) and s[2]: break
+                    time.sleep(0.4)
+                ok = (first and first[4] and first[3] == '下一步' and s and s[0].startswith(f'{total} / {total}') and s[3] == '開始操作'
+                      and not s[4] and s[5] == 'rgb(61, 107, 47)' and (want is None or (s[1] == want and s[2])))
+                check(f'{path} 導覽最後一步 {w}×{h}：只留綠色「開始操作」' + ('、標示「離開示範」完整在畫面內' if want else ''), ok and not errs, f'{first} {s} {errs}')
+                if ok:
+                    pg.keyboard.press('Escape'); pg.wait_for_timeout(600)
+                    gone = pg.evaluate("(()=>{const c=document.getElementById('dpCap');return (!c||!!c.dataset.off)&&!document.querySelector('.dp-hl')})()")
+                    check(f'{path} 導覽最後一步 {w}×{h}：Esc 仍可結束介紹', gone, '')
+                pg.close()
+
         # 3c. 學生手機：錯誤提示不可殘留（2026/11/16 學生手機深測發現）
         pg, errs = new_page(b, base, 375, 667)
         pg.goto(f'{base}/apply.html'); pg.wait_for_timeout(1200)

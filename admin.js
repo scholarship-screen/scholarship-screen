@@ -880,7 +880,7 @@ function exportReviewers(){
 async function checkKey(){try{const{data,error}=await SBC.functions.invoke('analyze',{body:{ping:true}});if(error||!data)return;const bad=data.key===false;
  const box=$('#keyWarn');box.classList.toggle('hidden',!bad)}catch(e){}}
 let DEMO=false;
-function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=15';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
+function loadDemoJs(){return window.DemoClient?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='demo.js?v=16';s.onload=ok;s.onerror=()=>no(new Error('示範載入失敗，請檢查網路'));document.head.appendChild(s)})}
 
 function adminDemoSteps(){
  const pendIdx=(no,k)=>RQ.findIndex(id=>{const r=FALL.find(x=>x.id===id);return r&&r.k===no+'|'+k});
@@ -899,7 +899,7 @@ function adminDemoSteps(){
  {t:'初篩結果',b:'資格、優先順序、正取及備取依協會規則自動計算，並列出不符資格原因。',ms:5500,do:async h=>{rdlg.close();await h.sleep(300);tab('result');render();await h.sleep(300);document.querySelectorAll('.tablewrap,.tbl-wrap').forEach(e=>e.scrollLeft=0);h.hl('#resultBox .card')}},
  {t:'文件核對',b:'綠色為已繳、橘色為待核對、紅色為缺件或退回；點選格子可查看檔案。',ms:5000,do:async h=>{tab('docs');await h.sleep(300);document.querySelectorAll('.tablewrap,.tbl-wrap').forEach(e=>e.scrollLeft=0);const dt=$('#docTable');if(dt&&dt.parentElement)dt.parentElement.scrollLeft=0;h.hl('#docTable')}},
  {t:'承辦功能：設定及匯出',b:'每年於此設定申請截止日、補件期限及聯絡方式，並同步顯示於學生申請頁。<br>名單可匯出 Excel，並提供評審用去識別版。',ms:6000,do:async h=>{tab('settings');await h.sleep(300);h.hl('#setForm1')}},
- {t:'示範結束',b:'按「開始操作」後說明框會關閉，可在示範資料中自行操作。<br>示範資料均為虛構，不影響正式系統；要離開請按上方藍色列的「離開示範」。',ms:6000,do:async h=>{tab('home');h.hl($('#demoBar')&&$('#demoBar').offsetParent?'#demoBar':'#hello')}}]}
+ {t:'示範結束',b:'按「開始操作」後說明框會關閉，可在示範資料中自行操作。<br>示範資料均為虛構，不影響正式系統；要離開請按上方藍色列的「離開示範」。',ms:6000,do:async h=>{tab('home');h.hl($('#demoBar')&&$('#demoBar').offsetParent?'#demoExit':'#hello')}}]}
 async function startDemo(){try{await loadDemoJs()}catch(e){alert(e.message);return}
  try{localStorage.setItem('sch_tour_done_demo@example.tw','1')}catch(e){}
  SBC=window.DemoClient();SBC.auth._demoLogin();DEMO=true;$('#demoBar').classList.remove('hidden');$('#demoBar').style.display='flex';if(ldlg.open)ldlg.close();
