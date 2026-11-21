@@ -47,6 +47,8 @@ details.help[open]{background:var(--infobg);border-radius:8px;padding:8px 12px;c
 .btn.big{width:100%;font-size:21px;padding:16px}
 .btn.sm{padding:8px 14px;font-size:17px;border-radius:10px}
 .btn.danger{color:var(--bad)}
+.copyBtn{min-height:48px;margin:4px auto 0}
+.copyMsg{min-height:1.4em;margin:6px 0 10px;font-size:17px;color:var(--ok,#15803d)}
 .btn:disabled{opacity:.5}
 .choice{display:grid;gap:14px}
 .consent ul{margin:6px 0;padding-left:24px}
@@ -253,6 +255,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
   <p>請<b>截圖</b>保存下列兩組號碼，日後補件及查詢進度均需使用。</p>
   <div class="codebox"><div class="l">申請編號</div><div class="v" id="cNo"></div></div>
   <div class="codebox"><div class="l">查詢碼</div><div class="v" id="cCode" style="font-family:ui-monospace,Menlo,Consolas,monospace"></div></div>
+  <button class="btn copyBtn" type="button" onclick="copyCodes(this,'#cNo','#cCode')">複製兩組號碼</button><div class="note copyMsg" aria-live="polite"></div>
   <label class="chk" style="font-size:18px;font-weight:600;justify-content:center;text-align:left"><input type="checkbox" id="cRemember">這是我自己的手機，記住登入 7 天</label>
   <button class="btn pri big" onclick="if($('#cRemember').checked)save();go('docs')">已保存，開始上傳文件</button>
  </div>
@@ -280,6 +283,7 @@ footer{max-width:820px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
   <h2 id="doneTitle">申請完成</h2>
   <div class="codebox"><div class="l">申請編號</div><div class="v" id="fNo"></div></div>
   <div class="codebox"><div class="l">查詢碼（請截圖或抄下保存）</div><div class="v" id="fCode"></div></div>
+  <p style="text-align:center;margin:0"><button class="btn copyBtn" type="button" onclick="copyCodes(this,'#fNo','#fCode')">複製兩組號碼</button></p><div class="note copyMsg" aria-live="polite" style="text-align:center"></div>
   <div id="doneMiss"></div>
   <p>審查結果將以 Email 或電話通知。查詢進度或補件，請開啟本網頁，點選「已申請：查詢進度及補件」，並輸入申請編號及查詢碼。</p>
   <button class="btn big" onclick="go('docs')">返回文件上傳及進度</button>
@@ -404,7 +408,7 @@ async function submitForm(e){
   else{f.clientToken=TOKEN;let r;try{r=await sb.rpc('submit_application',{p_form:f})}catch(x){r={error:x}}
    if(r.error&&/網路|逾時|fetch|network/i.test(String(r.error.message||r.error))){await new Promise(z=>setTimeout(z,1500));r=await sb.rpc('submit_application',{p_form:f})}
    const{data,error}=r;if(error)throw error;
-   ME={no:data.app_no,code:data.code};$('#cRemember').checked=false;$('#cNo').textContent=data.app_no;$('#cCode').textContent=data.code;await refresh(true);go('code')}
+   ME={no:data.app_no,code:data.code};$('#cRemember').checked=false;resetCopy();$('#cNo').textContent=data.app_no;$('#cCode').textContent=data.code;await refresh(true);go('code')}
  }catch(ex){const em=String(ex&&ex.message||ex||'').replace(/^(Type)?Error:\s*/,'');err.textContent=/截止/.test(em)?'本年度申請已截止。':/已經送出過/.test(em)?'本申請已送出成功。請返回首頁點選「已申請：查詢進度及補件」，或洽本會承辦人員取得申請編號。':/fetch|network|網路|Failed/i.test(em)?'網路連線不穩，資料尚未送出。請確認網路後再按一次送出（不會重複申請）。':'送出失敗：'+em;err.classList.remove('hidden')}
  finally{btn.disabled=false;btn.textContent=old}
 }
@@ -426,6 +430,15 @@ async function resumeSaved(){const ok=await refresh(true);if(ok){go('docs');retu
  if(/網路/.test(LASTERR)){alert('網路連線失敗，請確認網路後再試。');return}
  try{localStorage.removeItem(KEY)}catch(e){}alert('查無此申請，請重新輸入申請編號及查詢碼');go('login')}
 function upRunning(){let n=0;for(const k in UP)n+=(UP[k]||[]).filter(x=>x.st==='run').length;return n}
+function resetCopy(){document.querySelectorAll('.copyBtn').forEach(x=>x.textContent='複製兩組號碼');document.querySelectorAll('.copyMsg').forEach(x=>x.textContent='')}
+// 複製申請編號與查詢碼（可貼到記事本或傳給自己保存，避免忘記截圖）
+async function copyCodes(btn,noSel,codeSel){const no=($(noSel)||{}).textContent||'',code=($(codeSel)||{}).textContent||'';if(!no)return;
+ const t='松樑助學金　申請編號：'+no+(code?'　查詢碼：'+code:'');let ok=false;
+ try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(t);ok=true}}catch(e){}
+ if(!ok){try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px';document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,t.length);ok=document.execCommand('copy');ta.remove()}catch(e){ok=false}}
+ const m=btn.parentElement.querySelector('.copyMsg')||btn.parentElement.nextElementSibling;
+ if(m&&m.classList.contains('copyMsg'))m.textContent=ok?'已複製。可貼到手機記事本，或用 LINE 傳給自己保存。':'無法自動複製，請截圖或抄下上方兩組號碼。';
+ btn.textContent=ok?'✓ 已複製':'複製兩組號碼'}
 function logout(){const nRun=upRunning();if(!confirm((nRun?`還有 ${nRun} 個檔案正在上傳，現在登出會中斷上傳，這些檔案需要重新上傳。\n\n`:'')+'確定登出？下次查詢需重新輸入申請編號及查詢碼。'))return;if(!DEMO)dropMine(ME&&ME.no);ME=null;['#lgNo','#lgCode'].forEach(q=>{const e=$(q);if(e)e.value=''});const rm=$('#lgRemember');if(rm)rm.checked=false;if(typeof UP!=='undefined')for(const k in UP)delete UP[k];ST=null;const rc=$('#resumeCard');if(rc)rc.style.display='none';scrollTo(0,0);go('home')}
 
 // ===== 文件 =====
@@ -525,7 +538,7 @@ function finish(){
  const miss=DOCS.filter(d=>needed(d)==='need'&&!(ST.docs||[]).some(x=>x.type===d.k&&x.status!=='bad'));
  const bad=DOCS.filter(d=>(ST.docs||[]).some(x=>x.type===d.k&&x.status==='bad')&&!(ST.docs||[]).some(x=>x.type===d.k&&x.status!=='bad'));
  const list=[...new Set([...miss,...bad])];
- $('#fNo').textContent=ST.app_no;$('#fCode').textContent=(ME&&ME.code)||'';
+ resetCopy();$('#fNo').textContent=ST.app_no;$('#fCode').textContent=(ME&&ME.code)||'';
  $('#doneTitle').textContent=list.length?'資料已送出，尚有文件待補':'申請完成';
  $('#doneMiss').innerHTML=list.length?`<div class="alert warn"><b>待補文件：</b><ul class="miss">${list.map(d=>`<li>${esc(d.l)}</li>`).join('')}</ul>${(INFO.supDeadline||INFO.deadline)?`請在 <b>${fmtDate(INFO.supDeadline||INFO.deadline)}</b> 前補齊。`:'請儘速補齊。'}取得文件後，請憑申請編號及查詢碼登入上傳。</div>`:'<div class="alert ok">必要文件均已上傳。審查完成後，可於本頁查詢各文件審核狀態。</div>';
  go('done')}

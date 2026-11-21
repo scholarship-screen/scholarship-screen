@@ -195,6 +195,19 @@ def main():
         got = pg.evaluate("[!document.getElementById('v-code').classList.contains('hidden'),(document.getElementById('cNo')||{}).textContent||'',(document.getElementById('cCode')||{}).textContent||'']")
         check('學生完整送出申請→取得申請編號與查詢碼', got[0] and got[1] and got[2], f'{got} {errs}')
         check('學生送出流程無程式錯誤', not errs, errs)
+        # 3c. 送出後「複製兩組號碼」：複製內容含申請編號與查詢碼、按鈕 ≥44px、有成功提示；不支援時改提示截圖（2026/11/22 優化）
+        cp = pg.evaluate("""(async()=>{let cap=null;const ow=navigator.clipboard&&navigator.clipboard.writeText;try{Object.defineProperty(navigator,'clipboard',{value:{writeText:async t=>{cap=t}},configurable:true})}catch(e){}
+          const b=document.querySelector('#v-code .copyBtn');const h=b?b.getBoundingClientRect().height:0;b.click();await new Promise(r=>setTimeout(r,200));
+          const msg=document.querySelector('#v-code .copyMsg').textContent;
+          Object.defineProperty(navigator,'clipboard',{value:{writeText:async()=>{throw new Error('x')}},configurable:true});const ec=document.execCommand;document.execCommand=()=>false;resetCopy();b.click();await new Promise(r=>setTimeout(r,200));document.execCommand=ec;
+          const msg2=document.querySelector('#v-code .copyMsg').textContent;return {cap,h,msg,msg2,no:document.getElementById('cNo').textContent,code:document.getElementById('cCode').textContent,fs:parseFloat(getComputedStyle(b).fontSize)}})()""")
+        check('送出後「複製兩組號碼」：內容含申請編號與查詢碼、按鈕 ≥44px、字 ≥16px、有成功提示', bool(cp['cap']) and cp['no'] in cp['cap'] and cp['code'] in cp['cap'] and cp['h'] >= 44 and cp['fs'] >= 16 and '已複製' in cp['msg'], cp)
+        check('無法複製時改提示「請截圖或抄下」，不出現錯誤字樣', '截圖' in cp['msg2'] and 'Error' not in cp['msg2'], cp)
+        pg.evaluate("go('docs')"); pg.wait_for_timeout(300); pg.evaluate("finish()"); pg.wait_for_timeout(1200)
+        dn = pg.evaluate("""(async()=>{const v=document.getElementById('v-done');if(v.classList.contains('hidden'))return {shown:false};let cap=null;Object.defineProperty(navigator,'clipboard',{value:{writeText:async t=>{cap=t}},configurable:true});
+          const b=v.querySelector('.copyBtn');b.click();await new Promise(r=>setTimeout(r,200));return {shown:true,cap,msg:v.querySelector('.copyMsg').textContent,h:b.getBoundingClientRect().height,ow:document.documentElement.scrollWidth-document.documentElement.clientWidth}})()""")
+        check('完成頁也可「複製兩組號碼」，手機版面不溢出', dn.get('shown') and dn.get('cap') and '查詢碼' in dn['cap'] and '已複製' in dn['msg'] and dn['h'] >= 44 and dn['ow'] <= 0, dn)
+        check('複製號碼流程無程式錯誤', not errs, errs)
         pg.close()
 
         # 4. 後台導覽完整走完（正常速度與快速連按）
