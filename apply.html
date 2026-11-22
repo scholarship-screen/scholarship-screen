@@ -52,7 +52,7 @@ details.help[open]{background:var(--infobg);border-radius:8px;padding:8px 12px;c
 .btn:disabled{opacity:.5}
 .choice{display:grid;gap:14px}
 .consent ul{margin:6px 0;padding-left:24px}
-.chk{display:flex;gap:14px;align-items:flex-start;margin-top:16px;font-size:19px;font-weight:700;cursor:pointer}
+.chk{display:flex;gap:14px;align-items:flex-start;margin-top:16px;min-height:44px;padding:6px 0;box-sizing:border-box;font-size:19px;font-weight:700;cursor:pointer}
 .chk input{width:32px;height:32px;margin:0;flex:none;accent-color:var(--pri)}
 .alert{border-radius:10px;padding:12px 16px;margin:12px 0;font-size:18px}
 .alert.bad{background:var(--badbg);color:var(--bad)}.alert.ok{background:var(--okbg);color:var(--ok)}.alert.warn{background:var(--warnbg);color:var(--warn)}.alert.info{background:var(--infobg);color:var(--info)}
@@ -444,6 +444,10 @@ function logout(){const nRun=upRunning();if(!confirm((nRun?`還有 ${nRun} 個�
 // ===== 文件 =====
 function needed(d){const f=ST.form||{};if(d.skipPrev&&f.prev==='是')return'skip';if(d.need)return d.need(f)?(d.opt?'opt':'need'):'hide';return'need'}
 function whoNeeds(){const f=ST.form||{};return f.family==='單親'?['申請人本人',f.guardianRel||'家長']:['申請人本人','父親','母親']}
+// 份數足夠才算完成（財產、所得清單需要本人、父、母各一份；2026/11/23 修正：完成頁與進度列原本上傳 1 份就算完成）
+function docGood(d){return(ST.docs||[]).filter(x=>x.type===d.k&&x.status!=='bad').length}
+function docNeedN(d){return d.who?whoNeeds().length:1}
+function docDone(d){return docGood(d)>=docNeedN(d)}
 function docState(d){const L=(ST.docs||[]).filter(x=>x.type===d.k),run=(UP[d.k]||[]).some(x=>x.st==='run');
  if(run)return['wait','上傳中'];
  const good=L.filter(x=>x.status!=='bad'),nw=d.who?whoNeeds().length:1;
@@ -462,7 +466,7 @@ function renderDocs(){
  $('#editBtn').classList.toggle('hidden',!ST.open);
  const bad=DOCS.filter(d=>{const L=(ST.docs||[]).filter(x=>x.type===d.k);return L.some(x=>x.status==='bad')&&!L.some(x=>x.status!=='bad')}).length;
  $('#dState').innerHTML=!ST.open?'<div class="alert warn">已逾補件期限，文件僅供查閱。如有疑問，請洽本會承辦人員'+esc(INFO.contact?'（'+INFO.contact+'）':'')+'。</div>':bad?`<div class="alert bad">有 ${bad} 份文件經退回，請依下列原因重新上傳。</div>`:'';
- const req=DOCS.filter(d=>needed(d)==='need'),have=req.filter(d=>(ST.docs||[]).some(x=>x.type===d.k&&x.status!=='bad')).length;
+ const req=DOCS.filter(d=>needed(d)==='need'),have=req.filter(docDone).length;
  $('#prog').innerHTML=`<div style="display:flex;justify-content:space-between;font-size:18px"><b>必要文件</b><span>已上傳 <b>${have}</b>／${req.length}</span></div><div class="bar"><i style="width:${req.length?have/req.length*100:100}%"></i></div>`;
  const ICON={ok:'✓',need:'!',warn:'!',todo:'',wait:'…',opt:'–'};
  const card=d=>{const L=(ST.docs||[]).filter(x=>x.type===d.k),U=(UP[d.k]||[]).filter(x=>x.st!=='done');const[c,t]=docState(d);
@@ -535,12 +539,12 @@ async function removeDoc(id){
 }
 function finish(){
  if(Object.values(UP).flat().some(x=>x.st==='run')){alert('檔案上傳中，請稍候');return}
- const miss=DOCS.filter(d=>needed(d)==='need'&&!(ST.docs||[]).some(x=>x.type===d.k&&x.status!=='bad'));
+ const miss=DOCS.filter(d=>needed(d)==='need'&&!docDone(d));
  const bad=DOCS.filter(d=>(ST.docs||[]).some(x=>x.type===d.k&&x.status==='bad')&&!(ST.docs||[]).some(x=>x.type===d.k&&x.status!=='bad'));
  const list=[...new Set([...miss,...bad])];
  resetCopy();$('#fNo').textContent=ST.app_no;$('#fCode').textContent=(ME&&ME.code)||'';
  $('#doneTitle').textContent=list.length?'資料已送出，尚有文件待補':'申請完成';
- $('#doneMiss').innerHTML=list.length?`<div class="alert warn"><b>待補文件：</b><ul class="miss">${list.map(d=>`<li>${esc(d.l)}</li>`).join('')}</ul>${(INFO.supDeadline||INFO.deadline)?`請在 <b>${fmtDate(INFO.supDeadline||INFO.deadline)}</b> 前補齊。`:'請儘速補齊。'}取得文件後，請憑申請編號及查詢碼登入上傳。</div>`:'<div class="alert ok">必要文件均已上傳。審查完成後，可於本頁查詢各文件審核狀態。</div>';
+ $('#doneMiss').innerHTML=list.length?`<div class="alert warn"><b>待補文件：</b><ul class="miss">${list.map(d=>{const g=docGood(d),n=docNeedN(d);return`<li>${esc(d.l)}${g&&g<n?`（已上傳 ${g}／${n} 份；需要 ${esc(whoNeeds().join('、'))} 各一份）`:''}</li>`}).join('')}</ul>${(INFO.supDeadline||INFO.deadline)?`請在 <b>${fmtDate(INFO.supDeadline||INFO.deadline)}</b> 前補齊。`:'請儘速補齊。'}取得文件後，請憑申請編號及查詢碼登入上傳。</div>`:'<div class="alert ok">必要文件均已上傳。審查完成後，可於本頁查詢各文件審核狀態。</div>';
  go('done')}
 
 let DEMO=false;

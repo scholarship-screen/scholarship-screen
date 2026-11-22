@@ -210,6 +210,26 @@ def main():
         check('複製號碼流程無程式錯誤', not errs, errs)
         pg.close()
 
+        # 3d. 財產／所得清單只上傳 1 份（需要本人、父、母各一份）：完成頁要列為待補並註明份數、進度列不可算完成（2026/11/23 學生手機深測發現）
+        pg, errs = new_page(b, base, 375, 667)
+        pg.goto(f'{base}/apply.html'); pg.wait_for_timeout(1500)
+        pg.evaluate("startDemo()"); pg.wait_for_timeout(500)
+        pg.evaluate("(()=>{const g=document.querySelector('#dpCap .go');if(g)g.click()})()"); pg.wait_for_timeout(800)
+        pg.evaluate("go('home');startNew()"); pg.wait_for_timeout(300)
+        pg.evaluate("v=>{const f=document.getElementById('v-form');for(const[k,x]of Object.entries(v)){const e=f.querySelector('[name='+k+']');if(e){e.value=x;e.dispatchEvent(new Event('change',{bubbles:true}))}}f.querySelector('[name=consent]').checked=true;famUI()}", vals)
+        pg.evaluate("document.getElementById('sendBtn').click()"); pg.wait_for_timeout(2000)
+        rh = pg.evaluate("document.querySelector('#v-code label.chk').getBoundingClientRect().height")
+        check('號碼頁「記住登入」勾選列高度 ≥44px（2026/11/23 優化）', rh >= 44, rh)
+        pg.evaluate("go('docs')"); pg.wait_for_timeout(300)
+        p0 = pg.evaluate("document.querySelector('#prog').innerText")
+        pg.evaluate("""(async()=>{const c=document.createElement('canvas');c.width=600;c.height=400;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,600,400);for(let i=0;i<300;i++){g.fillStyle='#'+(i*4567%0xffffff).toString(16).padStart(6,'0');g.fillRect(i*7%600,i*13%400,9,9)}const bl=await new Promise(r=>c.toBlob(r,'image/jpeg',.9));await pick('d_prop',{files:[new File([bl],'財產.jpg',{type:'image/jpeg'})],set value(v){}})})()"""); pg.wait_for_timeout(1200)
+        p1 = pg.evaluate("document.querySelector('#prog').innerText")
+        pg.evaluate("finish()"); pg.wait_for_timeout(500)
+        dm = pg.evaluate("document.getElementById('doneMiss').innerText")
+        check('財產清單只上傳 1／3 份：完成頁列為待補並註明份數，進度列不算完成', '全國財產稅總歸戶財產查詢清單（已上傳 1／3 份' in dm and p0.split('已上傳')[1].split('/')[0].split('／')[0].strip() == p1.split('已上傳')[1].split('／')[0].strip(), (dm[:200], p0, p1))
+        check('份數檢查流程無程式錯誤', not errs, errs)
+        pg.close()
+
         # 4. 後台導覽完整走完（正常速度與快速連按）
         for gap in (1.2, 0.2):
             pg, errs = new_page(b, base)
